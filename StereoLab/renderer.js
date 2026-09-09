@@ -135,7 +135,7 @@ export class StereoRenderer {
         gl.texImage2D(gl.TEXTURE_2D, 0, internal, width, height, 0, format, type, data);
     }
     uniform(p, name, method, ...values) { this.gl[method](this.gl.getUniformLocation(p, name), ...values); }
-    render(source, depth, depthWidth, depthHeight, { strength = 1, showDepth = false } = {}) {
+    render(source, depth, depthWidth, depthHeight, { strength = 1, showDepth = false, syncGpu = false } = {}) {
         const { gl, params: p } = this;
         const sw = source.videoWidth || source.width, sh = source.videoHeight || source.height;
         if (!sw || !sh || depth.length !== depthWidth * depthHeight) throw new Error('Invalid stereo frame');
@@ -177,6 +177,7 @@ export class StereoRenderer {
         this.uniform(this.fill, 'uContent', 'uniform2f', cw, ch); this.uniform(this.fill, 'uInset', 'uniform2f', ...inset);
         this.uniform(this.fill, 'uBase', 'uniform1f', p.base);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
+        if (syncGpu) gl.finish();
         if (query) { gl.endQuery(this.timer.TIME_ELAPSED_EXT); this.queries.push(query); }
         while (this.queries.length && gl.getQueryParameter(this.queries[0], gl.QUERY_RESULT_AVAILABLE)) {
             const q = this.queries.shift();

@@ -9,10 +9,16 @@ const root = import.meta.dirname, args = process.argv.slice(2);
 const option = (key, fallback) => { const i = args.indexOf(key); return i < 0 ? fallback : args[i + 1]; };
 const seconds = Number(option('--seconds', 12)), width = Number(option('--width', 1920));
 const input = Number(option('--input', 266)), dtype = option('--dtype', 'fp16');
+const debug = option('--debug', '1') !== '0';
+const inferInterval = Number(option('--inferInterval', 0));
+const syncGpu = option('--syncGpu', '0') === '1';
+const render = option('--render', '1') !== '0';
+const motion = option('--motion', '1') !== '0';
 const cdp = option('--cdp', null), externalUrl = option('--url', null);
 if (Boolean(cdp) !== Boolean(externalUrl)) throw new Error('--cdp and --url must be supplied together');
 const geometryOnly = args.includes('--geometry-only');
-if (!Number.isFinite(seconds) || seconds < 5 || seconds > 300 || ![640, 1280, 1920].includes(width)
+if (!Number.isFinite(seconds) || seconds < 5 || seconds > 300 || !Number.isFinite(inferInterval) || inferInterval < 0 || inferInterval > 1000
+    || ![640, 1280, 1920].includes(width)
     || ![266, 378, 518].includes(input) || !['fp16', 'fp32'].includes(dtype)) throw new Error('Invalid verification options');
 const out = resolve(root, '.local', `verification-${cdp ? 'android-' : ''}${width}-${input}-${dtype}-${seconds}s`);
 let server, browser, attachedPage;
@@ -34,7 +40,7 @@ try {
     await page.locator('canvas').screenshot({ path: resolve(out, 'synthetic-sbs.png') });
     const report = { schema: 1, browser: await browser.version(), scope: cdp ? 'android-chrome-browser' : 'desktop-browser', userAgent: await page.evaluate(() => navigator.userAgent), geometry, samples: [] };
     if (!geometryOnly) {
-        await page.goto(`${url}/?input=${input}&dtype=${dtype}`);
+        await page.goto(`${url}/?input=${input}&dtype=${dtype}&debug=${debug ? 1 : 0}&inferInterval=${inferInterval}&syncGpu=${syncGpu ? 1 : 0}&render=${render ? 1 : 0}&motion=${motion ? 1 : 0}`);
         await page.selectOption('#resolution', String(width));
         await page.selectOption('#input', String(input));
         await page.click('#load');
@@ -70,6 +76,7 @@ try {
             metrics.performancePassed = metrics.activeStereoFraction > 0.8
                 && metrics.callbackFps >= a / b * 0.90
                 && metrics.droppedVideoFrames / Math.max(1, metrics.totalVideoFrames) < 0.02;
+            if (render) {
             // Let the sole outstanding inference settle before checking pause behavior.
             await page.waitForFunction(() => !window.stereoLab.state.busy, {}, { timeout: 10000 });
             const snapshot = await page.evaluate(() => {
@@ -94,9 +101,9 @@ try {
             assert.ok(snapshot.normalizedDepthSpread > 0.05, 'Model output must contain scene depth variation');
             assert.ok(snapshot.stereoDifference > 0, 'Eye images must differ');
             assert.ok(snapshot.sceneDepthPixelEffect > 0, 'Scene depth must change pixels beyond a flat-screen shift');
-            assert.ok(snapshot.debugDepthRange > 10, 'Debug must display the actual nonuniform model depth');
+            if (debug) assert.ok(snapshot.debugDepthRange > 10, 'Debug must display the actual nonuniform model depth');
             await page.locator('#output').screenshot({ path: resolve(out, `sample-${index + 1}-sbs.png`) });
-            await page.locator('.debug').screenshot({ path: resolve(out, `sample-${index + 1}-debug.png`) });
+            if (debug) await page.locator('.debug').screenshot({ path: resolve(out, `sample-${index + 1}-debug.png`) });
             await page.check('#depth');
             await page.locator('#output').screenshot({ path: resolve(out, `sample-${index + 1}-depth.png`) });
             await page.uncheck('#depth');
@@ -111,10 +118,12 @@ try {
                 return !Number.isFinite(lab.tracker.observedAt) || Math.abs(lab.tracker.observedAt - lab.video.currentTime) < 0.1;
             }), 'Seek must invalidate old depth; an already completed observation may only belong to the new time');
             metrics.functional = { ...snapshot, pause: true, seekInvalidatesDepth: true };
+            }
         }
     }
     assert.equal(pageErrors.length, 0);
-    report.functionalPassed = true;
+    report.functionalPassed = render;
+    report.functionalChecksSkipped = !render;
     report.passed = report.samples.every(sample => sample.performancePassed);
     await writeFile(resolve(out, 'metrics.json'), JSON.stringify(report, null, 2) + '\n');
     assert.ok(report.passed, 'Functional checks passed, but realtime performance threshold failed; see metrics.json');

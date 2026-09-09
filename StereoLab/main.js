@@ -7,10 +7,18 @@ const thumb = new OffscreenCanvas(GRID_WIDTH, GRID_HEIGHT), tc = thumb.getContex
 const capture = new OffscreenCanvas(518, 294), cc = capture.getContext('2d', { willReadFrequently: true });
 const state = { model: 'not-loaded', device: null, frames: 0, inferred: 0, accepted: 0, rejected: 0,
     activeStereoFrames: 0, processingMs: [], inferenceMs: [], depthAgeMs: [], started: null, busy: false, errors: 0,
-    missedVideoCallbacks: 0, lastPresented: null, playedSeconds: 0, lastMedia: null, busySince: 0, sceneCuts: 0 };
+    missedVideoCallbacks: 0, lastPresented: null, playedSeconds: 0, lastMedia: null, busySince: 0, lastInferStart: -Infinity, sceneCuts: 0,
+    captureMs: [], inferenceCaptureMs: [], motionMs: [], debugMs: [], renderMs: [] };
 const options = new URLSearchParams(location.search);
 const dtype = options.get('dtype') === 'fp32' ? 'fp32' : 'fp16';
+const debugEnabled = options.get('debug') !== '0';
+const renderEnabled = options.get('render') !== '0';
+const motionEnabled = options.get('motion') !== '0';
+const syncGpu = options.get('syncGpu') === '1';
+const requestedInferInterval = Number(options.get('inferInterval'));
+const inferIntervalMs = Number.isFinite(requestedInferInterval) ? Math.max(0, Math.min(1000, requestedInferInterval)) : 0;
 if (['266', '378', '518'].includes(options.get('input'))) document.querySelector('#input').value = options.get('input');
+if (!debugEnabled) document.querySelector('.debug').hidden = true;
 let qualityStart = { totalVideoFrames: 0, droppedVideoFrames: 0 };
 const push = (list, v) => { list.push(v); if (list.length > 3600) list.shift(); };
 const estimatedContext = document.querySelector('#estimated-depth').getContext('2d');
@@ -26,6 +34,7 @@ function paintDepth(context, values) {
     context.putImageData(pixels, 0, 0);
 }
 function drawDepthDebug() {
+    if (!debugEnabled) return;
     if (tracker.observation !== lastObservation) {
         paintDepth(estimatedContext, tracker.observation?.depth);
         lastObservation = tracker.observation;
@@ -51,7 +60,10 @@ function report() {
         totalVideoFrames: quality.totalVideoFrames - qualityStart.totalVideoFrames,
         droppedVideoFrames: quality.droppedVideoFrames - qualityStart.droppedVideoFrames,
         videoTimeSeconds: state.playedSeconds,
-        processingMs: summarize(state.processingMs), inferenceMs: summarize(state.inferenceMs), gpuMs: summarize(renderer.gpuMs),
+        processingMs: summarize(state.processingMs), captureMs: summarize(state.captureMs), inferenceCaptureMs: summarize(state.inferenceCaptureMs), motionMs: summarize(state.motionMs),
+        debugMs: summarize(state.debugMs), renderMs: summarize(state.renderMs), inferenceMs: summarize(state.inferenceMs),
+        gpuMs: summarize(renderer.gpuMs), gpuTimerSupported: Boolean(renderer.timer), syncGpu, renderEnabled, motionEnabled, debugEnabled,
+        inferIntervalMs,
         depthAgeMs: summarize(state.depthAgeMs), temporalDepthInnovation: tracker.temporalError,
         sceneCuts: state.sceneCuts, errors: state.errors, videoCount: document.querySelectorAll('video').length };
 }
@@ -60,16 +72,21 @@ function configure() {
     renderer.configure({ width, height: width * 9 / 16, amplitude: Number(document.querySelector('#amplitude').value) });
     draw();
 }
-function draw() {
+function draw(measure = false) {
+    const debugStart = measure ? performance.now() : 0;
     drawDepthDebug();
-    if (video.readyState >= 2) renderer.render(video, tracker.depth, GRID_WIDTH, GRID_HEIGHT,
-        { strength: tracker.strength(), showDepth: document.querySelector('#depth').checked });
+    if (measure) push(state.debugMs, performance.now() - debugStart);
+    const renderStart = measure ? performance.now() : 0;
+    if (renderEnabled && video.readyState >= 2) renderer.render(video, tracker.depth, GRID_WIDTH, GRID_HEIGHT,
+        { strength: tracker.strength(), showDepth: document.querySelector('#depth').checked, syncGpu });
+    if (measure) push(state.renderMs, performance.now() - renderStart);
 }
 function resetMetrics() {
     state.frames = state.inferred = state.accepted = state.rejected = state.activeStereoFrames = 0;
-    state.processingMs = []; state.inferenceMs = []; state.depthAgeMs = []; renderer.gpuMs = [];
+    state.processingMs = []; state.captureMs = []; state.inferenceCaptureMs = []; state.motionMs = []; state.debugMs = []; state.renderMs = [];
+    state.inferenceMs = []; state.depthAgeMs = []; renderer.gpuMs = [];
     state.started = performance.now();
-    state.missedVideoCallbacks = 0; state.lastPresented = null;
+    state.missedVideoCallbacks = 0; state.lastPresented = null; state.lastInferStart = -Infinity;
     state.playedSeconds = 0; state.lastMedia = null; state.sceneCuts = 0;
     qualityStart = video.getVideoPlaybackQuality();
 }
@@ -81,13 +98,18 @@ function frame(now, metadata) {
     if (state.lastMedia !== null && metadata.mediaTime >= state.lastMedia)
         state.playedSeconds += Math.min(0.5, metadata.mediaTime - state.lastMedia);
     state.lastMedia = metadata.mediaTime;
+    const captureStart = performance.now();
     tc.drawImage(video, 0, 0, GRID_WIDTH, GRID_HEIGHT);
     const rgba = tc.getImageData(0, 0, GRID_WIDTH, GRID_HEIGHT).data, gray = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
     for (let i = 0; i < gray.length; i++) gray[i] = (rgba[i * 4] * 77 + rgba[i * 4 + 1] * 150 + rgba[i * 4 + 2] * 29) >> 8;
+    push(state.captureMs, performance.now() - captureStart);
     const previousCuts = tracker.cuts;
-    tracker.advance(gray, metadata.mediaTime);
+    const motionStart = performance.now();
+    tracker.advance(gray, metadata.mediaTime, { motion: motionEnabled });
+    push(state.motionMs, performance.now() - motionStart);
     state.sceneCuts += Math.max(0, tracker.cuts - previousCuts);
-    if (state.model === 'ready' && !state.busy) {
+    if (state.model === 'ready' && !state.busy && performance.now() - state.lastInferStart >= inferIntervalMs) {
+        const inferenceCaptureStart = performance.now();
         capture.width = Number(document.querySelector('#input').value);
         capture.height = Math.max(14, Math.round(capture.width * video.videoHeight / video.videoWidth / 14) * 14);
         cc.drawImage(video, 0, 0, capture.width, capture.height);
@@ -96,11 +118,12 @@ function frame(now, metadata) {
         for (let i = 0; i < rgb.length / 3; i++) {
             rgb[i * 3] = pixels[i * 4]; rgb[i * 3 + 1] = pixels[i * 4 + 1]; rgb[i * 3 + 2] = pixels[i * 4 + 2];
         }
-        state.busy = true; state.busySince = performance.now();
+        push(state.inferenceCaptureMs, performance.now() - inferenceCaptureStart);
+        state.busy = true; state.busySince = performance.now(); state.lastInferStart = state.busySince;
         worker.postMessage({ type: 'infer', pixels: rgb.buffer, width: capture.width, height: capture.height,
             time: metadata.mediaTime, generation: tracker.generation }, [rgb.buffer]);
     }
-    draw(); state.frames++;
+    draw(true); state.frames++;
     if (tracker.strength() > 0.01) state.activeStereoFrames++;
     if (Number.isFinite(tracker.observedAt)) push(state.depthAgeMs, (tracker.time - tracker.observedAt) * 1000);
     push(state.processingMs, performance.now() - start);

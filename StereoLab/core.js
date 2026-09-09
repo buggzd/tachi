@@ -82,16 +82,19 @@ export class DepthTracker {
         this.observedAt = -Infinity; this.time = 0; this.cuts = 0;
         this.temporalError = 0;
         this.observation = null;
+        this.motionEnabled = true;
     }
-    advance(gray, time) {
+    advance(gray, time, { motion = true } = {}) {
         if (gray.length !== this.depth.length || !Number.isFinite(time)) throw new Error('Invalid frame');
         if (time < this.time || time - this.time > 0.5) this.reset();
+        this.motionEnabled = motion;
         let flow = null;
-        if (this.gray) {
+        if (this.gray && motion) {
             let error = 0;
             for (let i = 0; i < gray.length; i++) error += Math.abs(gray[i] - this.gray[i]);
             if (error / gray.length > 45) {
                 const cuts = this.cuts + 1; this.reset(); this.cuts = cuts;
+                this.motionEnabled = motion;
             } else {
                 flow = motionField(this.gray, gray);
                 this.depth = warpDepth(this.depth, flow);
@@ -116,7 +119,10 @@ export class DepthTracker {
         const observed = incoming;
         for (let i = first + 1; i < this.history.length; i++) {
             const f = this.history[i].flow;
-            if (!f) return false;
+            if (!f) {
+                if (this.motionEnabled === false) continue;
+                return false;
+            }
             incoming = warpDepth(incoming, f);
         }
         const alpha = Number.isFinite(this.observedAt) ? 0.65 : 1;

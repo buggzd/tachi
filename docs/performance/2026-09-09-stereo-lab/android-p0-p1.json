@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "scope": "android-chrome-browser",
+  "device": {
+    "soc": "SM8850",
+    "android": 16,
+    "api": 36,
+    "chrome": "150.0.7871.186",
+    "charging": true,
+    "batteryPercent": 95,
+    "batteryTemperatureC": 37.0,
+    "thermalStatus": 0
+  },
+  "media": {
+    "samples": 3,
+    "source": "local Jellyfin excerpts",
+    "sourceResolution": "1920x1080",
+    "sourceFps": ["24000/1001", "24000/1001", "25/1"]
+  },
+  "apkWebViewCapability": {
+    "debugPackage": "com.jellyfinforrayneo.client.debug",
+    "provider": "com.google.android.webview",
+    "providerVersion": "150.0.7871.181",
+    "userAgentClass": "Android WebView",
+    "webgpuAdapter": true,
+    "webgpuDevice": true,
+    "webgpuFeatures": ["shader-f16", "timestamp-query"],
+    "webgpuLimits": {"maxTextureDimension2D": 16384, "maxStorageBufferBindingSize": 2147483644},
+    "webgl2": true,
+    "webglTimerSupported": false,
+    "offscreenCanvas": true,
+    "worker": true,
+    "mp4AvcAac": "probably",
+    "hlsMime": "maybe",
+    "endToEndStereoLab": "not tested; lab is not packaged in APK"
+  },
+  "baseline60s": {
+    "input": "266x154",
+    "eye": "640x360",
+    "debug": true,
+    "samples": [
+      {"callbackFps": 17.5695, "processingMeanMs": 23.1444, "inferenceMeanMs": 64.6772, "activeStereoFraction": 0.9640, "depthAgeP95Ms": 291.958, "droppedVideoFrames": 0},
+      {"callbackFps": 17.4939, "processingMeanMs": 22.4151, "inferenceMeanMs": 63.9504, "activeStereoFraction": 0.9333, "depthAgeP95Ms": 291.958, "droppedVideoFrames": 0},
+      {"callbackFps": 19.2280, "processingMeanMs": 21.0240, "inferenceMeanMs": 65.0050, "activeStereoFraction": 0.9347, "depthAgeP95Ms": 240.000, "droppedVideoFrames": 0}
+    ]
+  },
+  "phaseTiming15s": {
+    "input": "266x154",
+    "eye": "640x360",
+    "debugOn": [
+      {"callbackFps": 16.6993, "captureMeanMs": 14.9621, "motionMeanMs": 2.9031, "debugMeanMs": 0.3328, "renderMeanMs": 0.7434, "inferenceMeanMs": 61.5444},
+      {"callbackFps": 15.4286, "captureMeanMs": 19.3447, "motionMeanMs": 3.0404, "debugMeanMs": 0.3272, "renderMeanMs": 0.8498, "inferenceMeanMs": 62.1673},
+      {"callbackFps": 19.7669, "captureMeanMs": 11.5987, "motionMeanMs": 2.8062, "debugMeanMs": 0.3291, "renderMeanMs": 0.7706, "inferenceMeanMs": 63.4411}
+    ],
+    "debugOff": [
+      {"callbackFps": 18.8803, "captureMeanMs": 12.6077, "motionMeanMs": 2.6392, "debugMeanMs": 0.0021, "renderMeanMs": 0.8315, "inferenceMeanMs": 61.3358},
+      {"callbackFps": 18.7642, "captureMeanMs": 11.0244, "motionMeanMs": 2.9318, "debugMeanMs": 0.0000, "renderMeanMs": 0.9159, "inferenceMeanMs": 63.5392},
+      {"callbackFps": 19.4998, "captureMeanMs": 11.8706, "motionMeanMs": 2.8355, "debugMeanMs": 0.0014, "renderMeanMs": 0.9270, "inferenceMeanMs": 64.8466}
+    ]
+  },
+  "captureBreakdown13sInput266": {
+    "eye": "640x360",
+    "samples": [
+      {"callbackFps": 19.2541, "captureMeanMs": 11.6143, "inferenceCaptureMeanMs": 10.2742, "motionMeanMs": 2.4040, "renderMeanMs": 0.8020, "inferenceMeanMs": 59.4375},
+      {"callbackFps": 19.6364, "captureMeanMs": 9.9738, "inferenceCaptureMeanMs": 8.3944, "motionMeanMs": 2.5383, "renderMeanMs": 0.9113, "inferenceMeanMs": 59.4096},
+      {"callbackFps": 19.9391, "captureMeanMs": 10.3000, "inferenceCaptureMeanMs": 8.6078, "motionMeanMs": 2.5599, "renderMeanMs": 0.8141, "inferenceMeanMs": 59.7781}
+    ]
+  },
+  "isolations": {
+    "gpuSync7s": {"gpuTimerSupported": false, "renderMeanMs": [0.8993, 0.7541, 0.8590], "callbackFps": [18.9445, 18.9569, 19.0238]},
+    "renderOff12s": {"callbackFps": [18.6678, 19.7589, 20.9611], "captureMeanMs": [14.8341, 11.7569, 11.2973], "motionMeanMs": [3.0185, 3.6238, 2.4323]},
+    "motionOffRenderOff12s": {"callbackFps": [20.2364, 21.2959, 21.5396], "captureMeanMs": [12.9782, 11.5802, 11.9452], "motionMeanMs": [0.0048, 0.0039, 0.0048], "functionalStereo": "not a quality pass; temporal motion alignment disabled"},
+    "inferInterval100ms17s": {"callbackFps": [16.6748, 16.4727, 18.6594], "inferenceMeanMs": [67.4761, 64.9757, 56.1837], "depthAgeP95Ms": [291.958, 250.250, 240.000]}
+  },
+  "inputTiers12s": {
+    "378x210": {
+      "callbackFps": [16.2116, 16.3800, 15.6135],
+      "inferenceMeanMs": [100.8280, 109.2928, 105.7279],
+      "activeStereoFraction": [0.9282, 0.8939, 0.8677],
+      "depthAgeP95Ms": [333.667, 375.375, 320.000]
+    },
+    "518x294": {
+      "callbackFps": [12.9274, 13.1735, 13.1339],
+      "inferenceMeanMs": [205.7178, 201.5533, 202.3457],
+      "activeStereoFraction": [0.3846, 0.4403, 0.4303],
+      "depthAgeP95Ms": [500.500, 667.333, 480.000],
+      "droppedVideoFrames": [2, 1, 0]
+    }
+  },
+  "outputTiers12sInput266": {
+    "1280x720": {"callbackFps": [18.5803, 18.5253, 21.1989], "renderMeanMs": [0.8261, 0.8821, 0.7738]},
+    "1920x1080": {"callbackFps": [17.7021, 18.2805, 18.8933], "renderMeanMs": [0.8164, 0.9068, 0.8236]}
+  },
+  "functional": {
+    "baseline": "geometry, depth variation, debug depth, pause, seek, single video and no-error checks passed",
+    "performanceThreshold": "not passed on any full AI run; output callback remains below 90% of source rate"
+  }
+}

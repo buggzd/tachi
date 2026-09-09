@@ -63,3 +63,11 @@ test('invalid and constant depth never count as valid stereo observations', () =
     assert.equal(t.observe(new Float32Array(W * H).fill(1), 0, t.generation), false);
     assert.equal(t.strength(), 0);
 });
+test('motion-disabled tracker accepts current depth without flow propagation', () => {
+    const t = new DepthTracker(), raw = Float32Array.from({ length: W * H }, (_, i) => i / (W * H));
+    const gray = new Uint8Array(W * H).fill(80), generation = t.generation;
+    t.advance(gray, 0, { motion: false });
+    t.advance(gray, 0.04, { motion: false });
+    assert.equal(t.observe(raw, 0.04, generation), true);
+    assert.equal(t.motionEnabled, false);
+});

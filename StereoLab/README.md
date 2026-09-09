@@ -100,6 +100,7 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 指标区分：
 
 - `processingMs`：主线程取缩略图、运动估计和 GPU 提交的 CPU 墙钟耗时。
+- `captureMs`：每帧 96×54 缩略图读取、灰度转换的耗时；`inferenceCaptureMs` 是送入模型前按所选档位缩放、读取和 RGB 打包的耗时。
 - `inferenceMs`：Worker 预处理、模型执行、结果读取/缩小的总耗时，包含 GPU 等待；不是纯模型内核时长。
 - `gpuMs`：GPU timer query 测量纹理上传、重投影和补洞；不支持时为 null，不能用 CPU 提交时间代替。
 - `callbackFps` / `missedVideoCallbacks`：视频帧驱动的 SBS 提交频率和漏掉的视频回调；不等于眼镜物理呈现帧率。
@@ -136,3 +137,9 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 实际输入尺寸必须匹配请求档位。功能检查继续覆盖所有片段，性能未达标
 会记录 `performancePassed: false` 并以非零状态退出，不能作为实时验证通过。
 Android Chrome 的结果不代表应用 WebView、眼镜输出或 NPU 性能。
+
+验证器还支持受控分项测量：`--debug 0` 关闭 Debug 画布，`--render 0` 跳过 SBS
+绘制，`--motion 0` 跳过分块运动传播，`--inferInterval <ms>` 限制推理启动间隔，
+`--syncGpu 1` 在绘制后调用 `gl.finish()` 观察同步等待。这些开关用于归因，关闭
+渲染或运动时的结果不能当作完整 SBS 画质通过。页面报告会记录实际生效的开关和
+`captureMs`、`motionMs`、`debugMs`、`renderMs` 分阶段统计。
