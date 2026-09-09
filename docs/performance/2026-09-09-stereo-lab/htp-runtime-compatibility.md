@@ -19,6 +19,54 @@ version-alignment gap, not evidence that the SoC lacks compute capability.
 Reference: [ORT QNN EP documentation](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html),
 “QNN Version Requirements” and “Install prerequisites”.
 
+## Official distribution and deployment check
+
+| Candidate | Official source and evidence | Support matrix / versions | Checksums and access | Decision |
+| --- | --- | --- | --- | --- |
+| Qualcomm AI Runtime SDK (QAIRT/QNN) | Qualcomm Package Manager: [Qualcomm_AI_Runtime_SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK). This is also the SDK URL linked by the [ORT QNN documentation](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html). | The current unauthenticated QPM page exposes only the web application shell; no package manifest, V81 support table, or download URL was available to this Mac session. | Requires a Qualcomm Package Manager account/entitlement. No package bytes or SHA-256 could be obtained, so there is no reproducible official 2.48 artifact in this workspace. | **Acquisition blocked** pending an authenticated QPM download or vendor-provided package and manifest. |
+| QAIRT 2.25 public reference tree | [Qualcomm AI Engine Direct mirror, V2.25.0.240728](https://github.com/qdsp6sw/qualcomm-ai-engine-direct-sdk/tree/V2.25.0.240728), commit `e32f4b482c9d0f941eae317e5a5d6dd48d600352`; the files retain Qualcomm copyright and release documentation, but the GitHub account is not the official download endpoint. | `sdk.yaml`: QAIRT `2.25.0`, build `240728104910_97711`, QNN backend API `2.16.0`, Android NDK `r26c`; setup guide verifies Ubuntu 22.04/WSL2 and Windows 11. Its HTP matrix stops at V75/V73/V69/V68, and `lib/aarch64-android` contains no V81 libraries or SM8850 entry. | The full archive was not downloaded, so no archive SHA-256 is claimed. Individual source URLs and the immutable commit are recorded. | **Not deployable for SM8850/V81**; useful only as a negative compatibility reference. |
+| QAIRT 2.48 V81 artifact witness | [ZipDepth SM8850 reference](https://github.com/meh301/ZipDepth-FP16-Qualcomm-QNN-SM8850), commit `99c80de923f00af104af87a0fceea67ee3b9effe`, independently reports SM8850/canoe/HTP V81 and QAIRT/QNN `2.48`, build `2.48.0.260626120635`. | This is a third-party application, not Qualcomm's support matrix or download channel. It demonstrates an ordinary Android packaging shape with matched arm64 host libraries and V81 context artifacts, but does not prove that Qualcomm will grant the same package to this project. | Its dependency file records SHA-256 values: `libQnnHtp.so` `4eaa10f59fce051e32012d6b4399c0576f5332c23349b6cc7452f9dcf8f270c7`; `libQnnHtpPrepare.so` `3e408206c9f3f24f60991476efdff388a271ff06411c18d02660a6ceac24cd0a`; V81 Skel `87e6463b4b4441eedb1b2ae889443510249eae4d6533278d3a5c798b8eea25d1`; V81 Stub `29d25ba60553f80210835f778854b6e6b542059e0c2296b99b65d2b0cb24cab6`; `libQnnSystem.so` `7ee62754b67a1f0f3b1defc1c441ff59d5ed4a02bb34f9437def7b7c8651062d`; ORT QNN 1.27.0 `d814a4927c78439da4fe599866c980ea853c2d3ecbb7078f897d559d63ccc872`. These are third-party LFS objects, not downloaded here. | **Corroborating lead only**; obtain the same version through official QPM/vendor access before use. |
+
+The public Qualcomm sample documentation describes loading the application-side
+backend and system libraries for an `aarch64-android` target. It does not authorize
+copying protected `/vendor` files, replacing system FastRPC, or replacing the
+device DSP skeleton. For this project the deployment contract remains: carry only
+the exact host-side QAIRT set that the official Android guide names, leave system
+FastRPC/DSP components under platform control, and verify every dependency with
+the same SDK manifest. The current vendor-copy experiment therefore stops here.
+
+The Direct probe now records the deployment version boundary before any QNN
+interface-table call. With the current local headers (`2.37.0`) and phone provider
+(`2.25.0`), it must report `apiCompatibility=FAIL` and exit at
+`directProbeStage=apiCompatibility`; this is intentional evidence, not a new
+loader workaround.
+
+## Host capability and toolchain gap
+
+The current Mac is Apple Silicon macOS 15.5. It can run the host quantization
+reference and the Android Gradle build with the installed platform 35, build tools
+34.0.0, CMake 3.22.1, and NDK 27.0.12077973. It has JDK 21 and Python 3.14; `adb`
+and `cmake` are not on `PATH` (the SDK contains CMake, and an external platform-tools
+copy is available elsewhere on disk).
+
+The public QAIRT 2.25 setup guide verifies Ubuntu 22.04/WSL2 or Windows, Python
+3.10, clang-14, and Android NDK r26c; it does not list macOS. HTP/DSP custom-op
+tooling additionally requires the Hexagon SDK. Therefore this Mac can prepare and
+validate the fixed host vector and compile the Android probe, but it cannot yet be
+treated as a supported host for QAIRT conversion or V81 offline context compilation.
+The missing host environment is an authenticated QAIRT release plus a Linux
+Ubuntu 22.04 x86_64 (or vendor-supported equivalent) tool host, with the matching
+NDK/Hexagon tools. Running those x86_64 tools on Apple Silicon would require a
+supported VM/container/emulation setup; no such QAIRT toolchain is installed here.
+
+## Phase-one verification record
+
+| Check | Expected | Actual | Status |
+| --- | --- | --- | --- |
+| Host U8 Relu quantization reference | QNN formula `(q + offset) * scale`, `scale=0.05`, `offset=-128`, followed by ReLU and re-quantization must reproduce the probe vector. | `python3 StereoLab/validate-qnn-relu-reference.py` produced `quantReference=PASS` and the exact 16-byte expected array. | PASS |
+| Probe source/build | The corrected offset and provider/API gate compile for arm64 Android. | `assembleDebug` completed successfully with the local SDK; no device rerun was performed in this phase. | PASS |
+| Official SM8850/V81 package acquisition | Obtain an official versioned package, support matrix, manifest, and hashes. | QPM endpoint is known, but authenticated package access and the V81 matrix are unavailable in this session. | BLOCKED |
+
 ## Phone runtime files
 
 | Component | Phone path and observed size | Exists | App-readable / copied | Direct probe load | Dependency result |

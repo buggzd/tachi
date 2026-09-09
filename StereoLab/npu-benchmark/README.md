@@ -29,10 +29,25 @@ before initializing ONNX Runtime. It records each gate separately:
 `graphFinalize`, `graphExecute`, and `outputCheck`. The probe emits
 `directProbeMarker=PASS` only when the graph executes and its U8 Relu output
 matches the known reference vector. A provider enumeration or successful
-device creation alone is not an NPU inference pass.
+device creation alone is not an NPU inference pass. It selects the HTP provider
+by backend ID and requires the provider's QNN major/minor API to match the
+headers used to compile the probe; a mismatch exits with
+`directProbeMarker=FAIL stage=apiCompatibility` before any interface-table call.
 
 The runtime inventory and the current failing gate are recorded in
 `docs/performance/2026-09-09-stereo-lab/htp-runtime-compatibility.md`.
+
+Before a device run, validate the fixed U8 Relu vector on the host:
+
+```bash
+python3 StereoLab/validate-qnn-relu-reference.py
+```
+
+The QNN scale-offset convention is `real = (quantized + offset) * scale`.
+For scale `0.05` and U8 zero point `128`, the QNN offset is `-128`; the host
+check covers dequantization, ReLU, re-quantization, and the expected output
+vector. The native probe repeats this check and emits `quantReference=PASS`
+before loading the provider interface table.
 
 ```bash
 adb install -r StereoLab/npu-benchmark/app/build/outputs/apk/debug/app-debug.apk

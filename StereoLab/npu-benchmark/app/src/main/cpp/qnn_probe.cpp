@@ -1,8 +1,12 @@
 #include <jni.h>
 #include <android/log.h>
 
+#include <algorithm>
+#include <array>
+#include <cmath>
 #include <dlfcn.h>
 #include <cstdint>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -17,6 +21,64 @@ constexpr char kTag[] = "TachiQnnDirectProbe";
 constexpr char kAdspLibraryPath[] =
         "/vendor/lib/rfsa/adsp;/vendor/dsp/cdsp;/vendor/dsp/adsp"
         ";/system/lib/rfsa/adsp;/dsp";
+constexpr float kReluQuantScale = 0.05f;
+constexpr uint32_t kHtpBackendId = 6;
+// QNN scale-offset encoding is real = (quantized + offset) * scale.  The U8
+// zero point 128 therefore has an offset of -128 in the QNN struct.
+constexpr int32_t kReluQuantOffset = -128;
+constexpr std::array<uint8_t, 16> kReluInput = {
+        0, 64, 96, 127, 128, 129, 160, 200,
+        255, 1, 32, 80, 140, 180, 220, 250};
+constexpr std::array<uint8_t, 16> kReluExpected = {
+        128, 128, 128, 128, 128, 129, 160, 200,
+        255, 128, 128, 128, 140, 180, 220, 250};
+
+uint8_t quantizeReluReference(uint8_t quantizedInput) {
+    const float dequantized =
+            (static_cast<float>(quantizedInput) + static_cast<float>(kReluQuantOffset))
+            * kReluQuantScale;
+    const float relu = std::max(0.0f, dequantized);
+    const long rounded = std::lround(
+            relu / kReluQuantScale - static_cast<float>(kReluQuantOffset));
+    const long clamped = std::max<long>(0, std::min<long>(255, rounded));
+    return static_cast<uint8_t>(clamped);
+}
+
+bool validateReluQuantizationReference(std::string* details) {
+    bool matches = true;
+    std::ostringstream report;
+    report << "quantReference formula=(q+offset)*scale"
+           << " scale=" << kReluQuantScale
+           << " offset=" << kReluQuantOffset << " dequant=";
+    for (uint8_t value : kReluInput) {
+        const float dequantized =
+                (static_cast<float>(value) + static_cast<float>(kReluQuantOffset))
+                * kReluQuantScale;
+        report << dequantized << ",";
+    }
+    report << " relu=";
+    for (uint8_t value : kReluInput) {
+        const float dequantized =
+                (static_cast<float>(value) + static_cast<float>(kReluQuantOffset))
+                * kReluQuantScale;
+        report << std::max(0.0f, dequantized) << ",";
+    }
+    report << " requant=";
+    for (size_t index = 0; index < kReluInput.size(); ++index) {
+        const uint8_t actual = quantizeReluReference(kReluInput[index]);
+        report << static_cast<unsigned int>(actual) << ",";
+        matches = matches && actual == kReluExpected[index];
+    }
+    report << " expected=";
+    for (uint8_t value : kReluExpected) {
+        report << static_cast<unsigned int>(value) << ",";
+    }
+    report << " result=" << (matches ? "PASS" : "FAIL") << "\n";
+    if (details != nullptr) {
+        *details = report.str();
+    }
+    return matches;
+}
 
 void logLine(const std::string& line) {
     // Android logcat truncates a single record at roughly 4 KiB.  The probe
@@ -112,8 +174,8 @@ std::string runDirectReluGraph(
     Qnn_QuantizeParams_t quantizeParams = QNN_QUANTIZE_PARAMS_INIT;
     quantizeParams.encodingDefinition = QNN_DEFINITION_DEFINED;
     quantizeParams.quantizationEncoding = QNN_QUANTIZATION_ENCODING_SCALE_OFFSET;
-    quantizeParams.scaleOffsetEncoding.scale = 0.05f;
-    quantizeParams.scaleOffsetEncoding.offset = 128;
+    quantizeParams.scaleOffsetEncoding.scale = kReluQuantScale;
+    quantizeParams.scaleOffsetEncoding.offset = kReluQuantOffset;
     uint32_t dimensions[] = {1, 1, 1, 16};
     Qnn_Tensor_t input = QNN_TENSOR_INIT;
     input.v1.name = "direct_relu_input";
@@ -201,16 +263,12 @@ std::string runDirectReluGraph(
     }
     bool outputCheck = false;
     if (status == QNN_SUCCESS && graph != nullptr) {
-        const uint8_t inputData[16] = {
-                0, 64, 96, 127, 128, 129, 160, 200,
-                255, 1, 32, 80, 140, 180, 220, 250};
-        const uint8_t expected[16] = {
-                128, 128, 128, 128, 128, 129, 160, 200,
-                255, 128, 128, 128, 140, 180, 220, 250};
+        const uint8_t* inputData = kReluInput.data();
+        const uint8_t* expected = kReluExpected.data();
         uint8_t outputData[16] = {};
         Qnn_Tensor_t executeInput = input;
         executeInput.v1.clientBuf.data = const_cast<uint8_t*>(inputData);
-        executeInput.v1.clientBuf.dataSize = sizeof(inputData);
+        executeInput.v1.clientBuf.dataSize = kReluInput.size();
         Qnn_Tensor_t executeOutput = outputTensor;
         executeOutput.v1.clientBuf.data = outputData;
         executeOutput.v1.clientBuf.dataSize = sizeof(outputData);
@@ -255,6 +313,14 @@ std::string runProbe(const std::string& directory, uint32_t socModel) {
     output << "directProbe=begin\n";
     output << "socModel=" << socModel << " signedPdRequested=true\n";
     output << "adspLibraryPath=" << kAdspLibraryPath << "\n";
+    std::string quantReference;
+    const bool quantReferencePass = validateReluQuantizationReference(&quantReference);
+    output << quantReference;
+    if (!quantReferencePass) {
+        output << "directProbeMarker=FAIL stage=quantReference\n";
+        output << "directProbe=end\n";
+        return output.str();
+    }
 
     LoadedLibraries libraries;
     // This probe deliberately uses only the application-readable copies.  A
@@ -311,19 +377,55 @@ std::string runProbe(const std::string& directory, uint32_t socModel) {
     Qnn_ErrorHandle_t status = getProviders(&providers, &providerCount);
     output << "providersStatus=" << hexError(status)
            << " count=" << providerCount << "\n";
-    if (status != QNN_SUCCESS || providers == nullptr || providerCount == 0
-            || providers[0] == nullptr) {
+    if (status != QNN_SUCCESS || providers == nullptr || providerCount == 0) {
         output << "directProbeMarker=FAIL stage=providers\n";
         output << "directProbe=end\n";
         return output.str();
     }
 
-    const QnnInterface_t* provider = providers[0];
-    output << "providerBackendId=" << provider->backendId
-           << " provider=" << (provider->providerName == nullptr ? "" : provider->providerName)
-           << " api=" << provider->apiVersion.coreApiVersion.major << "."
-           << provider->apiVersion.coreApiVersion.minor << "."
-           << provider->apiVersion.coreApiVersion.patch << "\n";
+    const QnnInterface_t* provider = nullptr;
+    for (uint32_t index = 0; index < providerCount; ++index) {
+        if (providers[index] == nullptr) {
+            output << "provider[" << index << "]=" << "null\n";
+            continue;
+        }
+        const QnnInterface_t* candidate = providers[index];
+        output << "provider[" << index << "] backendId=" << candidate->backendId
+               << " name=" << (candidate->providerName == nullptr ? "" : candidate->providerName)
+               << " api=" << candidate->apiVersion.coreApiVersion.major << "."
+               << candidate->apiVersion.coreApiVersion.minor << "."
+               << candidate->apiVersion.coreApiVersion.patch << "\n";
+        if (candidate->backendId == kHtpBackendId && provider == nullptr) {
+            provider = candidate;
+        }
+    }
+    if (provider == nullptr) {
+        output << "providerSelection=FAIL requiredBackendId=" << kHtpBackendId << "\n";
+        output << "directProbeMarker=FAIL stage=providerSelection\n";
+        output << "directProbe=end\n";
+        return output.str();
+    }
+    output << "providerSelection=PASS backendId=" << provider->backendId
+           << " name=" << (provider->providerName == nullptr ? "" : provider->providerName)
+           << "\n";
+    const Qnn_ApiVersion_t providerApi = provider->apiVersion;
+    output << "providerApi=" << providerApi.coreApiVersion.major << "."
+           << providerApi.coreApiVersion.minor << "."
+           << providerApi.coreApiVersion.patch << "\n";
+    output << "probeHeaderApi=" << QNN_API_VERSION_MAJOR << "."
+           << QNN_API_VERSION_MINOR << "." << QNN_API_VERSION_PATCH << "\n";
+    // The union member below is named from the compile-time header version.
+    // Do not call it unless the provider advertises the same major/minor ABI.
+    if (providerApi.coreApiVersion.major != QNN_API_VERSION_MAJOR
+            || providerApi.coreApiVersion.minor != QNN_API_VERSION_MINOR) {
+        output << "apiCompatibility=FAIL required=" << QNN_API_VERSION_MAJOR << "."
+               << QNN_API_VERSION_MINOR << " actual=" << providerApi.coreApiVersion.major
+               << "." << providerApi.coreApiVersion.minor << "\n";
+        output << "directProbeMarker=FAIL stage=apiCompatibility\n";
+        output << "directProbe=end\n";
+        return output.str();
+    }
+    output << "apiCompatibility=PASS majorMinorMatch=true\n";
     const auto& interfaceTable = provider->QNN_INTERFACE_VER_NAME;
     if (interfaceTable.backendCreate == nullptr || interfaceTable.deviceCreate == nullptr) {
         output << "interface=missing backendCreateOrDeviceCreate\n";
