@@ -2,6 +2,8 @@
 
 tachi 已实现普通 2D 视频的可调远近虚拟银幕：复用同一个 WebView 帧，在左右眼分别缩放和平移。无需第二个播放器、逐像素深度生成或 XR 空间服务。显示状态机和生命周期约束见 [Android 架构](ANDROID_ARCHITECTURE.md#rayneo-display-state)，操作方式见 [使用指南](USER_GUIDE.md#眼镜显示模式)。
 
+逐像素深度生成与双眼重投影另有 [独立桌面实验](../StereoLab/README.md)，尚未接入 APK；下文仍描述已发布的平面虚拟银幕。
+
 ## 坐标与视差
 
 完整 SBS 输出包含两个并排的 16:9 眼区。设每眼原生宽度为 `N`、高度为 `H`，缩放比例为 `s`，总眼内视差为 `d = uL - uR`：

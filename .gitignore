@@ -51,6 +51,11 @@ signing.properties
 /GlassesUI/.vite/
 /.jellyfin-dev.json
 
+# Local stereo feasibility models, media, dependencies, and generated evidence.
+/StereoLab/node_modules/
+/StereoLab/.local/
+/StereoLab/dist/
+
 # OS files
 .DS_Store
 Thumbs.db

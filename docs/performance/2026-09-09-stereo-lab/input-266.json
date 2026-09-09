@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "browser": "152.0.7977.82",
+  "scope": "desktop-browser",
+  "geometry": {
+    "zeroDisparityDifference": 0,
+    "foregroundDisparityPixels": 8,
+    "holePixels": 2304,
+    "backgroundFilledPixels": 2304,
+    "borderLeaks": 0,
+    "glError": 0
+  },
+  "samples": [
+    {
+      "scope": "desktop-browser-experiment",
+      "model": "ready",
+      "backend": "webgpu",
+      "dtype": "fp16",
+      "modelInputWidth": 266,
+      "modelInputHeight": 154,
+      "depthTensorType": "float32",
+      "eyeWidth": 1920,
+      "eyeHeight": 1080,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "frames": 1430,
+      "inferenceCount": 1046,
+      "acceptedDepthCount": 1044,
+      "rejectedDepthCount": 2,
+      "activeStereoFrames": 1417,
+      "missedVideoCallbacks": 0,
+      "wallSeconds": 60.000800000190736,
+      "totalVideoFrames": 1431,
+      "droppedVideoFrames": 0,
+      "videoTimeSeconds": 59.47608299999936,
+      "processingMs": {
+        "count": 1430,
+        "mean": 10.273216775747446,
+        "p50": 10.300000190734863,
+        "p95": 13.5
+      },
+      "inferenceMs": {
+        "count": 1046,
+        "mean": 31.986042070115275,
+        "p50": 35.60000038146973,
+        "p95": 40
+      },
+      "gpuMs": {
+        "count": 1429,
+        "mean": 7.964965614415662,
+        "p50": 8.882749,
+        "p95": 9.987541
+      },
+      "depthAgeMs": {
+        "count": 1417,
+        "mean": 65.69725052928752,
+        "p50": 83.41599999999971,
+        "p95": 83.41700000000074
+      },
+      "temporalDepthInnovation": 0.10781933979224387,
+      "sceneCuts": 6,
+      "errors": 0,
+      "videoCount": 1,
+      "sample": 1,
+      "expectedFps": "24000/1001",
+      "callbackFps": 23.833015559716774,
+      "activeStereoFraction": 0.990909090909091,
+      "functional": {
+        "normalizedDepthSpread": 0.5818795263767242,
+        "stereoDifference": 1979383,
+        "sceneDepthPixelEffect": 1777672,
+        "debugDepthRange": 111,
+        "frames": 1430,
+        "time": 1.11714,
+        "pause": true,
+        "seekInvalidatesDepth": true
+      }
+    },
+    {
+      "scope": "desktop-browser-experiment",
+      "model": "ready",
+      "backend": "webgpu",
+      "dtype": "fp16",
+      "modelInputWidth": 266,
+      "modelInputHeight": 154,
+      "depthTensorType": "float32",
+      "eyeWidth": 1920,
+      "eyeHeight": 1080,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "frames": 1432,
+      "inferenceCount": 1047,
+      "acceptedDepthCount": 1042,
+      "rejectedDepthCount": 5,
+      "activeStereoFrames": 1399,
+      "missedVideoCallbacks": 0,
+      "wallSeconds": 60.000699999809264,
+      "totalVideoFrames": 1432,
+      "droppedVideoFrames": 0,
+      "videoTimeSeconds": 59.55949899999936,
+      "processingMs": {
+        "count": 1432,
+        "mean": 9.723393855148188,
+        "p50": 9.90000057220459,
+        "p95": 12.299999237060547
+      },
+      "inferenceMs": {
+        "count": 1047,
+        "mean": 31.621394472568515,
+        "p50": 35.5,
+        "p95": 40
+      },
+      "gpuMs": {
+        "count": 1431,
+        "mean": 8.112785596785452,
+        "p50": 9.033249,
+        "p95": 10.14325
+      },
+      "depthAgeMs": {
+        "count": 1399,
+        "mean": 65.6183338098645,
+        "p50": 83.41599999999971,
+        "p95": 83.41700000000074
+      },
+      "temporalDepthInnovation": 0.052514285880695885,
+      "sceneCuts": 21,
+      "errors": 0,
+      "videoCount": 1,
+      "sample": 2,
+      "expectedFps": "24000/1001",
+      "callbackFps": 23.866388225546572,
+      "activeStereoFraction": 0.9769553072625698,
+      "functional": {
+        "normalizedDepthSpread": 0.783582785907015,
+        "stereoDifference": 3323096,
+        "sceneDepthPixelEffect": 5433859,
+        "debugDepthRange": 221,
+        "frames": 1432,
+        "time": 1.15871,
+        "pause": true,
+        "seekInvalidatesDepth": true
+      }
+    },
+    {
+      "scope": "desktop-browser-experiment",
+      "model": "ready",
+      "backend": "webgpu",
+      "dtype": "fp16",
+      "modelInputWidth": 266,
+      "modelInputHeight": 154,
+      "depthTensorType": "float32",
+      "eyeWidth": 1920,
+      "eyeHeight": 1080,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "frames": 1495,
+      "inferenceCount": 1033,
+      "acceptedDepthCount": 1028,
+      "rejectedDepthCount": 5,
+      "activeStereoFrames": 1452,
+      "missedVideoCallbacks": 0,
+      "wallSeconds": 60.0055,
+      "totalVideoFrames": 1494,
+      "droppedVideoFrames": 0,
+      "videoTimeSeconds": 59.639999999999176,
+      "processingMs": {
+        "count": 1495,
+        "mean": 9.474180593458705,
+        "p50": 9.699999809265137,
+        "p95": 12.40000057220459
+      },
+      "inferenceMs": {
+        "count": 1033,
+        "mean": 31.98576960051279,
+        "p50": 35.39999961853027,
+        "p95": 40.69999980926514
+      },
+      "gpuMs": {
+        "count": 1494,
+        "mean": 8.400904211512717,
+        "p50": 9.332874,
+        "p95": 10.384375
+      },
+      "depthAgeMs": {
+        "count": 1452,
+        "mean": 65.92286501377406,
+        "p50": 80.00000000000007,
+        "p95": 80.00000000000185
+      },
+      "temporalDepthInnovation": 0.01622078932523254,
+      "sceneCuts": 24,
+      "errors": 0,
+      "videoCount": 1,
+      "sample": 3,
+      "expectedFps": "25/1",
+      "callbackFps": 24.914382848238912,
+      "activeStereoFraction": 0.9712374581939799,
+      "functional": {
+        "normalizedDepthSpread": 0.9628074988722801,
+        "stereoDifference": 4068212,
+        "sceneDepthPixelEffect": 7884338,
+        "debugDepthRange": 255,
+        "frames": 1495,
+        "time": 1.087625,
+        "pause": true,
+        "seekInvalidatesDepth": true
+      }
+    }
+  ],
+  "passed": true,
+  "provenance": {
+    "baselineCommit": "2ec600c29f5f7e4f4e8a41edef7a147239029430",
+    "machine": "Apple M4",
+    "platform": "macOS arm64",
+    "implementationSha256": {
+      "core.js": "fc1520ea26ce0d3aec35558a6f44035b93ea0a34d05c19326da6fb7e817f58ca",
+      "renderer.js": "adc6f31ee9991f723d9dba60bb26edaec11cd0bd8e0289cf9999469a67d17b6e",
+      "depth-worker.js": "19b33aac0ecb7fc0b33bfe923ebcdfcef818b807b5b929b2c408b0475abb0961",
+      "main.js": "40e50823ef2321c1f349d368b66090f9e3387590ae950a49d427e3c0e9e7b4f7",
+      "index.html": "07057a5d77ab208fce194f30c506428ac7bcdb3bf9e8ce87cdcb574d52bdddc6",
+      "package-lock.json": "43c2dc59622141eb3f724276b140c40878470fa620e779b8a0bf77ee3dd384da"
+    },
+    "modelRevision": "4472b7362082ad9968fee890ca0f1e5aca36b93d"
+  }
+}

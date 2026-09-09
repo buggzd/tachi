@@ -1,0 +1,159 @@
+import { GRID_WIDTH, GRID_HEIGHT, DepthTracker, summarize } from './core.js';
+import { StereoRenderer } from './renderer.js';
+const video = document.querySelector('#source'), canvas = document.querySelector('#output');
+const tracker = new DepthTracker(), renderer = new StereoRenderer(canvas);
+let worker = new Worker(new URL('./depth-worker.js', import.meta.url), { type: 'module' });
+const thumb = new OffscreenCanvas(GRID_WIDTH, GRID_HEIGHT), tc = thumb.getContext('2d', { willReadFrequently: true });
+const capture = new OffscreenCanvas(518, 294), cc = capture.getContext('2d', { willReadFrequently: true });
+const state = { model: 'not-loaded', device: null, frames: 0, inferred: 0, accepted: 0, rejected: 0,
+    activeStereoFrames: 0, processingMs: [], inferenceMs: [], depthAgeMs: [], started: null, busy: false, errors: 0,
+    missedVideoCallbacks: 0, lastPresented: null, playedSeconds: 0, lastMedia: null, busySince: 0, sceneCuts: 0 };
+const options = new URLSearchParams(location.search);
+const dtype = options.get('dtype') === 'fp32' ? 'fp32' : 'fp16';
+if (['266', '378', '518'].includes(options.get('input'))) document.querySelector('#input').value = options.get('input');
+let qualityStart = { totalVideoFrames: 0, droppedVideoFrames: 0 };
+const push = (list, v) => { list.push(v); if (list.length > 3600) list.shift(); };
+const estimatedContext = document.querySelector('#estimated-depth').getContext('2d');
+const stableContext = document.querySelector('#stable-depth').getContext('2d');
+let lastObservation = null;
+function paintDepth(context, values) {
+    const pixels = context.createImageData(GRID_WIDTH, GRID_HEIGHT);
+    for (let i = 0; i < GRID_WIDTH * GRID_HEIGHT; i++) {
+        const value = values ? Math.round(Math.max(0, Math.min(1, values[i])) * 255) : 0;
+        pixels.data[i * 4] = pixels.data[i * 4 + 1] = pixels.data[i * 4 + 2] = value;
+        pixels.data[i * 4 + 3] = 255;
+    }
+    context.putImageData(pixels, 0, 0);
+}
+function drawDepthDebug() {
+    if (tracker.observation !== lastObservation) {
+        paintDepth(estimatedContext, tracker.observation?.depth);
+        lastObservation = tracker.observation;
+    }
+    paintDepth(stableContext, Number.isFinite(tracker.observedAt) ? tracker.depth : null);
+    document.querySelector('#estimated-time').textContent = tracker.observation
+        ? `视频时间 ${tracker.observation.time.toFixed(3)}s · 白近 / 黑远` : '等待深度估计';
+    document.querySelector('#stable-time').textContent = Number.isFinite(tracker.observedAt)
+        ? `视频时间 ${tracker.time.toFixed(3)}s · 深度年龄 ${Math.round((tracker.time - tracker.observedAt) * 1000)}ms · 强度 ${Math.round(tracker.strength() * 100)}%`
+        : '暂无有效深度 · 平面回退';
+}
+function report() {
+    const quality = video.getVideoPlaybackQuality();
+    return { scope: 'desktop-browser-experiment', model: state.model, backend: state.device, dtype,
+        modelInputWidth: capture.width, modelInputHeight: capture.height,
+        depthTensorType: state.depthTensorType ?? null,
+        eyeWidth: renderer.params.width, eyeHeight: renderer.params.height,
+        sourceWidth: video.videoWidth, sourceHeight: video.videoHeight,
+        frames: state.frames, inferenceCount: state.inferred, acceptedDepthCount: state.accepted,
+        rejectedDepthCount: state.rejected, activeStereoFrames: state.activeStereoFrames,
+        missedVideoCallbacks: state.missedVideoCallbacks,
+        wallSeconds: state.started ? (performance.now() - state.started) / 1000 : 0,
+        totalVideoFrames: quality.totalVideoFrames - qualityStart.totalVideoFrames,
+        droppedVideoFrames: quality.droppedVideoFrames - qualityStart.droppedVideoFrames,
+        videoTimeSeconds: state.playedSeconds,
+        processingMs: summarize(state.processingMs), inferenceMs: summarize(state.inferenceMs), gpuMs: summarize(renderer.gpuMs),
+        depthAgeMs: summarize(state.depthAgeMs), temporalDepthInnovation: tracker.temporalError,
+        sceneCuts: state.sceneCuts, errors: state.errors, videoCount: document.querySelectorAll('video').length };
+}
+function configure() {
+    const width = Number(document.querySelector('#resolution').value);
+    renderer.configure({ width, height: width * 9 / 16, amplitude: Number(document.querySelector('#amplitude').value) });
+    draw();
+}
+function draw() {
+    drawDepthDebug();
+    if (video.readyState >= 2) renderer.render(video, tracker.depth, GRID_WIDTH, GRID_HEIGHT,
+        { strength: tracker.strength(), showDepth: document.querySelector('#depth').checked });
+}
+function resetMetrics() {
+    state.frames = state.inferred = state.accepted = state.rejected = state.activeStereoFrames = 0;
+    state.processingMs = []; state.inferenceMs = []; state.depthAgeMs = []; renderer.gpuMs = [];
+    state.started = performance.now();
+    state.missedVideoCallbacks = 0; state.lastPresented = null;
+    state.playedSeconds = 0; state.lastMedia = null; state.sceneCuts = 0;
+    qualityStart = video.getVideoPlaybackQuality();
+}
+function frame(now, metadata) {
+    const start = performance.now();
+    if (!state.started) state.started = start;
+    if (state.lastPresented !== null) state.missedVideoCallbacks += Math.max(0, metadata.presentedFrames - state.lastPresented - 1);
+    state.lastPresented = metadata.presentedFrames;
+    if (state.lastMedia !== null && metadata.mediaTime >= state.lastMedia)
+        state.playedSeconds += Math.min(0.5, metadata.mediaTime - state.lastMedia);
+    state.lastMedia = metadata.mediaTime;
+    tc.drawImage(video, 0, 0, GRID_WIDTH, GRID_HEIGHT);
+    const rgba = tc.getImageData(0, 0, GRID_WIDTH, GRID_HEIGHT).data, gray = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
+    for (let i = 0; i < gray.length; i++) gray[i] = (rgba[i * 4] * 77 + rgba[i * 4 + 1] * 150 + rgba[i * 4 + 2] * 29) >> 8;
+    const previousCuts = tracker.cuts;
+    tracker.advance(gray, metadata.mediaTime);
+    state.sceneCuts += Math.max(0, tracker.cuts - previousCuts);
+    if (state.model === 'ready' && !state.busy) {
+        capture.width = Number(document.querySelector('#input').value);
+        capture.height = Math.max(14, Math.round(capture.width * video.videoHeight / video.videoWidth / 14) * 14);
+        cc.drawImage(video, 0, 0, capture.width, capture.height);
+        const pixels = cc.getImageData(0, 0, capture.width, capture.height).data;
+        const rgb = new Uint8ClampedArray(capture.width * capture.height * 3);
+        for (let i = 0; i < rgb.length / 3; i++) {
+            rgb[i * 3] = pixels[i * 4]; rgb[i * 3 + 1] = pixels[i * 4 + 1]; rgb[i * 3 + 2] = pixels[i * 4 + 2];
+        }
+        state.busy = true; state.busySince = performance.now();
+        worker.postMessage({ type: 'infer', pixels: rgb.buffer, width: capture.width, height: capture.height,
+            time: metadata.mediaTime, generation: tracker.generation }, [rgb.buffer]);
+    }
+    draw(); state.frames++;
+    if (tracker.strength() > 0.01) state.activeStereoFrames++;
+    if (Number.isFinite(tracker.observedAt)) push(state.depthAgeMs, (tracker.time - tracker.observedAt) * 1000);
+    push(state.processingMs, performance.now() - start);
+    video.requestVideoFrameCallback(frame);
+}
+function failModel() {
+    state.model = 'error'; state.busy = false; state.errors++; worker.terminate(); tracker.reset(); draw();
+}
+function attachWorker() {
+worker.onmessage = ({ data }) => {
+    if (data.type === 'ready') { state.model = 'ready'; state.device = data.device; }
+    if (data.type === 'depth') {
+        state.depthTensorType = data.outputType;
+        state.busy = false; state.inferred++; push(state.inferenceMs, data.inferenceMs);
+        if (tracker.observe(data.depth, data.time, data.generation)) state.accepted++; else state.rejected++;
+        if (video.paused) draw();
+    }
+    if (data.type === 'error') failModel();
+};
+worker.onerror = failModel;
+}
+attachWorker();
+document.querySelector('#load').onclick = () => {
+    if (!['not-loaded', 'error'].includes(state.model)) return;
+    if (state.model === 'error') { worker = new Worker(new URL('./depth-worker.js', import.meta.url), { type: 'module' }); attachWorker(); }
+    state.model = 'loading'; worker.postMessage({ type: 'load', device: 'webgpu', dtype });
+};
+document.querySelector('#play').onclick = () => video.paused ? video.play() : video.pause();
+document.querySelector('#resolution').onchange = configure;
+document.querySelector('#amplitude').oninput = configure;
+document.querySelector('#depth').onchange = draw;
+video.addEventListener('seeking', () => { tracker.reset(); state.lastMedia = null; drawDepthDebug(); });
+video.addEventListener('loadeddata', draw);
+document.querySelector('#export').onclick = () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(report(), null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'stereo-metrics.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+try {
+    const response = await fetch('/samples/manifest.json');
+    if (!response.ok) throw new Error();
+    const samples = await response.json(), select = document.querySelector('#sample');
+    for (const sample of samples) {
+        if (!/^clip-[0-4]\.mp4$/.test(sample.file)) continue;
+        const option = document.createElement('option'); option.value = sample.file;
+        option.textContent = `${sample.label} · ${sample.width}×${sample.height}`; select.append(option);
+    }
+    select.onchange = () => { video.pause(); tracker.reset(); video.src = '/samples/' + select.value; resetMetrics(); };
+    if (select.options.length) select.onchange();
+} catch { document.querySelector('#status').textContent = '尚无本地测试片段。请运行 npm run samples。'; }
+video.requestVideoFrameCallback(frame);
+setInterval(() => {
+    if (state.busy && performance.now() - state.busySince > 5000) failModel();
+    document.querySelector('#status').textContent = JSON.stringify(report(), null, 2);
+}, 1000);
+window.stereoLab = { report, resetMetrics, tracker, renderer, state, video };
+window.addEventListener('pagehide', () => { worker.terminate(); renderer.dispose(); video.pause(); });

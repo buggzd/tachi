@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>Stereo geometry fixture</title>
+<canvas id="result"></canvas><script type="module">
+import { StereoRenderer } from '../renderer.js';
+window.runGeometryTests = () => {
+    const width = 640, height = 360;
+    const source = new OffscreenCanvas(width, height), ctx = source.getContext('2d');
+    ctx.fillStyle = '#188c42'; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#ea2020'; ctx.fillRect(240, 100, 160, 160);
+    const depth = Float32Array.from({length: width * height}, (_, i) => {
+        const x = i % width, y = Math.floor(i / width);
+        return x >= 240 && x < 400 && y >= 100 && y < 260 ? 1 : 0;
+    });
+    const renderer = new StereoRenderer(document.querySelector('canvas'), { width, height, base: 0, amplitude: 0 });
+    renderer.render(source, depth, width, height);
+    const flat = renderer.readPixels(); let difference = 0;
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) for (let c = 0; c < 3; c++)
+        difference += Math.abs(flat[(y * width * 2 + x) * 4 + c] - flat[(y * width * 2 + x + width) * 4 + c]);
+    if (difference !== 0) throw new Error('Zero disparity does not produce identical eyes');
+    renderer.configure({ width, height, base: 0, amplitude: 48 }); renderer.render(source, depth, width, height);
+    const raw = renderer.readPixels(true), output = renderer.readPixels();
+    const centers = [0, 1].map(eye => {
+        let sum = 0, count = 0;
+        for (let x = 0; x < width; x++) {
+            const i = (180 * width * 2 + x + eye * width) * 4;
+            if (output[i] > 180 && output[i + 1] < 80) { sum += x; count++; }
+        }
+        if (!count) throw new Error('Foreground missing');
+        return sum / count;
+    });
+    // Full-scale amplitude 48 -> 16px at 640, near disparity +8px.
+    if (Math.abs(centers[0] - centers[1] - 8) > 1) throw new Error('Incorrect eye sign or disparity magnitude');
+    let holes = 0, backgroundFilled = 0, borderLeaks = 0;
+    for (let y = 50; y < height - 50; y++) for (let eye = 0; eye < 2; eye++)
+        for (let x = 50; x < width - 50; x++) {
+            const i = (y * width * 2 + eye * width + x) * 4;
+            if (raw[i + 3] === 0) {
+                holes++; if (output[i + 1] > 100 && output[i] < 80) backgroundFilled++;
+            }
+        }
+    for (let y = 0; y < height; y++) for (const x of [0, width - 1, width, width * 2 - 1]) {
+        const i = (y * width * 2 + x) * 4;
+        if (output[i] + output[i + 1] + output[i + 2] !== 0) borderLeaks++;
+    }
+    if (!holes || backgroundFilled !== holes) throw new Error('Disocclusion is not filled from background');
+    if (borderLeaks) throw new Error('Eye border leakage');
+    const result = { zeroDisparityDifference: difference, foregroundDisparityPixels: centers[0] - centers[1],
+        holePixels: holes, backgroundFilledPixels: backgroundFilled, borderLeaks, glError: renderer.gl.getError() };
+    if (result.glError) throw new Error('WebGL error');
+    return result;
+};
+</script>

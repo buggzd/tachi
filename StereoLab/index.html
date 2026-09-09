@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tachi · SBS 算法验证</title>
+<link rel="icon" href="data:,">
+<style>
+body{margin:0;background:#10151b;color:#e6eef4;font:15px system-ui;padding:24px}main{max-width:1500px;margin:auto}
+h1{font-size:24px}p{color:#aab9c8;line-height:1.6}.controls{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:20px 0}
+button,select,input{font:inherit;color:inherit;background:#243442;border:1px solid #4d6678;border-radius:6px;padding:9px}
+button{cursor:pointer}canvas#output{width:100%;background:#000;display:block}video{width:320px;max-width:100%;margin-top:16px}
+pre{white-space:pre-wrap;background:#19232d;padding:16px;line-height:1.5}label{display:flex;gap:8px;align-items:center}
+.debug{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}.debug figure{margin:0;background:#19232d;padding:12px;border-radius:8px}
+.debug video,.debug canvas{display:block;width:100%;aspect-ratio:16/9;background:#000;margin-top:10px;object-fit:contain}
+.debug figcaption{color:#c9dce8;min-height:24px}.debug small{display:block;color:#91a8b9;margin-top:8px}
+@media(max-width:760px){.debug{grid-template-columns:1fr}}
+.eye-labels{display:flex;justify-content:space-around;color:#89d7c5;margin-bottom:8px}
+</style>
+<main><h1>tachi · 实时 SBS 算法验证</h1>
+<p>单个视频源 → 本地深度估计 → 运动对齐 → 双眼重投影与背景补洞。此页为桌面实验，尚未接入 Android 播放器。</p>
+<div class="controls">
+<select id="sample" aria-label="测试片段"></select>
+<label>深度输入<select id="input"><option value="266">266px / 性能</option><option value="378">378px / 均衡</option><option value="518">518px / 细节</option></select></label>
+<button id="load">加载深度模型</button><button id="play">播放 / 暂停</button>
+<label>每眼分辨率<select id="resolution"><option value="640">640 × 360</option><option value="1280">1280 × 720</option><option value="1920">1920 × 1080</option></select></label>
+<label>立体强度<input id="amplitude" type="range" min="0" max="48" value="24"></label>
+<label><input id="depth" type="checkbox">双眼输出显示深度</label>
+<button id="export">保存脱敏指标</button>
+</div>
+<div class="eye-labels"><span>左眼 L</span><span>右眼 R</span></div><canvas id="output"></canvas>
+<div class="debug">
+<figure><figcaption>原始视频</figcaption><video id="source" controls playsinline loop muted></video><small>唯一视频解码源</small></figure>
+<figure><figcaption>模型估计深度</figcaption><canvas id="estimated-depth" width="96" height="54"></canvas><small id="estimated-time">等待深度估计</small></figure>
+<figure><figcaption>当前渲染深度 · 时间对齐后</figcaption><canvas id="stable-depth" width="96" height="54"></canvas><small id="stable-time">暂无有效深度</small></figure>
+</div>
+<p>深度图：白色较近，黑色较远；仅表示相对远近，不是米制距离。上方为实时 SBS 输出，深度过期时降为平面。模型图为本次估计在 96×54 工作网格上的归一化结果。</p>
+<pre id="status">初始化…</pre></main><script type="module" src="/main.js"></script></html>
