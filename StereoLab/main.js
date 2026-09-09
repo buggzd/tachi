@@ -39,7 +39,7 @@ function drawDepthDebug() {
 }
 function report() {
     const quality = video.getVideoPlaybackQuality();
-    return { scope: 'desktop-browser-experiment', model: state.model, backend: state.device, dtype,
+    return { scope: /Android/.test(navigator.userAgent) ? 'android-browser-experiment' : 'desktop-browser-experiment', model: state.model, backend: state.device, dtype,
         modelInputWidth: capture.width, modelInputHeight: capture.height,
         depthTensorType: state.depthTensorType ?? null,
         eyeWidth: renderer.params.width, eyeHeight: renderer.params.height,

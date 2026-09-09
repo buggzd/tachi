@@ -122,3 +122,17 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 后续接入必须继续满足 [Android 架构](../docs/ANDROID_ARCHITECTURE.md)：
 一个眼镜 WebView、一个 HTML video、一个声音与上报流。当前原生银幕复制不能直接产生
 逐像素双眼差异，需先验证新的合成路径与原有基础视差如何协同。
+
+## 手机 Chrome 验证
+
+无线 ADB 连接后，将本地实验服务端口 reverse 到手机，并将
+`localabstract:chrome_devtools_remote` forward 到本机空闲端口。
+打开手机 Chrome 后，用 `--cdp http://127.0.0.1:<调试端口>
+--url http://127.0.0.1:<实验服务端口>` 运行验证器；例如附加
+`--width 640 --input 266 --seconds 12`。验证器创建和关闭自己的测试页，
+断开 CDP 时保留手机 Chrome；ADB 映射由调用者管理。
+
+手机报告写入 `.local/verification-android-*`，与桌面证据分开。
+实际输入尺寸必须匹配请求档位。功能检查继续覆盖所有片段，性能未达标
+会记录 `performancePassed: false` 并以非零状态退出，不能作为实时验证通过。
+Android Chrome 的结果不代表应用 WebView、眼镜输出或 NPU 性能。

@@ -9,30 +9,34 @@ const root = import.meta.dirname, args = process.argv.slice(2);
 const option = (key, fallback) => { const i = args.indexOf(key); return i < 0 ? fallback : args[i + 1]; };
 const seconds = Number(option('--seconds', 12)), width = Number(option('--width', 1920));
 const input = Number(option('--input', 266)), dtype = option('--dtype', 'fp16');
+const cdp = option('--cdp', null), externalUrl = option('--url', null);
+if (Boolean(cdp) !== Boolean(externalUrl)) throw new Error('--cdp and --url must be supplied together');
 const geometryOnly = args.includes('--geometry-only');
 if (!Number.isFinite(seconds) || seconds < 5 || seconds > 300 || ![640, 1280, 1920].includes(width)
     || ![266, 378, 518].includes(input) || !['fp16', 'fp32'].includes(dtype)) throw new Error('Invalid verification options');
-const out = resolve(root, '.local', `verification-${width}-${input}-${dtype}-${seconds}s`);
-let server, browser;
+const out = resolve(root, '.local', `verification-${cdp ? 'android-' : ''}${width}-${input}-${dtype}-${seconds}s`);
+let server, browser, attachedPage;
 try {
     await mkdir(out, { recursive: true });
-    server = await createServer({ root, configFile: resolve(root, 'vite.config.js'), server: { host: '127.0.0.1', port: 0, strictPort: false } });
-    await server.listen();
-    const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-    browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--enable-unsafe-webgpu',
+    if (!cdp) server = await createServer({ root, configFile: resolve(root, 'vite.config.js'), server: { host: '127.0.0.1', port: 0, strictPort: false } });
+    if (server) await server.listen();
+    const url = externalUrl || `http://127.0.0.1:${server.httpServer.address().port}`;
+    browser = cdp ? await chromium.connectOverCDP(cdp) : await chromium.launch({ channel: 'chrome', headless: true, args: ['--enable-unsafe-webgpu',
         ...(process.platform === 'darwin' ? ['--use-angle=metal'] : []),
         '--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    const page = cdp ? await browser.contexts()[0].newPage() : await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    if (cdp) attachedPage = page;
     const pageErrors = []; page.on('pageerror', () => pageErrors.push('page-error'));
     await page.goto(url + '/tests/renderer.html');
     await page.waitForFunction(() => typeof window.runGeometryTests === 'function');
     const geometry = await page.evaluate(() => window.runGeometryTests());
     console.log('Geometry:', JSON.stringify(geometry));
     await page.locator('canvas').screenshot({ path: resolve(out, 'synthetic-sbs.png') });
-    const report = { schema: 1, browser: await browser.version(), scope: 'desktop-browser', geometry, samples: [] };
+    const report = { schema: 1, browser: await browser.version(), scope: cdp ? 'android-chrome-browser' : 'desktop-browser', userAgent: await page.evaluate(() => navigator.userAgent), geometry, samples: [] };
     if (!geometryOnly) {
         await page.goto(`${url}/?input=${input}&dtype=${dtype}`);
         await page.selectOption('#resolution', String(width));
+        await page.selectOption('#input', String(input));
         await page.click('#load');
         await page.waitForFunction(() => ['ready', 'error'].includes(window.stereoLab?.state.model), {}, { timeout: 180000 });
         assert.equal(await page.evaluate(() => window.stereoLab.state.model), 'ready', 'Real depth model must load');
@@ -49,6 +53,8 @@ try {
             const end = Date.now() + seconds * 1000;
             while (Date.now() < end) await page.waitForTimeout(Math.min(1000, end - Date.now()));
             const metrics = await page.evaluate(() => { window.stereoLab.video.pause(); return window.stereoLab.report(); });
+            metrics.scope = report.scope;
+            assert.equal(metrics.modelInputWidth, input, 'Measured model input must match requested tier');
             metrics.sample = index + 1; metrics.expectedFps = manifest[index].fps;
             metrics.callbackFps = metrics.frames / metrics.wallSeconds;
             metrics.activeStereoFraction = metrics.activeStereoFrames / metrics.frames;
@@ -59,10 +65,11 @@ try {
             assert.equal(metrics.model, 'ready'); assert.equal(metrics.errors, 0);
             assert.equal(metrics.videoCount, 1);
             assert.ok(metrics.acceptedDepthCount >= 5, 'No live depth updates');
-            assert.ok(metrics.activeStereoFraction > 0.8, 'Depth is too stale for sustained stereo');
+
             const [a, b] = metrics.expectedFps.split('/').map(Number);
-            assert.ok(metrics.callbackFps >= a / b * 0.90, 'Output callback throughput falls below 90% of source fps');
-            assert.ok(metrics.droppedVideoFrames / Math.max(1, metrics.totalVideoFrames) < 0.02, 'Excess video decode drops');
+            metrics.performancePassed = metrics.activeStereoFraction > 0.8
+                && metrics.callbackFps >= a / b * 0.90
+                && metrics.droppedVideoFrames / Math.max(1, metrics.totalVideoFrames) < 0.02;
             // Let the sole outstanding inference settle before checking pause behavior.
             await page.waitForFunction(() => !window.stereoLab.state.busy, {}, { timeout: 10000 });
             const snapshot = await page.evaluate(() => {
@@ -107,10 +114,13 @@ try {
         }
     }
     assert.equal(pageErrors.length, 0);
-    report.passed = true;
+    report.functionalPassed = true;
+    report.passed = report.samples.every(sample => sample.performancePassed);
     await writeFile(resolve(out, 'metrics.json'), JSON.stringify(report, null, 2) + '\n');
+    assert.ok(report.passed, 'Functional checks passed, but realtime performance threshold failed; see metrics.json');
     console.log('PASS: geometry' + (geometryOnly ? '' : ', live model, all media samples, throughput, pause, and seek'));
 } finally {
+    if (attachedPage) await attachedPage.close();
     if (browser) await browser.close();
     if (server) await server.close();
 }
