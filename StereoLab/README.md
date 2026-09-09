@@ -111,6 +111,22 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 测量在桌面浏览器中进行，同时开启了用于证据抓取的 `preserveDrawingBuffer`。
 手机 NPU 性能、Android WebView 的视频纹理传递、音画对齐和长期温升都需要后续独立验收。
 
+## QNN HTP 候选与独立 Android benchmark
+
+桌面筛选和证据见 [QNN 桌面验证](../docs/performance/2026-09-09-stereo-lab/qnn-desktop.md)。
+固定 `1×3×154×266` 输入后，U16 激活/U8 权重候选在 24 张真实 Jellyfin 校准帧上
+平均 Spearman 约 0.988、同位置排序一致率约 96.6%；U8 激活候选约 0.263 和 59.9%，
+不再使用。量化模型只用于本地实验，不进入正式 APK。
+
+独立 benchmark 的源代码在 `StereoLab/npu-benchmark/`。本轮已冻结深度模型和量化配置，
+只运行一个 Direct QNN U8 Relu 最小图，依次检查 backend/device/context/graph 创建、
+图终结、执行和参考输出。当前手机实测在 `graphCreate` 失败：HTP Prepare loader
+找不到应用可读的 `libQnnHtpPrepare.so`，所以没有执行到 `graphFinalize`、
+`graphExecute` 或输出比较；这不是 NPU 性能结论。运行库来源、版本、路径和分阶段证据见
+[HTP 运行库兼容清单](../docs/performance/2026-09-09-stereo-lab/htp-runtime-compatibility.md)。
+在获得与 V81 固件匹配且可部署的官方 QAIRT/QNN 运行库前，不继续重建 APK 或恢复真实
+深度模型测试。
+
 ## 模型与依赖
 
 - 模型：`onnx-community/depth-anything-v2-small`，revision

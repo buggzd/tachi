@@ -1,0 +1,101 @@
+plugins {
+    id "com.android.application"
+}
+
+def npuRoot = file("../../.local/npu")
+def modelFile = file("${npuRoot}/depth-anything-v2-small-qnn-266-u8a-i8w.onnx")
+def smokeModelFile = file("${npuRoot}/qnn-smoke-qdq-conv-relu.onnx")
+def ioSmokeModelFile = file("${npuRoot}/qnn-smoke-qdq-conv-relu-io.onnx")
+def reluSmokeModelFile = file("${npuRoot}/qnn-smoke-relu.onnx")
+def calibrationDir = file("${npuRoot}/calib")
+def generatedAssets = file("${buildDir}/generated/benchmarkAssets")
+
+android {
+    namespace "com.tachi.stereolab.npubenchmark"
+    compileSdk 35
+    buildToolsVersion "34.0.0"
+
+    defaultConfig {
+        applicationId "com.tachi.stereolab.npubenchmark"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "0.1"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
+                abiFilters "arm64-v8a"
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging true
+        }
+        resources {
+            excludes += ["META-INF/LICENSE*", "META-INF/NOTICE*"]
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file("src/main/cpp/CMakeLists.txt")
+            version "3.22.1"
+        }
+    }
+}
+
+tasks.register("prepareBenchmarkAssets", Copy) {
+    if (!modelFile.isFile()) {
+        throw new GradleException("Missing local QNN model: ${modelFile}")
+    }
+    if (!calibrationDir.isDirectory()) {
+        throw new GradleException("Missing local calibration directory: ${calibrationDir}")
+    }
+    from(modelFile) {
+        rename { "depth-anything-v2-small-qnn-266-u8a-i8w.onnx" }
+        into("models")
+    }
+    if (!smokeModelFile.isFile()) {
+        throw new GradleException("Missing local QNN smoke model: ${smokeModelFile}")
+    }
+    from(smokeModelFile) {
+        rename { "qnn-smoke-qdq-conv-relu.onnx" }
+        into("models")
+    }
+    if (!ioSmokeModelFile.isFile()) {
+        throw new GradleException("Missing local quantized-I/O QNN smoke model: ${ioSmokeModelFile}")
+    }
+    from(ioSmokeModelFile) {
+        rename { "qnn-smoke-qdq-conv-relu-io.onnx" }
+        into("models")
+    }
+    if (!reluSmokeModelFile.isFile()) {
+        throw new GradleException("Missing local QNN Relu smoke model: ${reluSmokeModelFile}")
+    }
+    from(reluSmokeModelFile) {
+        rename { "qnn-smoke-relu.onnx" }
+        into("models")
+    }
+    from(calibrationDir) {
+        include "*.png"
+        into("calibration")
+    }
+    into(generatedAssets)
+}
+
+android.sourceSets.main.assets.srcDir(generatedAssets)
+tasks.named("preBuild").configure {
+    dependsOn("prepareBenchmarkAssets")
+}
+
+dependencies {
+    implementation files("${npuRoot}/onnxruntime-android-qnn-1.22.0.aar")
+}

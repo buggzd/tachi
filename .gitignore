@@ -53,8 +53,13 @@ signing.properties
 
 # Local stereo feasibility models, media, dependencies, and generated evidence.
 /StereoLab/node_modules/
+/StereoLab/__pycache__/
 /StereoLab/.local/
 /StereoLab/dist/
+/StereoLab/npu-benchmark/.gradle/
+/StereoLab/npu-benchmark/app/.cxx/
+/StereoLab/npu-benchmark/build/
+/StereoLab/npu-benchmark/app/build/
 
 # OS files
 .DS_Store

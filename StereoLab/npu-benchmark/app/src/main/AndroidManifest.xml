@@ -1,0 +1,35 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:label="tachi NPU benchmark"
+        android:icon="@drawable/ic_launcher"
+        android:theme="@style/AppTheme"
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:supportsRtl="true">
+        <uses-native-library android:name="libadsprpc.so" android:required="false" />
+        <uses-native-library android:name="libcdsprpc.so" android:required="false" />
+        <uses-native-library android:name="libQnnSystem.so" android:required="false" />
+        <uses-native-library android:name="libQnnHtp.so" android:required="false" />
+        <uses-native-library android:name="libQnnHtpPrepare.so" android:required="false" />
+        <uses-native-library android:name="libQnnHtpV81Stub.so" android:required="false" />
+        <uses-native-library android:name="libQnnHtpV81Skel.so" android:required="false" />
+        <uses-native-library android:name="libhidlbase.so" android:required="false" />
+        <uses-native-library android:name="libhardware.so" android:required="false" />
+        <uses-native-library android:name="libutils.so" android:required="false" />
+        <uses-native-library android:name="libbinder_ndk.so" android:required="false" />
+        <uses-native-library android:name="vendor.qti.hardware.dsp@1.0.so" android:required="false" />
+        <uses-native-library android:name="vendor.qti.hardware.dsp-V1-ndk.so" android:required="false" />
+        <uses-native-library android:name="libdmabufheap.so" android:required="false" />
+        <uses-native-library android:name="libvmmem.so" android:required="false" />
+        <uses-native-library android:name="libcutils.so" android:required="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
