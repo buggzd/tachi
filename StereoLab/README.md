@@ -100,7 +100,9 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 指标区分：
 
 - `processingMs`：主线程取缩略图、运动估计和 GPU 提交的 CPU 墙钟耗时。
-- `captureMs`：每帧 96×54 缩略图读取、灰度转换的耗时；`inferenceCaptureMs` 是送入模型前按所选档位缩放、读取和 RGB 打包的耗时。
+- `captureMs`：每帧运动输入的读取、灰度转换耗时。默认基线是 96×54 读回；共享读回实验在启动推理的帧上从模型输入读回派生灰度，因此该字段会包含较大读回。
+- `inferenceCaptureMs`：送入模型前按所选档位绘制、读取和 RGB 打包的耗时；共享读回实验与 `captureMs` 在推理帧上有意共享同一段读回，不能把两个字段相加。
+- `motionFromModelFrames` / `motionThumbnailFrames`：运动灰度分别来自模型输入读回和独立缩略图读回的帧数。
 - `inferenceMs`：Worker 预处理、模型执行、结果读取/缩小的总耗时，包含 GPU 等待；不是纯模型内核时长。
 - `gpuMs`：GPU timer query 测量纹理上传、重投影和补洞；不支持时为 null，不能用 CPU 提交时间代替。
 - `callbackFps` / `missedVideoCallbacks`：视频帧驱动的 SBS 提交频率和漏掉的视频回调；不等于眼镜物理呈现帧率。
@@ -110,6 +112,8 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 
 测量在桌面浏览器中进行，同时开启了用于证据抓取的 `preserveDrawingBuffer`。
 手机 NPU 性能、Android WebView 的视频纹理传递、音画对齐和长期温升都需要后续独立验收。
+共享模型读回派生运动缩略图的前后数据，以及 QPM 的真实登录门槛见
+[2026-09-10 实验记录](../docs/performance/2026-09-10-stereo-lab/frame-capture-and-qpm.md)。
 
 ## QNN HTP 候选与独立 Android benchmark
 

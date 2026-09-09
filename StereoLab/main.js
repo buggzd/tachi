@@ -8,7 +8,8 @@ const capture = new OffscreenCanvas(518, 294), cc = capture.getContext('2d', { w
 const state = { model: 'not-loaded', device: null, frames: 0, inferred: 0, accepted: 0, rejected: 0,
     activeStereoFrames: 0, processingMs: [], inferenceMs: [], depthAgeMs: [], started: null, busy: false, errors: 0,
     missedVideoCallbacks: 0, lastPresented: null, playedSeconds: 0, lastMedia: null, busySince: 0, lastInferStart: -Infinity, sceneCuts: 0,
-    captureMs: [], inferenceCaptureMs: [], motionMs: [], debugMs: [], renderMs: [] };
+    captureMs: [], inferenceCaptureMs: [], motionMs: [], debugMs: [], renderMs: [],
+    motionFromModelFrames: 0, motionThumbnailFrames: 0 };
 const options = new URLSearchParams(location.search);
 const dtype = options.get('dtype') === 'fp32' ? 'fp32' : 'fp16';
 const debugEnabled = options.get('debug') !== '0';
@@ -24,6 +25,18 @@ const push = (list, v) => { list.push(v); if (list.length > 3600) list.shift(); 
 const estimatedContext = document.querySelector('#estimated-depth').getContext('2d');
 const stableContext = document.querySelector('#stable-depth').getContext('2d');
 let lastObservation = null;
+function grayscaleFromRgba(rgba, width, height) {
+    const gray = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
+    for (let y = 0; y < GRID_HEIGHT; y++) {
+        const sourceY = Math.min(height - 1, Math.floor((y + 0.5) * height / GRID_HEIGHT));
+        for (let x = 0; x < GRID_WIDTH; x++) {
+            const sourceX = Math.min(width - 1, Math.floor((x + 0.5) * width / GRID_WIDTH));
+            const source = (sourceY * width + sourceX) * 4;
+            gray[y * GRID_WIDTH + x] = (rgba[source] * 77 + rgba[source + 1] * 150 + rgba[source + 2] * 29) >> 8;
+        }
+    }
+    return gray;
+}
 function paintDepth(context, values) {
     const pixels = context.createImageData(GRID_WIDTH, GRID_HEIGHT);
     for (let i = 0; i < GRID_WIDTH * GRID_HEIGHT; i++) {
@@ -62,6 +75,7 @@ function report() {
         videoTimeSeconds: state.playedSeconds,
         processingMs: summarize(state.processingMs), captureMs: summarize(state.captureMs), inferenceCaptureMs: summarize(state.inferenceCaptureMs), motionMs: summarize(state.motionMs),
         debugMs: summarize(state.debugMs), renderMs: summarize(state.renderMs), inferenceMs: summarize(state.inferenceMs),
+        motionFromModelFrames: state.motionFromModelFrames, motionThumbnailFrames: state.motionThumbnailFrames,
         gpuMs: summarize(renderer.gpuMs), gpuTimerSupported: Boolean(renderer.timer), syncGpu, renderEnabled, motionEnabled, debugEnabled,
         inferIntervalMs,
         depthAgeMs: summarize(state.depthAgeMs), temporalDepthInnovation: tracker.temporalError,
@@ -85,6 +99,7 @@ function resetMetrics() {
     state.frames = state.inferred = state.accepted = state.rejected = state.activeStereoFrames = 0;
     state.processingMs = []; state.captureMs = []; state.inferenceCaptureMs = []; state.motionMs = []; state.debugMs = []; state.renderMs = [];
     state.inferenceMs = []; state.depthAgeMs = []; renderer.gpuMs = [];
+    state.motionFromModelFrames = 0; state.motionThumbnailFrames = 0;
     state.started = performance.now();
     state.missedVideoCallbacks = 0; state.lastPresented = null; state.lastInferStart = -Infinity;
     state.playedSeconds = 0; state.lastMedia = null; state.sceneCuts = 0;
@@ -98,29 +113,37 @@ function frame(now, metadata) {
     if (state.lastMedia !== null && metadata.mediaTime >= state.lastMedia)
         state.playedSeconds += Math.min(0.5, metadata.mediaTime - state.lastMedia);
     state.lastMedia = metadata.mediaTime;
+    const shouldInfer = state.model === 'ready' && !state.busy && performance.now() - state.lastInferStart >= inferIntervalMs;
+    let gray, inferencePixels, inferenceWidth, inferenceHeight;
     const captureStart = performance.now();
-    tc.drawImage(video, 0, 0, GRID_WIDTH, GRID_HEIGHT);
-    const rgba = tc.getImageData(0, 0, GRID_WIDTH, GRID_HEIGHT).data, gray = new Uint8Array(GRID_WIDTH * GRID_HEIGHT);
-    for (let i = 0; i < gray.length; i++) gray[i] = (rgba[i * 4] * 77 + rgba[i * 4 + 1] * 150 + rgba[i * 4 + 2] * 29) >> 8;
+    if (shouldInfer) {
+        capture.width = Number(document.querySelector('#input').value);
+        capture.height = Math.max(14, Math.round(capture.width * video.videoHeight / video.videoWidth / 14) * 14);
+        cc.drawImage(video, 0, 0, capture.width, capture.height);
+        inferencePixels = cc.getImageData(0, 0, capture.width, capture.height).data;
+        inferenceWidth = capture.width; inferenceHeight = capture.height;
+        gray = grayscaleFromRgba(inferencePixels, inferenceWidth, inferenceHeight);
+        state.motionFromModelFrames++;
+    } else {
+        tc.drawImage(video, 0, 0, GRID_WIDTH, GRID_HEIGHT);
+        const rgba = tc.getImageData(0, 0, GRID_WIDTH, GRID_HEIGHT).data;
+        gray = grayscaleFromRgba(rgba, GRID_WIDTH, GRID_HEIGHT);
+        state.motionThumbnailFrames++;
+    }
     push(state.captureMs, performance.now() - captureStart);
     const previousCuts = tracker.cuts;
     const motionStart = performance.now();
     tracker.advance(gray, metadata.mediaTime, { motion: motionEnabled });
     push(state.motionMs, performance.now() - motionStart);
     state.sceneCuts += Math.max(0, tracker.cuts - previousCuts);
-    if (state.model === 'ready' && !state.busy && performance.now() - state.lastInferStart >= inferIntervalMs) {
-        const inferenceCaptureStart = performance.now();
-        capture.width = Number(document.querySelector('#input').value);
-        capture.height = Math.max(14, Math.round(capture.width * video.videoHeight / video.videoWidth / 14) * 14);
-        cc.drawImage(video, 0, 0, capture.width, capture.height);
-        const pixels = cc.getImageData(0, 0, capture.width, capture.height).data;
-        const rgb = new Uint8ClampedArray(capture.width * capture.height * 3);
+    if (shouldInfer) {
+        const rgb = new Uint8ClampedArray(inferenceWidth * inferenceHeight * 3);
         for (let i = 0; i < rgb.length / 3; i++) {
-            rgb[i * 3] = pixels[i * 4]; rgb[i * 3 + 1] = pixels[i * 4 + 1]; rgb[i * 3 + 2] = pixels[i * 4 + 2];
+            rgb[i * 3] = inferencePixels[i * 4]; rgb[i * 3 + 1] = inferencePixels[i * 4 + 1]; rgb[i * 3 + 2] = inferencePixels[i * 4 + 2];
         }
-        push(state.inferenceCaptureMs, performance.now() - inferenceCaptureStart);
+        push(state.inferenceCaptureMs, performance.now() - captureStart);
         state.busy = true; state.busySince = performance.now(); state.lastInferStart = state.busySince;
-        worker.postMessage({ type: 'infer', pixels: rgb.buffer, width: capture.width, height: capture.height,
+        worker.postMessage({ type: 'infer', pixels: rgb.buffer, width: inferenceWidth, height: inferenceHeight,
             time: metadata.mediaTime, generation: tracker.generation }, [rgb.buffer]);
     }
     draw(true); state.frames++;

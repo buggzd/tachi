@@ -27,6 +27,7 @@
 | [2026-09-07 真机复测](performance/2026-09-07/README.md) | 优化后的资源、帧轨迹、播放与恢复检查 |
 | [实时 SBS 算法实验](../StereoLab/README.md) | 独立桌面和手机 Chrome 深度估计与双眼合成验证；手机 P0/P1 性能基线已记录，尚未接入 Android 产品 |
 | [2026-09-09 SBS 桌面验证](performance/2026-09-09-stereo-lab/README.md) | 三段真实片源、两种推理尺寸的功能断言和匿名性能数据 |
+| [2026-09-10 QPM 与取帧实验](performance/2026-09-10-stereo-lab/frame-capture-and-qpm.md) | QPM 真实登录门槛，以及共享模型读回派生运动缩略图的前后对照 |
 | [v0.3.0 发布说明](releases/v0.3.0.md) | 已发布版本的能力快照；其他版本见 [GitHub Releases](https://github.com/buggzd/tachi/releases) |
 
 历史中的“当前代码”“下一步”和测试数量只对应其日期与提交。实现范围以路线图及现行源码为准；测试通过不等于覆盖了架构文档的全部设备验收。

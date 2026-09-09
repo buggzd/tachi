@@ -1,0 +1,325 @@
+{
+  "schema": 1,
+  "browser": "152.0.7977.83",
+  "scope": "desktop-browser",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+  "geometry": {
+    "zeroDisparityDifference": 0,
+    "foregroundDisparityPixels": 8,
+    "holePixels": 2304,
+    "backgroundFilledPixels": 2304,
+    "borderLeaks": 0,
+    "glError": 0
+  },
+  "samples": [
+    {
+      "scope": "desktop-browser",
+      "model": "ready",
+      "backend": "webgpu",
+      "dtype": "fp16",
+      "modelInputWidth": 266,
+      "modelInputHeight": 154,
+      "depthTensorType": "float32",
+      "eyeWidth": 640,
+      "eyeHeight": 360,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "frames": 288,
+      "inferenceCount": 217,
+      "acceptedDepthCount": 216,
+      "rejectedDepthCount": 1,
+      "activeStereoFrames": 284,
+      "missedVideoCallbacks": 0,
+      "wallSeconds": 12.003,
+      "totalVideoFrames": 287,
+      "droppedVideoFrames": 0,
+      "videoTimeSeconds": 11.970291,
+      "processingMs": {
+        "count": 288,
+        "mean": 8.293055570787853,
+        "p50": 9.100000381469727,
+        "p95": 10.600000381469727
+      },
+      "captureMs": {
+        "count": 288,
+        "mean": 4.299652818176481,
+        "p50": 4.199999809265137,
+        "p95": 5.199999809265137
+      },
+      "inferenceCaptureMs": {
+        "count": 216,
+        "mean": 4.3777777574680465,
+        "p50": 4.300000190734863,
+        "p95": 5.300000190734863
+      },
+      "motionMs": {
+        "count": 288,
+        "mean": 0.5048611097865634,
+        "p50": 0.5,
+        "p95": 0.6000003814697266
+      },
+      "debugMs": {
+        "count": 288,
+        "mean": 0.06666665275891621,
+        "p50": 0.09999942779541016,
+        "p95": 0.19999980926513672
+      },
+      "renderMs": {
+        "count": 288,
+        "mean": 0.11388890610800849,
+        "p50": 0.10000038146972656,
+        "p95": 0.20000076293945312
+      },
+      "inferenceMs": {
+        "count": 217,
+        "mean": 17.934562221650154,
+        "p50": 17.799999237060547,
+        "p95": 19.299999237060547
+      },
+      "gpuMs": {
+        "count": 288,
+        "mean": 0.6225493368055557,
+        "p50": 0.550166,
+        "p95": 1.100167
+      },
+      "gpuTimerSupported": true,
+      "syncGpu": false,
+      "renderEnabled": true,
+      "motionEnabled": true,
+      "debugEnabled": true,
+      "inferIntervalMs": 0,
+      "depthAgeMs": {
+        "count": 284,
+        "mean": 63.003084507042104,
+        "p50": 41.709000000000884,
+        "p95": 83.41700000000074
+      },
+      "temporalDepthInnovation": 0.21801161453498566,
+      "sceneCuts": 2,
+      "errors": 0,
+      "videoCount": 1,
+      "sample": 1,
+      "expectedFps": "24000/1001",
+      "callbackFps": 23.994001499625092,
+      "activeStereoFraction": 0.9861111111111112,
+      "performancePassed": true,
+      "functional": {
+        "normalizedDepthSpread": 0.5632714838720858,
+        "stereoDifference": 81944,
+        "sceneDepthPixelEffect": 116920,
+        "debugDepthRange": 201,
+        "frames": 288,
+        "time": 13.340486,
+        "pause": true,
+        "seekInvalidatesDepth": true
+      }
+    },
+    {
+      "scope": "desktop-browser",
+      "model": "ready",
+      "backend": "webgpu",
+      "dtype": "fp16",
+      "modelInputWidth": 266,
+      "modelInputHeight": 154,
+      "depthTensorType": "float32",
+      "eyeWidth": 640,
+      "eyeHeight": 360,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "frames": 287,
+      "inferenceCount": 219,
+      "acceptedDepthCount": 217,
+      "rejectedDepthCount": 2,
+      "activeStereoFrames": 282,
+      "missedVideoCallbacks": 0,
+      "wallSeconds": 12.004,
+      "totalVideoFrames": 288,
+      "droppedVideoFrames": 0,
+      "videoTimeSeconds": 11.928583999999999,
+      "processingMs": {
+        "count": 287,
+        "mean": 8.426480828261957,
+        "p50": 9.199999809265137,
+        "p95": 10.700000762939453
+      },
+      "captureMs": {
+        "count": 287,
+        "mean": 4.3386759973984566,
+        "p50": 4.200000762939453,
+        "p95": 5.199999809265137
+      },
+      "inferenceCaptureMs": {
+        "count": 220,
+        "mean": 4.433181767030196,
+        "p50": 4.399999618530273,
+        "p95": 5.299999237060547
+      },
+      "motionMs": {
+        "count": 287,
+        "mean": 0.48919861158842826,
+        "p50": 0.5,
+        "p95": 0.6000003814697266
+      },
+      "debugMs": {
+        "count": 287,
+        "mean": 0.06271777668065726,
+        "p50": 0.09999942779541016,
+        "p95": 0.10000038146972656
+      },
+      "renderMs": {
+        "count": 287,
+        "mean": 0.11672470876979496,
+        "p50": 0.10000038146972656,
+        "p95": 0.19999980926513672
+      },
+      "inferenceMs": {
+        "count": 219,
+        "mean": 17.931050217859276,
+        "p50": 17.799999237060547,
+        "p95": 19.600000381469727
+      },
+      "gpuMs": {
+        "count": 287,
+        "mean": 0.635478777003484,
+        "p50": 0.552916,
+        "p95": 1.103667
+      },
+      "gpuTimerSupported": true,
+      "syncGpu": false,
+      "renderEnabled": true,
+      "motionEnabled": true,
+      "debugEnabled": true,
+      "inferIntervalMs": 0,
+      "depthAgeMs": {
+        "count": 282,
+        "mean": 61.52719148936162,
+        "p50": 41.708999999999996,
+        "p95": 83.41700000000074
+      },
+      "temporalDepthInnovation": 0.00882986681627625,
+      "sceneCuts": 3,
+      "errors": 0,
+      "videoCount": 1,
+      "sample": 2,
+      "expectedFps": "24000/1001",
+      "callbackFps": 23.908697100966346,
+      "activeStereoFraction": 0.9825783972125436,
+      "performancePassed": true,
+      "functional": {
+        "normalizedDepthSpread": 0.9999999999999987,
+        "stereoDifference": 381277,
+        "sceneDepthPixelEffect": 530089,
+        "debugDepthRange": 255,
+        "frames": 287,
+        "time": 13.280454,
+        "pause": true,
+        "seekInvalidatesDepth": true
+      }
+    },
+    {
+      "scope": "desktop-browser",
+      "model": "ready",
+      "backend": "webgpu",
+      "dtype": "fp16",
+      "modelInputWidth": 266,
+      "modelInputHeight": 154,
+      "depthTensorType": "float32",
+      "eyeWidth": 640,
+      "eyeHeight": 360,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "frames": 299,
+      "inferenceCount": 208,
+      "acceptedDepthCount": 206,
+      "rejectedDepthCount": 2,
+      "activeStereoFrames": 291,
+      "missedVideoCallbacks": 1,
+      "wallSeconds": 12.002400000572205,
+      "totalVideoFrames": 300,
+      "droppedVideoFrames": 0,
+      "videoTimeSeconds": 11.959999999999999,
+      "processingMs": {
+        "count": 299,
+        "mean": 8.367224064957737,
+        "p50": 9.399999618530273,
+        "p95": 11.699999809265137
+      },
+      "captureMs": {
+        "count": 299,
+        "mean": 4.502006680670391,
+        "p50": 4.300000190734863,
+        "p95": 6
+      },
+      "inferenceCaptureMs": {
+        "count": 208,
+        "mean": 4.534615379113418,
+        "p50": 4.5,
+        "p95": 5.300000190734863
+      },
+      "motionMs": {
+        "count": 299,
+        "mean": 0.5050167128393881,
+        "p50": 0.5,
+        "p95": 0.6000003814697266
+      },
+      "debugMs": {
+        "count": 299,
+        "mean": 0.06989969298193686,
+        "p50": 0.09999942779541016,
+        "p95": 0.19999980926513672
+      },
+      "renderMs": {
+        "count": 299,
+        "mean": 0.11438125112782353,
+        "p50": 0.10000038146972656,
+        "p95": 0.19999980926513672
+      },
+      "inferenceMs": {
+        "count": 208,
+        "mean": 18.084615400204292,
+        "p50": 18,
+        "p95": 19.800000190734863
+      },
+      "gpuMs": {
+        "count": 299,
+        "mean": 0.6450930301003343,
+        "p50": 0.577291,
+        "p95": 1.031499
+      },
+      "gpuTimerSupported": true,
+      "syncGpu": false,
+      "renderEnabled": true,
+      "motionEnabled": true,
+      "debugEnabled": true,
+      "inferIntervalMs": 0,
+      "depthAgeMs": {
+        "count": 291,
+        "mean": 65.8419243986254,
+        "p50": 80.00000000000007,
+        "p95": 80.00000000000007
+      },
+      "temporalDepthInnovation": 0.01823640333371253,
+      "sceneCuts": 5,
+      "errors": 0,
+      "videoCount": 1,
+      "sample": 3,
+      "expectedFps": "25/1",
+      "callbackFps": 24.91168432861306,
+      "activeStereoFraction": 0.9732441471571907,
+      "performancePassed": true,
+      "functional": {
+        "normalizedDepthSpread": 0.9767899625003338,
+        "stereoDifference": 497369,
+        "sceneDepthPixelEffect": 1064031,
+        "debugDepthRange": 255,
+        "frames": 299,
+        "time": 13.285135,
+        "pause": true,
+        "seekInvalidatesDepth": true
+      }
+    }
+  ],
+  "functionalPassed": true,
+  "functionalChecksSkipped": false,
+  "passed": true
+}
