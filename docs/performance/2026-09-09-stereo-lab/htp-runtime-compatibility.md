@@ -137,3 +137,24 @@ deployable copy of the protected libraries, so an offline context binary is not
 an actionable substitute yet. It must be generated with a matching QNN/QAIRT
 toolchain and validated against the same V81 firmware before loading on the
 device.
+
+## 2026-09-10 current APK device recheck
+
+Installed the existing debug APK and launched the isolated benchmark on the
+connected phone. Captured only this process's probe logs and waited for its
+terminal marker; no global logcat clearing or production app changes were made.
+[Sanitized result and APK checksum](htp-device-recheck-2026-09-10.json).
+
+Host and device quantization references passed. HTP provider selection passed
+with backend ID 6, but the current probe correctly stopped at
+`apiCompatibility=FAIL required=2.37 actual=2.25`, followed by
+`directProbeMarker=FAIL stage=apiCompatibility` and completion.
+This run did not reach backend/device/context creation or graph execution.
+It supersedes the earlier graphCreate failure as the current probe's first
+failing gate; the loader still reports missing Prepare and V81 Calculator
+libraries. No NPU inference latency or depth-model success is claimed.
+
+Resume with a complete, versioned V81-compatible QAIRT/QNN package and matching
+headers. The local NPU directory and Downloads search found no new SDK package
+for this recheck. Do not remove the API guard to treat mismatched interface
+tables as compatible.
