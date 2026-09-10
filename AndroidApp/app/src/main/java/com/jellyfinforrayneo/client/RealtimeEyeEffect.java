@@ -12,6 +12,9 @@ import androidx.annotation.RequiresApi;
 @RequiresApi(33)
 final class RealtimeEyeEffect
 {
+    // The destination mask expands each control by 17 px. Every gather source
+    // lies within 16 px, so an unprotected destination cannot sample a control.
+    // Checking all eight masks again for each source adds 264 redundant tests.
     private static final String PROGRAM =
             "uniform shader content; uniform shader depthMap;"
             + "uniform float4 videoRect; uniform float4 masks[8];"
@@ -23,7 +26,7 @@ final class RealtimeEyeEffect
             + "if(!inside(p,videoRect) || protectedPixel(p)) return content.eval(p);"
             + "float best=-1; float bestError=1e6; float source=p.x; bool found=false;"
             + "for(int i=-16;i<=16;i++) { float2 q=p+float2(float(i),0);"
-            + "if(inside(q,videoRect) && !protectedPixel(q)) {"
+            + "if(inside(q,videoRect)) {"
             + "float2 uv=(q-videoRect.xy)/(videoRect.zw-videoRect.xy);"
             + "float d=float(depthMap.eval(uv*float2(266,154)).r);"
             + "float error=abs(q.x+direction*(d-0.5)*amplitude-p.x);"

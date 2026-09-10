@@ -45,6 +45,8 @@ assert np.array_equal(left[:10], color[:10]) and np.array_equal(left[:, :20], co
 for sign in [1, -1]:
     masked = render(sign, mask=[80., 20., 110., 80.])
     assert np.array_equal(masked[20:80, 80:110], color[20:80, 80:110]), 'Controls must stay flat'
+    assert np.all(masked[50, :63, 0] < 80), 'Left gather must not pull pixels from a control'
+    assert np.all(masked[50, 127:, 0] >= 110), 'Right gather must not pull pixels from a control'
     assert np.all(masked[:, :, 3] == 255), 'No unfilled transparent pixels'
 step = np.zeros((154, 266, 3), dtype=np.uint8)
 step[:, :133, :] = 255

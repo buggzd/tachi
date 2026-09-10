@@ -617,8 +617,9 @@ contains only local grayscale pixels; production code saves no frame/profile fil
 The new native gather shader is not the previously measured laboratory WebGL
 renderer. Desktop verification does not establish its WebView texture behavior,
 GPU throughput, optical output or thermal stability. See [realtime SBS development
-and deferred device checks](REALTIME_SBS.md). Device testing is deliberately
-deferred for this development phase at the user's request.
+and device checks](REALTIME_SBS.md). Initial integrated device testing confirms
+QNN inference and external stereo playback, but depth updates remain about 8 fps;
+full performance, optical and thermal acceptance is still pending.
 
 ## Verification
 
