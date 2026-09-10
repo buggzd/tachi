@@ -1,0 +1,76 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SBS compositor isolation benchmark</title>
+<style>body{margin:0;background:#111;color:white}canvas{width:100%;height:auto}video{width:160px}pre{white-space:pre-wrap}</style>
+<canvas></canvas><video muted playsinline loop></video><pre id="status">Compositor only; synthetic depth is not NPU evidence.</pre>
+<script type="module">
+import { StereoRenderer } from '../renderer.js';
+import { summarize } from '../core.js';
+const canvas = document.querySelector('canvas'), video = document.querySelector('video');
+let renderer, blobUrl;
+window.runRenderBenchmark = async ({ sample, width, seconds, syncGpu = false }) => {
+    if (!/^clip-[0-4]\.mp4$/.test(sample) || ![640, 1280, 1920].includes(width)
+        || seconds < 5 || seconds > 120) throw new Error('Invalid benchmark options');
+    renderer?.dispose();
+    if (blobUrl) URL.revokeObjectURL(blobUrl);
+    // Complete media transfer before timing: wireless ADB is not the playback source during measurement.
+    const response = await fetch('/samples/' + sample);
+    if (!response.ok) throw new Error('Sample fetch failed');
+    blobUrl = URL.createObjectURL(await response.blob());
+    video.src = blobUrl;
+    await new Promise((resolve, reject) => { video.onloadeddata = resolve; video.onerror = reject; });
+    renderer = new StereoRenderer(canvas, { width, height: width * 9 / 16, base: 8, amplitude: 24 });
+    const depth = new Float32Array(96 * 54), durations = [], intervals = [];
+    let started = null, lastWall = null, lastPresented = null, frames = 0, missed = 0, warm = 0, qualityStart;
+    let hiddenFrames = 0;
+    await video.play();
+    const result = await new Promise((resolve, reject) => {
+        const frame = (now, metadata) => {
+            try {
+                // Moving near rectangles over a smooth background exercise depth-dependent splatting and holes.
+                const shift = Math.sin(metadata.mediaTime * 2) * 14;
+                for (let y = 0; y < 54; y++) for (let x = 0; x < 96; x++)
+                    depth[y * 96 + x] = x > 24 + shift && x < 65 + shift && y > 10 && y < 44 ? 1 : 0.1 + x / 160;
+                const before = performance.now();
+                renderer.render(video, depth, 96, 54, { strength: 1, syncGpu });
+                const after = performance.now();
+                if (++warm <= 24) { video.requestVideoFrameCallback(frame); return; }
+                if (started === null) { started = before; qualityStart = video.getVideoPlaybackQuality(); }
+                frames++; durations.push(after - before);
+                if (lastWall !== null) intervals.push(before - lastWall);
+                if (lastPresented !== null) missed += Math.max(0, metadata.presentedFrames - lastPresented - 1);
+                if (document.visibilityState !== 'visible') hiddenFrames++;
+                lastWall = before; lastPresented = metadata.presentedFrames;
+                if (after - started < seconds * 1000) { video.requestVideoFrameCallback(frame); return; }
+                video.pause();
+                renderer.gl.finish();
+                const elapsed = performance.now() - started, quality = video.getVideoPlaybackQuality();
+                resolve({ scope: 'android-chrome-compositor-only', depthSource: 'animated-synthetic-96x54',
+                    npuInference: false, mediaTransport: 'fully-loaded-blob', eyeWidth: width, eyeHeight: width * 9 / 16,
+                    sourceWidth: video.videoWidth, sourceHeight: video.videoHeight, seconds: elapsed / 1000,
+                    frames, callbackFps: frames / elapsed * 1000, missedVideoCallbacks: missed, hiddenFrames,
+                    renderWallMs: summarize(durations), callbackIntervalMs: summarize(intervals), syncGpu,
+                    gpuTimerSupported: Boolean(renderer.timer), gpuMs: summarize(renderer.gpuMs),
+                    droppedVideoFrames: quality.droppedVideoFrames - qualityStart.droppedVideoFrames,
+                    totalVideoFrames: quality.totalVideoFrames - qualityStart.totalVideoFrames,
+                    glError: renderer.gl.getError(), preserveDrawingBuffer: renderer.gl.getContextAttributes().preserveDrawingBuffer });
+            } catch (error) { video.pause(); reject(error); }
+        };
+        video.requestVideoFrameCallback(frame);
+    });
+    // Readback is outside the timed interval; verify work produced scene-dependent pixels.
+    const stereo = renderer.readPixels();
+    renderer.render(video, depth, 96, 54, { strength: 0, syncGpu: true });
+    const flat = renderer.readPixels();
+    let nonblack = 0, sceneEffect = 0;
+    for (let i = 0; i < stereo.length; i += 16) {
+        nonblack += stereo[i] > 0 ? 1 : 0;
+        sceneEffect += Math.abs(stereo[i] - flat[i]);
+    }
+    result.nonblackSamples = nonblack; result.sceneDepthPixelEffect = sceneEffect;
+    renderer.render(video, depth, 96, 54, { strength: 1, syncGpu: true });
+    document.querySelector('#status').textContent = JSON.stringify(result, null, 2);
+    return result;
+};
+window.addEventListener('pagehide', () => { video.pause(); renderer?.dispose(); if (blobUrl) URL.revokeObjectURL(blobUrl); });
+</script>

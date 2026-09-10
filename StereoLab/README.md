@@ -163,3 +163,26 @@ Android Chrome 的结果不代表应用 WebView、眼镜输出或 NPU 性能。
 `--syncGpu 1` 在绘制后调用 `gl.finish()` 观察同步等待。这些开关用于归因，关闭
 渲染或运动时的结果不能当作完整 SBS 画质通过。页面报告会记录实际生效的开关和
 `captureMs`、`motionMs`、`debugMs`、`renderMs` 分阶段统计。
+
+## 单独验证 SBS 合成吞吐
+
+`verify-compositor.mjs` 在手机 Chrome 中隔离测试视频纹理上传、逐像素双眼
+重投影与背景补洞。输入是原有 Jellyfin 本地片段和持续变化的合成深度，
+不运行模型，不执行运动传播，不将结果计作 NPU 或完整转换通过。媒体先
+完整加载为手机内存 Blob，计时阶段不通过无线 ADB 读取片段。
+
+```bash
+node StereoLab/verify-compositor.mjs --cdp http://127.0.0.1:9223 --url http://127.0.0.1:4188 --seconds 20
+node StereoLab/verify-compositor.mjs --widths 1920 --seconds 60 --sync-gpu
+```
+
+使用现有渲染器、96×54 深度网格、90% 画面大小及默认视差。`--sync-gpu`
+逐帧等待 `gl.finish()` 后计时，用于测量包含同步的 CPU 墙钟耗时，仍不
+等同 GPU timer。报告包含回调间隔、遗漏回调、解码丢帧和页面可见性；
+计时后读取像素，检查非黑输出及相对纯平面合成的深度作用。
+结果和截图写入 `.local/compositor-*`，截图含片源，不提交。
+
+原路线需要分别满足三项门槛：合成跟上片源；NPU 端到端深度更新满足所选
+刷新周期；二者并行运行后仍满足帧率和深度年龄约束。24/25 fps 对应
+41.7/40 ms 合成预算；若要求每帧新深度，深度链路也须达到该吞吐。
+若使用低频深度加时间传播，则单独报告深度刷新率，不能称为逐帧 NPU 深度。

@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "scope": "compositor-isolation",
+  "startedAt": "2026-09-10T10:23:04.446Z",
+  "browser": "150.0.7871.186",
+  "npuValidated": false,
+  "implementationSha256": {
+    "renderer.js": "63e8f81f0c83c30e7a69ae6add42ed55ed729670015f8a5af285236072598161",
+    "core.js": "d0c1abe2c195f998b83704053e9e56e0fb201d7ed7f2d6e4088ed5fe604d6384",
+    "tests/render-throughput.html": "21c3ec84eae812b244aef9a982c1146804d1fba4cbff90088f2ca744ed5955d4",
+    "verify-compositor.mjs": "09f758b4d8438176a00b674cd5b047f38707bd1840f687b99cdac7e5e9a9131e"
+  },
+  "samples": [
+    {
+      "scope": "android-chrome-compositor-only",
+      "depthSource": "animated-synthetic-96x54",
+      "npuInference": false,
+      "mediaTransport": "fully-loaded-blob",
+      "eyeWidth": 1920,
+      "eyeHeight": 1080,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "seconds": 60.01040000000596,
+      "frames": 1422,
+      "callbackFps": 23.69589271192758,
+      "missedVideoCallbacks": 8,
+      "hiddenFrames": 0,
+      "renderWallMs": {
+        "count": 1422,
+        "mean": 2.700421940991144,
+        "p50": 1.699999988079071,
+        "p95": 7.9000000059604645
+      },
+      "callbackIntervalMs": {
+        "count": 1421,
+        "mean": 42.22899366643628,
+        "p50": 48.80000001192093,
+        "p95": 66.7999999821186
+      },
+      "syncGpu": true,
+      "gpuTimerSupported": false,
+      "gpuMs": null,
+      "droppedVideoFrames": 0,
+      "totalVideoFrames": 1429,
+      "glError": 0,
+      "preserveDrawingBuffer": true,
+      "nonblackSamples": 841752,
+      "sceneDepthPixelEffect": 2336070,
+      "sample": 1,
+      "expectedFps": 23.976023976023978,
+      "passed": true
+    },
+    {
+      "scope": "android-chrome-compositor-only",
+      "depthSource": "animated-synthetic-96x54",
+      "npuInference": false,
+      "mediaTransport": "fully-loaded-blob",
+      "eyeWidth": 1920,
+      "eyeHeight": 1080,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "seconds": 60.04390000000596,
+      "frames": 1427,
+      "callbackFps": 23.765944583877104,
+      "missedVideoCallbacks": 5,
+      "hiddenFrames": 0,
+      "renderWallMs": {
+        "count": 1427,
+        "mean": 2.6288717590434283,
+        "p50": 1.5999999940395355,
+        "p95": 7.699999988079071
+      },
+      "callbackIntervalMs": {
+        "count": 1426,
+        "mean": 42.10518934081347,
+        "p50": 48.79999998211861,
+        "p95": 66.59999999403954
+      },
+      "syncGpu": true,
+      "gpuTimerSupported": false,
+      "gpuMs": null,
+      "droppedVideoFrames": 0,
+      "totalVideoFrames": 1430,
+      "glError": 0,
+      "preserveDrawingBuffer": true,
+      "nonblackSamples": 838123,
+      "sceneDepthPixelEffect": 4038761,
+      "sample": 2,
+      "expectedFps": 23.976023976023978,
+      "passed": true
+    },
+    {
+      "scope": "android-chrome-compositor-only",
+      "depthSource": "animated-synthetic-96x54",
+      "npuInference": false,
+      "mediaTransport": "fully-loaded-blob",
+      "eyeWidth": 1920,
+      "eyeHeight": 1080,
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "seconds": 60.06119999998808,
+      "frames": 1493,
+      "callbackFps": 24.85797819557878,
+      "missedVideoCallbacks": 2,
+      "hiddenFrames": 0,
+      "renderWallMs": {
+        "count": 1493,
+        "mean": 2.565438714988744,
+        "p50": 1.5999999940395355,
+        "p95": 7.299999982118607
+      },
+      "callbackIntervalMs": {
+        "count": 1492,
+        "mean": 40.252747989272144,
+        "p50": 48.30000001192093,
+        "p95": 66.30000001192093
+      },
+      "syncGpu": true,
+      "gpuTimerSupported": false,
+      "gpuMs": null,
+      "droppedVideoFrames": 0,
+      "totalVideoFrames": 1495,
+      "glError": 0,
+      "preserveDrawingBuffer": true,
+      "nonblackSamples": 841752,
+      "sceneDepthPixelEffect": 8146348,
+      "sample": 3,
+      "expectedFps": 25,
+      "passed": true
+    }
+  ],
+  "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
+  "passed": true,
+  "device": {
+    "soc": "SM8850",
+    "android": 16
+  },
+  "batteryObservationDuringPreliminaryRun": {
+    "temperatureC": 34.2,
+    "charging": true,
+    "levelPercent": 79
+  }
+}
