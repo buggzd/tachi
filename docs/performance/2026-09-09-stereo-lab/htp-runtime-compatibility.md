@@ -158,3 +158,32 @@ Resume with a complete, versioned V81-compatible QAIRT/QNN package and matching
 headers. The local NPU directory and Downloads search found no new SDK package
 for this recheck. Do not remove the API guard to treat mismatched interface
 tables as compatible.
+
+## Authenticated QPM acquisition progress (2026-09-10)
+
+The user completed the QPM web login. The official QAIRT product page now
+exposes Linux/Windows release `2.50.40.260831` (2026-09-07, installer 2.42 GB),
+with installation through QPM3 desktop/CLI rather than a browser SDK download.
+This supersedes the earlier inability to view the authenticated product page;
+it does not yet establish V81 runtime compatibility or SDK acquisition.
+
+Downloaded the official Linux Debian QPM3 `3.0.133.0` package through the web
+Download action. Its local provenance records the package SHA-256. Created an
+isolated Ubuntu 22.04 amd64 container on the existing Docker Desktop instance;
+QPM CLI `--help` runs successfully under x86 emulation. This is an operational
+CLI check, not a vendor certification of the emulated host for conversion.
+
+`--download-only Qualcomm_AI_Runtime_SDK` reports that the CLI requires its own
+Qualcomm login; the browser session is not reused. The interactive CLI accepts
+username/password prompts without putting the password in command arguments.
+CLI login and any explicit SDK license activation remain required before
+acquiring the matching headers and runtime set. No authenticated cookies or
+passwords were extracted from Chrome or copied into repository files.
+
+The dormant ORT session configuration had `offload_graph_io_quantization=1`
+while disabling CPU EP fallback. The official
+[QNN EP options](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html)
+define 1 as offloading graph I/O quantization to CPU, and 0 as retaining it on
+QNN. The benchmark now uses 0. This corrects a later-stage configuration
+contradiction; it does not change the current Direct probe gate or demonstrate
+model support.

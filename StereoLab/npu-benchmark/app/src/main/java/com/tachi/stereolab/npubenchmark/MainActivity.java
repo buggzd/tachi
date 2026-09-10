@@ -157,9 +157,9 @@ public final class MainActivity extends Activity {
             options.setSessionLogVerbosityLevel(5);
             Map<String, String> qnnOptions = new HashMap<>();
             qnnOptions.put("backend_path", qnnBackend.getAbsolutePath());
-            // Keep QDQ graph I/O inside the QNN partition for the smoke model
-            // and for a later fixed-shape depth model with a float Java API.
-            qnnOptions.put("offload_graph_io_quantization", "1");
+            // A value of 1 offloads graph I/O quantization to the CPU EP.
+            // Keep it on QNN when validating a graph with CPU fallback disabled.
+            qnnOptions.put("offload_graph_io_quantization", "0");
             String socModel = socModelOverride == null || socModelOverride.isEmpty()
                     ? "660" : socModelOverride;
             qnnOptions.put("soc_model", socModel);
