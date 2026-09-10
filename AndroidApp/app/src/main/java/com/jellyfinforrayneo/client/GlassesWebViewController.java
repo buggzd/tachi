@@ -5,6 +5,9 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
+import android.graphics.Bitmap;
+import android.graphics.RenderNode;
+import android.os.SystemClock;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaCodecInfo;
@@ -70,6 +73,8 @@ final class GlassesWebViewController
     private DisplayModeStateMachine.State displayState;
     private StereoScreenSettings stereoSettings = StereoScreenSettings.DEFAULT;
     private String lastBootstrap;
+    private volatile RealtimeSbsController realtime;
+    private int depthCatalogGeneration = -1;
     private boolean ready;
     private boolean destroyed;
 
@@ -169,7 +174,14 @@ final class GlassesWebViewController
         {
             return;
         }
-        String state = bootstrapProvider.buildBootstrap().toString();
+        JSONObject bootstrap = bootstrapProvider.buildBootstrap();
+        int generation = bootstrap.optInt("catalogGeneration", -1);
+        if (realtime != null && (generation != depthCatalogGeneration || bootstrap.isNull("session")))
+        {
+            realtime.stop(null);
+        }
+        depthCatalogGeneration = generation;
+        String state = bootstrap.toString();
         if (state.equals(lastBootstrap))
         {
             return;
@@ -201,6 +213,13 @@ final class GlassesWebViewController
         Context context = rendererContext;
         webContainer = new StereoMirrorLayout(root.getContext());
         webContainer.setScreenSettings(stereoSettings);
+        webContainer.depthFailure = token ->
+        {
+            if (realtime != null)
+            {
+                realtime.rendererFailed(token);
+            }
+        };
         webContainer.setBackgroundColor(Color.BLACK);
         webContainer.setClipChildren(false);
 
@@ -218,6 +237,33 @@ final class GlassesWebViewController
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
 
+        realtime = new RealtimeSbsController(context, new RealtimeSbsController.Host()
+        {
+            @Override
+            public void clearDepth()
+            {
+                if (webContainer != null)
+                {
+                    webContainer.clearDepth();
+                }
+            }
+
+            @Override
+            public void applyDepth(Bitmap map, DepthFrame frame, long validUntil)
+            {
+                if (webContainer != null)
+                {
+                    webContainer.setDepth(map, frame, validUntil);
+                }
+            }
+
+            @Override
+            public void publish(JSONObject state)
+            {
+                evaluateJavascript("window.dispatchEvent(new CustomEvent('tachi-depth',{detail:"
+                        + state.toString() + "}));");
+            }
+        });
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -327,6 +373,10 @@ final class GlassesWebViewController
                 && displayState.displayModeApplied
                 && DisplayModeStateMachine.STEREO_SCREEN.equals(displayState.activeMode);
         boolean drawStereo = !transitioning && stereo;
+        if (!drawStereo && realtime != null)
+        {
+            realtime.stop(null);
+        }
         // Mirror uses WebView's normal hardware rendering. Stereo retains one
         // texture so both eye draws sample the same completed WebView frame.
         int layerType = drawStereo ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_NONE;
@@ -374,6 +424,11 @@ final class GlassesWebViewController
 
     private void destroyWebView()
     {
+        if (realtime != null)
+        {
+            realtime.close();
+            realtime = null;
+        }
         setReady(false);
         lastBootstrap = null;
         WebView current = webView;
@@ -409,6 +464,61 @@ final class GlassesWebViewController
         public String getBootstrapState()
         {
             return bootstrapProvider.buildBootstrap().toString();
+        }
+
+        @JavascriptInterface
+        public boolean realtimeSbsAvailable()
+        {
+            return RealtimeDepthBackend.available();
+        }
+
+        @JavascriptInterface
+        public void startRealtimeSbs(String token)
+        {
+            if (!DepthFrame.validToken(token))
+            {
+                return;
+            }
+            root.post(() ->
+            {
+                if (source != webView || destroyed || realtime == null)
+                {
+                    return;
+                }
+                if (!RealtimeDepthBackend.available() || displayState == null
+                        || !displayState.displayModeApplied || displayState.displayModeTransitioning
+                        || !DisplayModeStateMachine.STEREO_SCREEN.equals(displayState.activeMode)
+                        || bootstrapProvider.buildBootstrap().isNull("session"))
+                {
+                    evaluateJavascript("window.dispatchEvent(new CustomEvent('tachi-depth',{detail:{token:"
+                            + JSONObject.quote(token) + ",status:'error',sequence:0}}));");
+                    return;
+                }
+                realtime.start(token);
+            });
+        }
+
+        @JavascriptInterface
+        public void stopRealtimeSbs(String token)
+        {
+            if (!DepthFrame.validToken(token))
+            {
+                return;
+            }
+            root.post(() ->
+            {
+                if (source == webView && realtime != null)
+                {
+                    realtime.stop(token);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean submitRealtimeFrame(String payload)
+        {
+            RealtimeSbsController controller = realtime;
+            return source == webView && controller != null && controller.offer(payload);
         }
 
         @JavascriptInterface
@@ -520,6 +630,41 @@ final class GlassesWebViewController
     static final class StereoMirrorLayout extends FrameLayout
     {
         private boolean stereo;
+        private RealtimeEyeEffect depthEffect;
+        private long depthValidUntil;
+        private java.util.function.Consumer<String> depthFailure;
+        private String depthToken;
+
+        void clearDepth()
+        {
+            depthValidUntil = 0;
+            depthToken = null;
+            if (Build.VERSION.SDK_INT >= 33 && depthEffect != null)
+            {
+                depthEffect.clear();
+                depthEffect = null;
+            }
+            invalidate();
+        }
+
+        void setDepth(Bitmap bitmap, DepthFrame frame, long validUntil)
+        {
+            if (Build.VERSION.SDK_INT < 33 || !stereo || getChildCount() == 0)
+            {
+                return;
+            }
+            if (depthEffect == null)
+            {
+                depthEffect = new RealtimeEyeEffect();
+            }
+            View child = getChildAt(0);
+            depthEffect.update(bitmap, frame, child.getWidth(), child.getHeight());
+            depthToken = frame.token;
+            depthValidUntil = validUntil;
+            invalidate();
+            postInvalidateDelayed(Math.max(1, validUntil - SystemClock.elapsedRealtime() + 1));
+        }
+
         private boolean testPattern;
         private StereoScreenSettings settings = StereoScreenSettings.DEFAULT;
         private float normalizedDisparity = settings.normalizedDisparity();
@@ -543,6 +688,7 @@ final class GlassesWebViewController
             stereo = enabled;
             if (!enabled)
             {
+                clearDepth();
                 testPattern = false;
                 finishSettingsAnimation();
             }
@@ -636,6 +782,7 @@ final class GlassesWebViewController
         @Override
         protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight)
         {
+            clearDepth();
             super.onSizeChanged(width, height, oldWidth, oldHeight);
             updateGeometry();
         }
@@ -680,11 +827,46 @@ final class GlassesWebViewController
 
             View child = getChildAt(0);
             long drawingTime = getDrawingTime();
-            drawEye(canvas, child, drawingTime, true);
-            drawEye(canvas, child, drawingTime, false);
+            // Snapshot depth eligibility once: expiry must never make only one eye flat.
+            boolean useDepth = Build.VERSION.SDK_INT >= 33 && canvas.isHardwareAccelerated()
+                    && depthEffect != null && depthValidUntil > SystemClock.elapsedRealtime();
+            if (useDepth && Build.VERSION.SDK_INT >= 33)
+            {
+                try
+                {
+                    recordEye(depthEffect.left, child, drawingTime);
+                    recordEye(depthEffect.right, child, drawingTime);
+                }
+                catch (RuntimeException failure)
+                {
+                    String failedToken = depthToken;
+                    clearDepth();
+                    if (depthFailure != null)
+                    {
+                        post(() -> depthFailure.accept(failedToken));
+                    }
+                    useDepth = false;
+                }
+            }
+            drawEye(canvas, child, drawingTime, true, useDepth);
+            drawEye(canvas, child, drawingTime, false, useDepth);
         }
 
-        private void drawEye(Canvas canvas, View child, long drawingTime, boolean left)
+        @androidx.annotation.RequiresApi(33)
+        private void recordEye(RenderNode node, View child, long drawingTime)
+        {
+            Canvas recording = node.beginRecording(child.getWidth(), child.getHeight());
+            try
+            {
+                drawChild(recording, child, drawingTime);
+            }
+            finally
+            {
+                node.endRecording();
+            }
+        }
+
+        private void drawEye(Canvas canvas, View child, long drawingTime, boolean left, boolean useDepth)
         {
             StereoScreenGeometry frame = geometry;
             int eyeSave = canvas.save();
@@ -694,7 +876,14 @@ final class GlassesWebViewController
             // d = uL - uR. Translate in final eye pixels BEFORE scale, so size does not change d.
             canvas.translate(left ? frame.leftX : frame.rightX, frame.top);
             canvas.scale(frame.scale, frame.scale);
-            drawChild(canvas, child, drawingTime);
+            if (Build.VERSION.SDK_INT >= 33 && useDepth)
+            {
+                canvas.drawRenderNode(left ? depthEffect.left : depthEffect.right);
+            }
+            else
+            {
+                drawChild(canvas, child, drawingTime);
+            }
             if (testPattern)
             {
                 drawTarget(canvas, frame);

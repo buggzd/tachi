@@ -731,6 +731,8 @@ public final class MainActivity extends Activity
                     : rayNeoDisplay.getState();
             result.put("source", "android");
             result.put("displayMode", displayState.requestedMode);
+            result.put("displayModeApplied", displayState.displayModeApplied);
+            result.put("displayModeTransitioning", displayState.displayModeTransitioning);
             result.put("glassesConnected", displayState.connected);
             result.put("catalogGeneration", glassesCatalogGeneration);
             result.put("uiTheme", sessions == null ? UiTheme.DEFAULT : sessions.getUiTheme());

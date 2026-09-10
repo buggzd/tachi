@@ -15,6 +15,7 @@
 | SBS 视差、坐标单位、USB 控制和光学边界 | [虚拟银幕几何](SBS_GEOMETRY.md) |
 | 已采用的性能措施、采样方法和证据范围 | [性能维护](PERFORMANCE.md) |
 | 已实现范围、待开发功能和待复核问题 | [功能路线图](JELLYFIN_FEATURE_ROADMAP.md) |
+| 实时 3D 开发构建与统一实机调试 | [实时 SBS](REALTIME_SBS.md) |
 | 版本号与 Git 标签约束 | [版本规则](VERSIONING.md) |
 | 签名、发布和失败恢复 | [发布手册](RELEASE.md) |
 

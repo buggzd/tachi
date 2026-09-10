@@ -4,7 +4,8 @@
 Depth Anything V2 Small 在浏览器 WebGPU 中实时估计深度，WebGL 2 输出左右眼。
 主实验不使用预计算深度，也不调用云端推理。网页尚未接入正式 Android 播放器、
 Jellyfin 的正式播放/上报链路或眼镜 USB 控制。独立 Android benchmark 已验证
-NPU 深度与 SBS 合成的并发算力，但尚未将二者连接为真实视频数据管线。
+NPU 深度与 SBS 合成的并发算力。[tachi 开发分支](../docs/REALTIME_SBS.md) 已另行接入
+真实视频帧桥与原生两眼偏移，尚待统一实机验收；本网页实验继续独立保留。
 
 首轮结果与证据边界见 [2026-09-09 桌面验证](../docs/performance/2026-09-09-stereo-lab/README.md)。
 

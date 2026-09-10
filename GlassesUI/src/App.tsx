@@ -1,3 +1,5 @@
+import { useRealtimeSbs, DepthPreview } from './useRealtimeSbs'
+import './realtimeSbs.css'
 import { useLanguage } from './useLanguage'
 import { getLocale, t } from '../../SharedUI/i18n.mjs'
 import { parseSeekCommand } from '../../SharedUI/seekCommand.mjs'
@@ -2442,6 +2444,15 @@ function PlayerPage({
     plan?.videoCodec,
   ].filter(Boolean).join(' · ')
   const audioTracks = plan?.audioTracks ?? []
+  const realtime = useRealtimeSbs(videoRef, plan?.playSessionId ?? '', status === 'playing',
+    (plan?.subtitleStreamIndex ?? -1) >= 0, infoVisible)
+  const realtimeLabel = {
+    off: t('实时 3D 已关闭'), 'needs-stereo': t('请先在手机上切换到 3D 显示'),
+    subtitles: t('实时 3D 首版需要关闭字幕'), loading: t('正在准备实时 3D'),
+    ready: t('实时 3D 等待视频帧'), frame: t('实时 3D 正在转换'),
+    flat: t('当前画面保持平面显示'),
+    stale: t('深度延迟，暂时显示平面画面'), error: t('实时 3D 不可用，请关闭后重试'),
+  }[realtime.status]
   const subtitleTracks = plan?.subtitleTracks ?? []
   const statusLabel = {
     get preparing() { return t("正在加载") }, get buffering() { return t("缓冲中") }, get playing() { return t("正在播放") },
@@ -2485,6 +2496,11 @@ function PlayerPage({
         </header>
       </div>
 
+      {realtime.enabled && (controls || infoVisible) && <aside className="realtime-sbs-debug" role="status">
+        <strong>{realtimeLabel}</strong>
+        {infoVisible && <><small>{t('深度计算')} {realtime.metrics.nativeMs.toFixed(1)} ms · {t('帧往返')} {realtime.metrics.roundTripMs.toFixed(1)} ms</small>
+          <DepthPreview value={realtime.depth} /></>}
+      </aside>}
       <VideoInfoOverlay visible={infoVisible} plan={status === 'preparing' ? null : plan} failed={status === 'error'} videoRef={videoRef} hlsRef={hlsRef} sourceRef={infoSourceRef} />
 
       {(status === 'preparing' || status === 'buffering') && (
@@ -2583,6 +2599,7 @@ function PlayerPage({
             <div className="player-control-group player-control-group--right">
               <FocusButton sound={panel === 'audio' ? 'close' : 'open'} className="player-track-trigger--audio" variant="round" label={t("音轨")} disabled={!audioTracks.length || status === 'preparing'} active={panel === 'audio'} onClick={() => toggleTrackPanel('audio')}><AudioLines size={21} /></FocusButton>
               <FocusButton sound={panel === 'subtitles' ? 'close' : 'open'} className="player-track-trigger--subtitles" variant="round" label={t("字幕")} disabled={!subtitleTracks.length || status === 'preparing'} active={panel === 'subtitles'} onClick={() => toggleTrackPanel('subtitles')}><Captions size={21} /></FocusButton>
+              {realtime.available && <FocusButton className="player-realtime-trigger" variant="round" label={t('实时 3D')} active={realtime.enabled} onClick={() => { realtime.toggle(); reveal() }}><span>3D</span></FocusButton>}
               <FocusButton sound={infoVisible ? 'toggle-off' : 'toggle-on'} className="player-info-trigger" variant="round" label={t("视频信息")} active={infoVisible} onClick={() => { onToggleInfo(); reveal() }}><Info size={21} /></FocusButton>
             </div>
           </div>

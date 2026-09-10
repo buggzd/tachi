@@ -149,6 +149,9 @@ keeps a glasses-side failure visible so field testing does not require ADB.
 | `getBootstrapState`, `ready` | Receive the whitelisted session and display state |
 | `getHardwareVideoCodecs` | Enumerate hardware video decoder families |
 | `postMessage` | Send validated runtime/playback/session events to Android |
+| `realtimeSbsAvailable` | Whether this build/API includes the experimental QNN depth route |
+| `startRealtimeSbs`, `stopRealtimeSbs` | Start/stop a bounded playback-visit token, gated by confirmed stereo/session |
+| `submitRealtimeFrame` | Dedicated fixed 266×154 RGBA frame protocol; one outstanding request, separate size limits |
 
 Accepted glasses messages are `manage_login`, `logout`, `unauthorized`,
 `runtime_state`, `playback_state`, `search_state`, `set_ui_theme`, and
@@ -584,6 +587,38 @@ the toggle within that playback visit, while leaving playback or switching
 accounts clears it. Hardware codec enumeration describes capability only:
 WebView exposes no public API for the active hardware/software decoder, so the
 overlay explicitly reports automatic selection and unreported actual status.
+
+## Experimental realtime depth conversion
+
+The opt-in `-PrealtimeSbs=true` build packages a hash-pinned official QNN/V81
+runtime and depth model. Standard builds exclude them. The glasses playback
+control defaults off and currently requires no selected subtitle track. The
+existing single video supplies downsampled RGBA frames through a dedicated
+222000-character bounded bridge; a single worker runs strict QNN inference.
+No server URL, credentials, arbitrary shape or file path enters this protocol.
+The bootstrap now also exposes confirmed/transitioning display flags so the
+frontend cannot confuse a requested stereo mode with an applied one.
+
+`StereoMirrorLayout` keeps the completed WebView hardware layer as the only
+source. Two RenderNodes apply opposite AGSL depth shifts within the video rect,
+protect bounded DOM control regions, and retain the existing virtual-screen
+transforms. Both eyes snapshot the same depth eligibility before drawing. No
+second WebView, HTML video, audio path or reporting lifecycle is introduced;
+only an existing hardware transition may hide the WebView.
+
+Capture-age expiry, source/seek/pause/visibility changes, account generation
+changes and renderer loss clear depth. Playback tokens and monotonic sequence
+numbers reject stale results; one outstanding frame and a capacity-one worker
+queue provide backpressure. The QNN session is closed on its worker when the
+WebView is destroyed. Fixed error statuses restore the original flat content
+without automatic retry or a new USB transition. The optional debug preview
+contains only local grayscale pixels; production code saves no frame/profile files.
+
+The new native gather shader is not the previously measured laboratory WebGL
+renderer. Desktop verification does not establish its WebView texture behavior,
+GPU throughput, optical output or thermal stability. See [realtime SBS development
+and deferred device checks](REALTIME_SBS.md). Device testing is deliberately
+deferred for this development phase at the user's request.
 
 ## Verification
 

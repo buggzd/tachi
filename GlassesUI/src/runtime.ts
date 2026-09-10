@@ -16,6 +16,8 @@ export type JellyfinSession = {
 export type RuntimeBootstrap = {
   source: 'android' | 'development' | 'browser'
   displayMode: string
+  displayModeApplied?: boolean
+  displayModeTransitioning?: boolean
   uiTheme: UiTheme
   subtitleSize: SubtitleSize
   language: Language
@@ -27,6 +29,10 @@ export type RuntimeBootstrap = {
 }
 
 type NativeGlassesBridge = {
+  realtimeSbsAvailable?: () => boolean
+  startRealtimeSbs?: (token: string) => void
+  stopRealtimeSbs?: (token: string) => void
+  submitRealtimeFrame?: (payload: string) => boolean
   getBootstrapState: () => string
   getHardwareVideoCodecs: () => string
   ready: () => void
@@ -103,6 +109,8 @@ function parseBootstrap(value: string | RuntimeBootstrap | unknown): RuntimeBoot
     return {
       source: source.source === 'android' ? 'android' : 'browser',
       displayMode: text(source.displayMode) || 'Mirror2D',
+      displayModeApplied: source.displayModeApplied === true,
+      displayModeTransitioning: source.displayModeTransitioning === true,
       uiTheme: normalizeUiTheme(source.uiTheme),
       subtitleSize: normalizeSubtitleSize(source.subtitleSize),
       language: normalizeLanguage(source.language),

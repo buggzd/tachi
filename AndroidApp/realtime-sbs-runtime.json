@@ -1,0 +1,20 @@
+{
+  "qairtVersion": "2.50.40.260831",
+  "qnnApi": "2.39.0",
+  "soc": "SM8850",
+  "dsp": "V81",
+  "ortVersion": "1.22.0",
+  "ortSha256": "8be5cc2e5a56bf44673582661ca0e3731c12a9d57fae789c92f367e67755275f",
+  "modelSha256": "7cbe36d72ec5931c362e759274cdbbd0757dd1ddfb6b6c5fb37e918b006db19d",
+  "libraries": {
+    "libCalculator_skel.so": "50ec62aa4d8e811a0a84f636515a1a4a24bda33176190772322ae9d40f47273c",
+    "libQnnHtp.so": "d299323d79868adbb18997c8e99ae18f961005589ab137f56a51d27e67d6bf0f",
+    "libQnnHtpNetRunExtensions.so": "2923a52c9c3d4039ee181fc3978aff7546aa34ea970de939b0793954ae9c2345",
+    "libQnnHtpPrepare.so": "c59eb2c24dbc797d86963f02180baab0ad09bc7e2177db895010f2fd5930db75",
+    "libQnnHtpV81.so": "c626100f79fac84fa3a1493cc3be297cb2b4c2c83e7ac79b3140877ee17d7fe3",
+    "libQnnHtpV81CalculatorStub.so": "7729c3d166b5116fc6c1a9007170c1d60d928826917c5e3e181e56525fecf5c8",
+    "libQnnHtpV81Skel.so": "0df1a63f7fcf60b2f6ca419228c36bb97dc225ba69b24ea3a150a533e9bf3f5f",
+    "libQnnHtpV81Stub.so": "8cfb232be5f3f09d732805a8cfe222515460625a00267ed6648667e140be8a31",
+    "libQnnSystem.so": "b30bd9880dc48f6c5349185a7d45b326f8a064b10072e60094354fa23d9a2027"
+  }
+}

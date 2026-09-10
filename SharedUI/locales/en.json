@@ -774,5 +774,17 @@
   "原图": "Original",
   "适应屏幕": "Fit screen",
   "课程": "Course",
-  "屏幕": "Screen"
+  "屏幕": "Screen",
+  "实时 3D": "Realtime 3D",
+  "实时 3D 已关闭": "Realtime 3D is off",
+  "请先在手机上切换到 3D 显示": "Select 3D display on the phone first",
+  "实时 3D 首版需要关闭字幕": "Turn subtitles off to use this first version of realtime 3D",
+  "正在准备实时 3D": "Preparing realtime 3D",
+  "实时 3D 等待视频帧": "Realtime 3D is waiting for video",
+  "实时 3D 正在转换": "Realtime 3D is running",
+  "深度延迟，暂时显示平面画面": "Depth is delayed; showing the flat frame",
+  "实时 3D 不可用，请关闭后重试": "Realtime 3D unavailable; toggle off and retry",
+  "深度计算": "Depth",
+  "帧往返": "Frame round trip",
+  "当前画面保持平面显示": "Showing this frame without added depth"
 }

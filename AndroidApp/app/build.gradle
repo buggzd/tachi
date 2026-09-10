@@ -40,6 +40,24 @@ if (hasEnvironmentSigning && !file(environmentSigning.path).isFile()) {
 }
 def hasReleaseSigning = signingPropertiesFile.exists() || hasEnvironmentSigning
 
+def realtimeSbs = providers.gradleProperty("realtimeSbs").getOrElse("false") == "true"
+def realtimeManifest = new groovy.json.JsonSlurper().parse(rootProject.file("realtime-sbs-runtime.json"))
+def npuRoot = new File(repositoryRoot, "StereoLab/.local/npu")
+def realtimeModel = new File(npuRoot, "depth-anything-v2-small-qnn-266-u16a-i8w.onnx")
+def realtimeRuntime = new File(npuRoot, "qairt-runtime")
+def realtimeAssets = layout.buildDirectory.dir("generated/realtimeAssets")
+def realtimeLibraries = layout.buildDirectory.dir("generated/realtimeLibraries")
+if (realtimeSbs) {
+    def verifyHash = { File dependency, String expected ->
+        if (!dependency.isFile()) throw new GradleException("Missing local realtime SBS dependency; see docs/REALTIME_SBS.md")
+        def actual = dependency.withInputStream { java.security.MessageDigest.getInstance("SHA-256").digest(it.bytes).encodeHex().toString() }
+        if (actual != expected) throw new GradleException("Realtime SBS dependency differs from the validated manifest")
+    }
+    verifyHash(realtimeModel, realtimeManifest.modelSha256)
+    verifyHash(new File(npuRoot, "onnxruntime-android-qnn-1.22.0.aar"), realtimeManifest.ortSha256)
+    realtimeManifest.libraries.each { name, digest -> verifyHash(new File(realtimeRuntime, "arm64-v8a/${name}"), digest) }
+}
+
 android {
     namespace "com.jellyfinforrayneo.client"
     compileSdk 35
@@ -49,6 +67,7 @@ android {
         applicationId "com.jellyfinforrayneo.client"
         minSdk 26
         targetSdk 29
+        buildConfigField "String", "REALTIME_MODEL_SHA256", "\"${realtimeManifest.modelSha256}\""
         versionCode appVersionCode
         versionName appVersionName
 
@@ -183,4 +202,25 @@ dependencies {
     compileOnly "androidx.annotation:annotation:1.8.1"
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.json:json:20240303"
+}
+
+android.sourceSets.main.java.srcDir(realtimeSbs ? "src/realtime/java" : "src/standard/java")
+if (realtimeSbs) {
+    android.sourceSets.debug.manifest.srcFile("src/realtime/AndroidManifest.xml")
+    android.sourceSets.release.manifest.srcFile("src/realtime/AndroidManifest.xml")
+    tasks.register("prepareRealtimeLibraries", Sync) {
+        from(new File(realtimeRuntime, "arm64-v8a")) {
+            include realtimeManifest.libraries.keySet().toList()
+            into("arm64-v8a")
+        }
+        into(realtimeLibraries)
+    }
+    android.sourceSets.main.jniLibs.srcDir(files(realtimeLibraries).builtBy("prepareRealtimeLibraries"))
+    tasks.register("prepareRealtimeAssets", Sync) {
+        from(realtimeModel) { rename { "depth.onnx" }; into("realtime-sbs") }
+        into(realtimeAssets)
+    }
+    android.sourceSets.main.assets.srcDir(files(realtimeAssets).builtBy("prepareRealtimeAssets"))
+    tasks.named("preBuild").configure { dependsOn "prepareRealtimeAssets", "prepareRealtimeLibraries" }
+    dependencies { implementation files(new File(npuRoot, "onnxruntime-android-qnn-1.22.0.aar")) }
 }

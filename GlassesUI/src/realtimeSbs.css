@@ -1,0 +1,17 @@
+.realtime-sbs-debug {
+  position: absolute;
+  z-index: 4;
+  top: 110px;
+  left: 28px;
+  display: grid;
+  gap: 8px;
+  max-width: 340px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .85);
+  color: white;
+  pointer-events: none;
+}
+.realtime-sbs-debug canvas { width: 266px; height: 154px; background: black; }
+.realtime-sbs-debug small { opacity: .8; }
+.player-realtime-trigger span { font-size: 16px; font-weight: 700; }
