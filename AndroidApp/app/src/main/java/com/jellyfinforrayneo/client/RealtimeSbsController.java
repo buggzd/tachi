@@ -17,7 +17,7 @@ final class RealtimeSbsController
     interface Host
     {
         void clearDepth();
-        void applyDepth(Bitmap map, DepthFrame frame, long validUntil);
+        void applyDepth(Bitmap map, DepthFrame frame);
         void publish(JSONObject state);
     }
 
@@ -31,6 +31,8 @@ final class RealtimeSbsController
     private volatile boolean closed;
     private DepthBackend backend;
     private int lastSequence;
+    private String filterToken;
+    private DepthStabilizer stabilizer;
 
     RealtimeSbsController(Context context, Host host)
     {
@@ -122,11 +124,15 @@ final class RealtimeSbsController
         boolean flat = false;
         try
         {
-            if (!closed && frame.token.equals(token)
-                    && Math.abs(System.currentTimeMillis() - frame.capturedAt) <= 150)
+            if (!closed && frame.token.equals(token))
             {
                 byte[] rgba = Base64.decode(frame.rgba, Base64.NO_WRAP);
-                depth = DepthFrame.normalize(backend.infer(DepthFrame.preprocess(rgba)));
+                if (!frame.token.equals(filterToken))
+                {
+                    stabilizer = new DepthStabilizer();
+                    filterToken = frame.token;
+                }
+                depth = stabilizer.update(backend.infer(DepthFrame.preprocess(rgba)), rgba);
                 flat = depth == null;
             }
         }
@@ -150,8 +156,7 @@ final class RealtimeSbsController
                 fail(frame.token);
                 return;
             }
-            long age = System.currentTimeMillis() - frame.capturedAt;
-            if (result != null && age >= 0 && age <= 150)
+            if (result != null)
             {
                 int[] pixels = new int[DepthFrame.PIXELS];
                 for (int i = 0; i < pixels.length; i++)
@@ -162,7 +167,7 @@ final class RealtimeSbsController
                 Bitmap map = Bitmap.createBitmap(pixels, DepthFrame.WIDTH, DepthFrame.HEIGHT, Bitmap.Config.ARGB_8888);
                 try
                 {
-                    host.applyDepth(map, frame, SystemClock.elapsedRealtime() + 150 - age);
+                    host.applyDepth(map, frame);
                 }
                 catch (RuntimeException failure)
                 {
@@ -173,7 +178,7 @@ final class RealtimeSbsController
             }
             else
             {
-                host.clearDepth();
+                // A missing/flat result holds the last valid map for this playback visit.
                 publish(frame.token, noContrast ? "flat" : "stale", frame.sequence, elapsed, null);
             }
         });

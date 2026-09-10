@@ -16,7 +16,9 @@ try {
   await page.evaluate(() => { window.sbsHarness.hold = true; });
   await page.waitForTimeout(100);
   const held = await page.evaluate(() => window.sbsHarness.frames.length);
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(2200);
+  assert.equal(await page.locator('output').textContent(), 'stale');
+  assert.equal(await page.locator('canvas').evaluate(x => x.getContext('2d').getImageData(0, 0, 1, 1).data[0]), 120, 'Delay must retain the previous depth preview');
   assert.equal(await page.evaluate(() => window.sbsHarness.frames.length), held, 'Only one frame may await acknowledgement');
   await page.locator('#toggle').click();
   const oldToken = await page.evaluate(() => window.sbsHarness.token);
@@ -49,7 +51,18 @@ try {
   await page.locator('#toggle').click();
   await page.evaluate(() => { window.sbsHarness.error = false; window.sbsHarness.hold = true; });
   await page.locator('#toggle').click();
-  await page.waitForFunction(() => document.querySelector('output')?.textContent === 'error');
+  await page.waitForFunction(() => document.querySelector('output')?.textContent === 'stale');
+  const heldStarts = await page.evaluate(() => window.sbsHarness.starts.length);
+  const heldFrames = await page.evaluate(() => window.sbsHarness.frames.length);
+  await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(() => window.sbsHarness.frames.length), heldFrames);
+  await page.evaluate(() => {
+    const frame = window.sbsHarness.frames.at(-1);
+    window.sbsHarness.hold = false;
+    window.dispatchEvent(new CustomEvent('tachi-depth', { detail: { ...frame, status: 'frame', nativeMs: 25 } }));
+  });
+  await page.waitForFunction(() => document.querySelector('output')?.textContent === 'frame');
+  assert.equal(await page.evaluate(() => window.sbsHarness.starts.length), heldStarts, 'Late depth must resume without clearing/restarting the session');
   await page.evaluate(() => window.unmountSbs());
   assert.equal(await page.locator('video').count(), 0);
   assert.deepEqual(errors, []);

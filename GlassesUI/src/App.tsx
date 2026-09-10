@@ -2450,8 +2450,8 @@ function PlayerPage({
     off: t('实时 3D 已关闭'), 'needs-stereo': t('请先在手机上切换到 3D 显示'),
     subtitles: t('实时 3D 首版需要关闭字幕'), loading: t('正在准备实时 3D'),
     ready: t('实时 3D 等待视频帧'), frame: t('实时 3D 正在转换'),
-    flat: t('当前画面保持平面显示'),
-    stale: t('深度延迟，暂时显示平面画面'), error: t('实时 3D 不可用，请关闭后重试'),
+    flat: t('等待有效深度，保持上一帧'),
+    stale: t('深度更新延迟，保持上一帧'), error: t('实时 3D 不可用，请关闭后重试'),
   }[realtime.status]
   const subtitleTracks = plan?.subtitleTracks ?? []
   const statusLabel = {

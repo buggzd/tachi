@@ -606,7 +606,12 @@ transforms. Both eyes snapshot the same depth eligibility before drawing. No
 second WebView, HTML video, audio path or reporting lifecycle is introduced;
 only an existing hardware transition may hide the WebView.
 
-Capture-age expiry, source/seek/pause/visibility changes, account generation
+Depth is held between updates without capture-age expiry; a slow reply does not
+reset the session. The two-second frame watchdog reports delay while retaining
+one pending request and the last depth. Visit-local range smoothing and
+appearance-gated small depth smoothing reduce fluctuations, with a heuristic
+photometric cut reset; this is not motion compensation.
+Source/seek/pause/visibility changes, account generation
 changes and renderer loss clear depth. Playback tokens and monotonic sequence
 numbers reject stale results; one outstanding frame and a capacity-one worker
 queue provide backpressure. The QNN session is closed on its worker when the

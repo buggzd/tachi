@@ -249,11 +249,11 @@ final class GlassesWebViewController
             }
 
             @Override
-            public void applyDepth(Bitmap map, DepthFrame frame, long validUntil)
+            public void applyDepth(Bitmap map, DepthFrame frame)
             {
                 if (webContainer != null)
                 {
-                    webContainer.setDepth(map, frame, validUntil);
+                    webContainer.setDepth(map, frame);
                 }
             }
 
@@ -631,13 +631,11 @@ final class GlassesWebViewController
     {
         private boolean stereo;
         private RealtimeEyeEffect depthEffect;
-        private long depthValidUntil;
         private java.util.function.Consumer<String> depthFailure;
         private String depthToken;
 
         void clearDepth()
         {
-            depthValidUntil = 0;
             depthToken = null;
             if (Build.VERSION.SDK_INT >= 33 && depthEffect != null)
             {
@@ -647,7 +645,7 @@ final class GlassesWebViewController
             invalidate();
         }
 
-        void setDepth(Bitmap bitmap, DepthFrame frame, long validUntil)
+        void setDepth(Bitmap bitmap, DepthFrame frame)
         {
             if (Build.VERSION.SDK_INT < 33 || !stereo || getChildCount() == 0)
             {
@@ -660,9 +658,7 @@ final class GlassesWebViewController
             View child = getChildAt(0);
             depthEffect.update(bitmap, frame, child.getWidth(), child.getHeight());
             depthToken = frame.token;
-            depthValidUntil = validUntil;
             invalidate();
-            postInvalidateDelayed(Math.max(1, validUntil - SystemClock.elapsedRealtime() + 1));
         }
 
         private boolean testPattern;
@@ -827,9 +823,9 @@ final class GlassesWebViewController
 
             View child = getChildAt(0);
             long drawingTime = getDrawingTime();
-            // Snapshot depth eligibility once: expiry must never make only one eye flat.
+            // Both eyes use the same held map until replacement or explicit lifecycle cleanup.
             boolean useDepth = Build.VERSION.SDK_INT >= 33 && canvas.isHardwareAccelerated()
-                    && depthEffect != null && depthValidUntil > SystemClock.elapsedRealtime();
+                    && depthEffect != null;
             if (useDepth && Build.VERSION.SDK_INT >= 33)
             {
                 try

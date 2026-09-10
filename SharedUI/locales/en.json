@@ -782,9 +782,9 @@
   "正在准备实时 3D": "Preparing realtime 3D",
   "实时 3D 等待视频帧": "Realtime 3D is waiting for video",
   "实时 3D 正在转换": "Realtime 3D is running",
-  "深度延迟，暂时显示平面画面": "Depth is delayed; showing the flat frame",
+  "深度更新延迟，保持上一帧": "Depth update delayed; holding the last frame",
   "实时 3D 不可用，请关闭后重试": "Realtime 3D unavailable; toggle off and retry",
   "深度计算": "Depth",
   "帧往返": "Frame round trip",
-  "当前画面保持平面显示": "Showing this frame without added depth"
+  "等待有效深度，保持上一帧": "Waiting for valid depth; holding the last frame"
 }

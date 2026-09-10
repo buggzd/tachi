@@ -1,0 +1,73 @@
+{
+  "events": [
+    {
+      "status": "frame",
+      "sequence": 199,
+      "nativeMs": 41,
+      "age": 93
+    },
+    {
+      "status": "frame",
+      "sequence": 200,
+      "nativeMs": 42,
+      "age": 335
+    },
+    {
+      "status": "frame",
+      "sequence": 201,
+      "nativeMs": 42,
+      "age": 337
+    },
+    {
+      "status": "frame",
+      "sequence": 202,
+      "nativeMs": 45,
+      "age": 321
+    },
+    {
+      "status": "frame",
+      "sequence": 203,
+      "nativeMs": 38,
+      "age": 323
+    },
+    {
+      "status": "frame",
+      "sequence": 204,
+      "nativeMs": 42,
+      "age": 320
+    },
+    {
+      "status": "frame",
+      "sequence": 205,
+      "nativeMs": 43,
+      "age": 307
+    },
+    {
+      "status": "frame",
+      "sequence": 206,
+      "nativeMs": 42,
+      "age": 302
+    },
+    {
+      "status": "frame",
+      "sequence": 207,
+      "nativeMs": 31,
+      "age": 289
+    },
+    {
+      "status": "frame",
+      "sequence": 208,
+      "nativeMs": 42,
+      "age": 302
+    },
+    {
+      "status": "frame",
+      "sequence": 209,
+      "nativeMs": 41,
+      "age": 307
+    }
+  ],
+  "videos": 1,
+  "debug": "实时 3D 正在转换深度计算 42.0 ms · 帧往返 302.8 ms",
+  "method": "Temporary 220 ms busy wait before serializing each captured frame; functional fault injection, not performance data."
+}

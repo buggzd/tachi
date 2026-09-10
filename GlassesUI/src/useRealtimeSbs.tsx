@@ -67,7 +67,7 @@ export function useRealtimeSbs(videoRef: RefObject<HTMLVideoElement | null>, sou
     canvas.width = WIDTH; canvas.height = HEIGHT
     const context = canvas.getContext('2d', { willReadFrequently: true })
     if (!context || typeof video.requestVideoFrameCallback !== 'function') { setStatus('error'); return }
-    let disposed = false, busy = false, ready = false, callback = 0, sequence = 0, started = 0, mediaTime = 0
+    let disposed = false, busy = false, ready = false, callback = 0, sequence = 0, started = 0
     let updates = 0, lastPublish = 0
     let watchdog: ReturnType<typeof setTimeout> | undefined
     const stop = () => {
@@ -79,7 +79,7 @@ export function useRealtimeSbs(videoRef: RefObject<HTMLVideoElement | null>, sou
     const fail = () => { failed.current = true; stop(); setStatus('error'); setDepth(null) }
     const schedule = () => {
       if (disposed || callback) return
-      callback = video.requestVideoFrameCallback((_now, metadata) => {
+      callback = video.requestVideoFrameCallback(() => {
         callback = 0
         if (disposed) return
         schedule()
@@ -105,14 +105,14 @@ export function useRealtimeSbs(videoRef: RefObject<HTMLVideoElement | null>, sou
           }
           if (masks.length > 8) { fail(); return }
           const capturedAt = Date.now()
-          started = performance.now(); mediaTime = metadata.mediaTime
+          started = performance.now()
           context.drawImage(video, 0, 0, WIDTH, HEIGHT)
           const rgba = base64(context.getImageData(0, 0, WIDTH, HEIGHT).data)
           busy = true
           const accepted = bridge.submitRealtimeFrame?.(JSON.stringify({ token, sequence: ++sequence,
             capturedAt, rgba, rect, masks, debug: debugRef.current }))
           if (!accepted) { fail(); return }
-          watchdog = setTimeout(fail, 2000)
+          watchdog = setTimeout(() => setStatus('stale'), 2000)
         } catch { fail() }
       })
     }
@@ -125,8 +125,6 @@ export function useRealtimeSbs(videoRef: RefObject<HTMLVideoElement | null>, sou
       if ((message.status !== 'frame' && message.status !== 'stale' && message.status !== 'flat') || message.sequence !== sequence) return
       clearTimeout(watchdog)
       busy = false
-      if (message.status === 'flat' || message.status === 'stale') setDepth(null)
-      if (Math.abs(video.currentTime - mediaTime) > .2) { setEpoch(value => value + 1); return }
       updates++
       if (performance.now() - lastPublish > 500) {
         lastPublish = performance.now()
