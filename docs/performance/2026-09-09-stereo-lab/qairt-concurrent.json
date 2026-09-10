@@ -1,0 +1,183 @@
+{
+  "scope": "concurrent-independent-depth-and-synthetic-depth-compositor",
+  "profile": {
+    "profile": "qnn-profile-QNN_DEPTH_2026-09-10_20-09-48.json",
+    "providers": {
+      "QNNExecutionProvider": 6005
+    },
+    "nodeNames": [
+      "QNNExecutionProvider_QNN_1925928766247373067_0_0_kernel_time"
+    ],
+    "firstExecutionUs": 2439436,
+    "lastExecutionEndUs": 152998743,
+    "executionCount": 6005
+  },
+  "compositor": {
+    "schema": 1,
+    "scope": "compositor-isolation",
+    "startedAt": "2026-09-10T12:10:23.611Z",
+    "browser": "150.0.7871.186",
+    "npuValidated": false,
+    "implementationSha256": {
+      "renderer.js": "63e8f81f0c83c30e7a69ae6add42ed55ed729670015f8a5af285236072598161",
+      "core.js": "d0c1abe2c195f998b83704053e9e56e0fb201d7ed7f2d6e4088ed5fe604d6384",
+      "tests/render-throughput.html": "c93c053041efe29be90c3c2d36f68f645169b38c84eade261fb54f7b8fcbfb01",
+      "verify-compositor.mjs": "09f758b4d8438176a00b674cd5b047f38707bd1840f687b99cdac7e5e9a9131e"
+    },
+    "samples": [
+      {
+        "measurementStartEpochMs": 1789042229607.2,
+        "measurementEndEpochMs": 1789042249612.5,
+        "scope": "android-chrome-compositor-only",
+        "depthSource": "animated-synthetic-96x54",
+        "npuInference": false,
+        "mediaTransport": "fully-loaded-blob",
+        "eyeWidth": 1920,
+        "eyeHeight": 1080,
+        "sourceWidth": 1920,
+        "sourceHeight": 1080,
+        "seconds": 20.005,
+        "frames": 477,
+        "callbackFps": 23.844038990252436,
+        "missedVideoCallbacks": 0,
+        "hiddenFrames": 0,
+        "renderWallMs": {
+          "count": 477,
+          "mean": 1.60041928720764,
+          "p50": 1.2000000001862645,
+          "p95": 4.100000000093132
+        },
+        "callbackIntervalMs": {
+          "count": 476,
+          "mean": 42.02226890756224,
+          "p50": 49,
+          "p95": 68.10000000009313
+        },
+        "syncGpu": true,
+        "gpuTimerSupported": false,
+        "gpuMs": null,
+        "droppedVideoFrames": 0,
+        "totalVideoFrames": 477,
+        "glError": 0,
+        "preserveDrawingBuffer": true,
+        "nonblackSamples": 841752,
+        "sceneDepthPixelEffect": 2216487,
+        "sample": 1,
+        "expectedFps": 23.976023976023978,
+        "passed": true
+      },
+      {
+        "measurementStartEpochMs": 1789042252265,
+        "measurementEndEpochMs": 1789042272270.9,
+        "scope": "android-chrome-compositor-only",
+        "depthSource": "animated-synthetic-96x54",
+        "npuInference": false,
+        "mediaTransport": "fully-loaded-blob",
+        "eyeWidth": 1920,
+        "eyeHeight": 1080,
+        "sourceWidth": 1920,
+        "sourceHeight": 1080,
+        "seconds": 20.005799999999812,
+        "frames": 478,
+        "callbackFps": 23.893071009407493,
+        "missedVideoCallbacks": 0,
+        "hiddenFrames": 0,
+        "renderWallMs": {
+          "count": 478,
+          "mean": 2.196861924690284,
+          "p50": 1.7000000001862645,
+          "p95": 6
+        },
+        "callbackIntervalMs": {
+          "count": 477,
+          "mean": 41.93941299790376,
+          "p50": 48.39999999990687,
+          "p95": 67.39999999990687
+        },
+        "syncGpu": true,
+        "gpuTimerSupported": false,
+        "gpuMs": null,
+        "droppedVideoFrames": 0,
+        "totalVideoFrames": 476,
+        "glError": 0,
+        "preserveDrawingBuffer": true,
+        "nonblackSamples": 838989,
+        "sceneDepthPixelEffect": 5022600,
+        "sample": 2,
+        "expectedFps": 23.976023976023978,
+        "passed": true
+      },
+      {
+        "measurementStartEpochMs": 1789042275125.8,
+        "measurementEndEpochMs": 1789042295129,
+        "scope": "android-chrome-compositor-only",
+        "depthSource": "animated-synthetic-96x54",
+        "npuInference": false,
+        "mediaTransport": "fully-loaded-blob",
+        "eyeWidth": 1920,
+        "eyeHeight": 1080,
+        "sourceWidth": 1920,
+        "sourceHeight": 1080,
+        "seconds": 20.003,
+        "frames": 499,
+        "callbackFps": 24.946258061290806,
+        "missedVideoCallbacks": 0,
+        "hiddenFrames": 0,
+        "renderWallMs": {
+          "count": 499,
+          "mean": 2.2711422845715648,
+          "p50": 1.5,
+          "p95": 6.7999999998137355
+        },
+        "callbackIntervalMs": {
+          "count": 498,
+          "mean": 40.16345381526179,
+          "p50": 47.700000000186265,
+          "p95": 67
+        },
+        "syncGpu": true,
+        "gpuTimerSupported": false,
+        "gpuMs": null,
+        "droppedVideoFrames": 0,
+        "totalVideoFrames": 498,
+        "glError": 0,
+        "preserveDrawingBuffer": true,
+        "nonblackSamples": 841752,
+        "sceneDepthPixelEffect": 8149300,
+        "sample": 3,
+        "expectedFps": 25,
+        "passed": true
+      }
+    ],
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
+    "passed": true
+  },
+  "clockAlignmentUncertaintyMs": 1000,
+  "windows": [
+    {
+      "sample": 1,
+      "qnnEventCountWithinTrimmedWindow": 758,
+      "qnnGraphMeanMs": 22.317858839050132,
+      "qnnGraphP95Ms": 27.269,
+      "maxGraphStartGapMs": 43.370999999999185,
+      "npuRunCoversWindowWithClockMargin": true
+    },
+    {
+      "sample": 2,
+      "qnnEventCountWithinTrimmedWindow": 680,
+      "qnnGraphMeanMs": 24.406767647058825,
+      "qnnGraphP95Ms": 29.658,
+      "maxGraphStartGapMs": 43.762000000002445,
+      "npuRunCoversWindowWithClockMargin": true
+    },
+    {
+      "sample": 3,
+      "qnnEventCountWithinTrimmedWindow": 661,
+      "qnnGraphMeanMs": 25.020720121028745,
+      "qnnGraphP95Ms": 30.652,
+      "maxGraphStartGapMs": 43.31599999999162,
+      "npuRunCoversWindowWithClockMargin": true
+    }
+  ],
+  "passed": true
+}

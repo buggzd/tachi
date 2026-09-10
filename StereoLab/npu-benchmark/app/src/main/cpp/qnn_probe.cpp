@@ -307,12 +307,13 @@ std::string runDirectReluGraph(
 }
 
 std::string runProbe(const std::string& directory, uint32_t socModel) {
-    setenv("ADSP_LIBRARY_PATH", kAdspLibraryPath, 1);
+    const std::string adspPath = directory + ";" + kAdspLibraryPath;
+    setenv("ADSP_LIBRARY_PATH", adspPath.c_str(), 1);
 
     std::ostringstream output;
     output << "directProbe=begin\n";
-    output << "socModel=" << socModel << " signedPdRequested=true\n";
-    output << "adspLibraryPath=" << kAdspLibraryPath << "\n";
+    output << "socModel=" << socModel << " signedPdRequested=false\n";
+    output << "adspLibraryPath=" << adspPath << "\n";
     std::string quantReference;
     const bool quantReferencePass = validateReluQuantizationReference(&quantReference);
     output << quantReference;
@@ -464,7 +465,7 @@ std::string runProbe(const std::string& directory, uint32_t socModel) {
     QnnHtpDevice_CustomConfig_t signedPdConfig{};
     signedPdConfig.option = QNN_HTP_DEVICE_CONFIG_OPTION_SIGNEDPD;
     signedPdConfig.useSignedProcessDomain.deviceId = 0;
-    signedPdConfig.useSignedProcessDomain.useSignedProcessDomain = true;
+    signedPdConfig.useSignedProcessDomain.useSignedProcessDomain = false;
     QnnDevice_Config_t socDeviceConfig{};
     socDeviceConfig.option = QNN_DEVICE_CONFIG_OPTION_CUSTOM;
     socDeviceConfig.customConfig = &socConfig;

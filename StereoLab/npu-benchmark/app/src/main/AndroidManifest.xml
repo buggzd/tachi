@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <application
         android:label="tachi NPU benchmark"
         android:icon="@drawable/ic_launcher"
@@ -23,6 +25,10 @@
         <uses-native-library android:name="libdmabufheap.so" android:required="false" />
         <uses-native-library android:name="libvmmem.so" android:required="false" />
         <uses-native-library android:name="libcutils.so" android:required="false" />
+        <service
+            android:name=".BenchmarkKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

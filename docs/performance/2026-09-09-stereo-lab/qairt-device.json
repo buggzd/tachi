@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "date": "2026-09-10",
+  "scope": "isolated-depth-inference-not-player",
+  "sdk": "2.50.40.260831",
+  "qnnApi": "2.39.0",
+  "ort": "1.22.0",
+  "cpuFallbackDisabled": true,
+  "inputShape": [
+    1,
+    3,
+    154,
+    266
+  ],
+  "modelSha256": "7cbe36d72ec5931c362e759274cdbbd0757dd1ddfb6b6c5fb37e918b006db19d",
+  "runs": {
+    "qairt-depth-i8": [
+      "QNN_DEPTHSessionInitMs=2492.076",
+      "depthOutputInputIndex=10 height=154 width=266 range=1.8405912",
+      "QNN_DEPTHWarmupRuns=5 QNN_DEPTHMeasuredRuns=30 QNN_DEPTHRunMsMean=23.469 QNN_DEPTHRunMsP50=23.482 QNN_DEPTHRunMsP95=25.869 QNN_DEPTHChecksum=11775.953533",
+      "QNN_DEPTH_TENSOR_AND_RUNWarmupRuns=5 QNN_DEPTH_TENSOR_AND_RUNMeasuredRuns=30 QNN_DEPTH_TENSOR_AND_RUNRunMsMean=23.738 QNN_DEPTH_TENSOR_AND_RUNRunMsP50=23.674 QNN_DEPTH_TENSOR_AND_RUNRunMsP95=26.056 QNN_DEPTH_TENSOR_AND_RUNChecksum=11775.953533",
+      "benchmarkMarker=PASS stage=depth"
+    ],
+    "qairt-depth-sustained": [
+      "QNN_DEPTHSessionInitMs=2468.791",
+      "depthOutputInputIndex=4 height=154 width=266 range=1.1300014",
+      "QNN_DEPTHWarmupRuns=5 QNN_DEPTHMeasuredRuns=3000 QNN_DEPTHRunMsMean=22.678 QNN_DEPTHRunMsP50=23.165 QNN_DEPTHRunMsP95=23.841 QNN_DEPTHChecksum=955238.578835",
+      "QNN_DEPTH_TENSOR_AND_RUNWarmupRuns=5 QNN_DEPTH_TENSOR_AND_RUNMeasuredRuns=3000 QNN_DEPTH_TENSOR_AND_RUNRunMsMean=22.960 QNN_DEPTH_TENSOR_AND_RUNRunMsP50=23.472 QNN_DEPTH_TENSOR_AND_RUNRunMsP95=24.213 QNN_DEPTH_TENSOR_AND_RUNChecksum=955238.578835",
+      "benchmarkMarker=PASS stage=depth"
+    ],
+    "qairt-depth-concurrent-service": [
+      "QNN_DEPTHSessionInitMs=2438.911",
+      "depthOutputInputIndex=4 height=154 width=266 range=1.1300014",
+      "QNN_DEPTHWarmupRuns=5 QNN_DEPTHMeasuredRuns=6000 QNN_DEPTHRunMsMean=24.695 QNN_DEPTHRunMsP50=24.189 QNN_DEPTHRunMsP95=29.413 QNN_DEPTHChecksum=1908856.190954",
+      "QNN_DEPTH_TENSOR_AND_RUNWarmupRuns=5 QNN_DEPTH_TENSOR_AND_RUNMeasuredRuns=6000 QNN_DEPTH_TENSOR_AND_RUNRunMsMean=25.046 QNN_DEPTH_TENSOR_AND_RUNRunMsP50=24.528 QNN_DEPTH_TENSOR_AND_RUNRunMsP95=30.032 QNN_DEPTH_TENSOR_AND_RUNChecksum=1908856.190954",
+      "benchmarkMarker=PASS stage=depth"
+    ]
+  },
+  "initialProfile": {
+    "providers": {
+      "QNNExecutionProvider": 35
+    },
+    "sha256": "b8da203211c6f6511f0422c8d5d7fed917aab1027968f8ea4b4f1e1d2bb8b4d4"
+  },
+  "singleFrameComparison": {
+    "qnn-266-u16a-i8w": {
+      "rawMaeMean": 0.08956463634967804,
+      "rawRmseMean": 0.09089825302362442,
+      "rawPearsonMean": 0.999798461269429,
+      "rawSpearmanMean": 0.9998495826985141,
+      "normalizedMaeMean": 0.006784306839108467,
+      "normalizedRmseMean": 0.008266233839094639,
+      "normalizedPearsonMean": 0.999802213246573,
+      "normalizedSpearmanMean": 0.9998236984210528,
+      "orderingAgreementMean": 0.9951019287109375
+    },
+    "fixed-266": {
+      "rawMaeMean": 0.041500288993120193,
+      "rawRmseMean": 0.049817636609077454,
+      "rawPearsonMean": 0.9857389621001827,
+      "rawSpearmanMean": 0.9861285525363264,
+      "normalizedMaeMean": 0.04239659383893013,
+      "normalizedRmseMean": 0.0539495013654232,
+      "normalizedPearsonMean": 0.9854254434087968,
+      "normalizedSpearmanMean": 0.9859293805924497,
+      "orderingAgreementMean": 0.9489631652832031
+    }
+  },
+  "concurrency": {
+    "status": "passed-compute-contention-only",
+    "evidence": "qairt-concurrent.json",
+    "foregroundServiceVerified": true,
+    "foregroundServiceStoppedAfterCompletion": true
+  },
+  "sustainedProfile": {
+    "profile": "qnn-profile-QNN_DEPTH_2026-09-10_19-54-15.json",
+    "providers": {
+      "QNNExecutionProvider": 3005
+    },
+    "nodeNames": [
+      "QNNExecutionProvider_QNN_1925928766247373067_0_0_kernel_time"
+    ],
+    "firstExecutionUs": 2469537,
+    "lastExecutionEndUs": 71504615,
+    "executionCount": 3005,
+    "sha256": "f0d65bcb90bd6ba33a26f2d97f2a87674f1c23e9f9a05b68d91dde70c99b44c1"
+  }
+}

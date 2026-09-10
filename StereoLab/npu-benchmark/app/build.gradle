@@ -3,12 +3,18 @@ plugins {
 }
 
 def npuRoot = file("../../.local/npu")
-def modelFile = file("${npuRoot}/depth-anything-v2-small-qnn-266-u8a-i8w.onnx")
+def modelFile = file("${npuRoot}/depth-anything-v2-small-qnn-266-u16a-i8w.onnx")
 def smokeModelFile = file("${npuRoot}/qnn-smoke-qdq-conv-relu.onnx")
 def ioSmokeModelFile = file("${npuRoot}/qnn-smoke-qdq-conv-relu-io.onnx")
 def reluSmokeModelFile = file("${npuRoot}/qnn-smoke-relu.onnx")
 def calibrationDir = file("${npuRoot}/calib")
 def generatedAssets = file("${buildDir}/generated/benchmarkAssets")
+def qairtHeaders = file("${npuRoot}/qairt-sdk/include")
+def qairtRuntime = file("${npuRoot}/qairt-runtime")
+if (file("${qairtRuntime}/arm64-v8a/libQnnHtp.so").isFile()
+        && !file("${qairtHeaders}/QNN/QnnInterface.h").isFile()) {
+    throw new GradleException("Packaged QAIRT requires its matching local SDK headers")
+}
 
 android {
     namespace "com.tachi.stereolab.npubenchmark"
@@ -26,6 +32,9 @@ android {
             cmake {
                 cppFlags "-std=c++17"
                 abiFilters "arm64-v8a"
+                if (file("${qairtHeaders}/QNN/QnnInterface.h").isFile()) {
+                    arguments "-DQNN_INCLUDE_ROOT=${qairtHeaders}"
+                }
             }
         }
     }
@@ -52,7 +61,7 @@ android {
     }
 }
 
-tasks.register("prepareBenchmarkAssets", Copy) {
+tasks.register("prepareBenchmarkAssets", Sync) {
     if (!modelFile.isFile()) {
         throw new GradleException("Missing local QNN model: ${modelFile}")
     }
@@ -60,7 +69,7 @@ tasks.register("prepareBenchmarkAssets", Copy) {
         throw new GradleException("Missing local calibration directory: ${calibrationDir}")
     }
     from(modelFile) {
-        rename { "depth-anything-v2-small-qnn-266-u8a-i8w.onnx" }
+        rename { "depth-anything-v2-small-qnn-266-u16a-i8w.onnx" }
         into("models")
     }
     if (!smokeModelFile.isFile()) {
@@ -92,6 +101,7 @@ tasks.register("prepareBenchmarkAssets", Copy) {
 }
 
 android.sourceSets.main.assets.srcDir(generatedAssets)
+android.sourceSets.main.jniLibs.srcDir(qairtRuntime)
 tasks.named("preBuild").configure {
     dependsOn("prepareBenchmarkAssets")
 }

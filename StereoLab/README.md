@@ -2,8 +2,9 @@
 
 独立、只在本机运行的可行性验证页。一个 HTML `<video>` 解码视频，
 Depth Anything V2 Small 在浏览器 WebGPU 中实时估计深度，WebGL 2 输出左右眼。
-不使用预计算深度，也不调用云端推理。此实验尚未接入 Android APK、原生 NPU、
-Jellyfin 的正式播放/上报链路或眼镜 USB 控制。
+主实验不使用预计算深度，也不调用云端推理。网页尚未接入正式 Android 播放器、
+Jellyfin 的正式播放/上报链路或眼镜 USB 控制。独立 Android benchmark 已验证
+NPU 深度与 SBS 合成的并发算力，但尚未将二者连接为真实视频数据管线。
 
 首轮结果与证据边界见 [2026-09-09 桌面验证](../docs/performance/2026-09-09-stereo-lab/README.md)。
 
@@ -111,7 +112,8 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 - `temporalDepthInnovation`：运动对齐后新深度与历史预测的平均差异；没有真值，不能解释为深度准确率。
 
 测量在桌面浏览器中进行，同时开启了用于证据抓取的 `preserveDrawingBuffer`。
-手机 NPU 性能、Android WebView 的视频纹理传递、音画对齐和长期温升都需要后续独立验收。
+手机 NPU 的独立与并发算力结果见下节；Android WebView 的视频纹理传递、
+音画对齐和长期温升仍需后续验收。
 共享模型读回派生运动缩略图的前后数据，以及 QPM 的真实登录门槛见
 [2026-09-10 实验记录](../docs/performance/2026-09-10-stereo-lab/frame-capture-and-qpm.md)。
 
@@ -122,14 +124,14 @@ macOS 测试使用 ANGLE Metal；WebGPU 使用浏览器实验启用标志，因�
 平均 Spearman 约 0.988、同位置排序一致率约 96.6%；U8 激活候选约 0.263 和 59.9%，
 不再使用。量化模型只用于本地实验，不进入正式 APK。
 
-独立 benchmark 的源代码在 `StereoLab/npu-benchmark/`。本轮已冻结深度模型和量化配置，
-只运行一个 Direct QNN U8 Relu 最小图，依次检查 backend/device/context/graph 创建、
-图终结、执行和参考输出。当前手机实测在 `graphCreate` 失败：HTP Prepare loader
-找不到应用可读的 `libQnnHtpPrepare.so`，所以没有执行到 `graphFinalize`、
-`graphExecute` 或输出比较；这不是 NPU 性能结论。运行库来源、版本、路径和分阶段证据见
-[HTP 运行库兼容清单](../docs/performance/2026-09-09-stereo-lab/htp-runtime-compatibility.md)。
-在获得与 V81 固件匹配且可部署的官方 QAIRT/QNN 运行库前，不继续重建 APK 或恢复真实
-深度模型测试。
+独立 benchmark 的源代码在 `StereoLab/npu-benchmark/`。官方 QAIRT 2.50.40
+配套运行库和 QNN 2.39 头文件已在 SM8850/V81 上通过 Direct QNN 建图、执行和
+参考输出校验；ORT 1.22 的严格 QNN smoke 也通过。U16/U8 的逐通道卷积权重
+被 QNN 拒绝，实机改用 U16/I8 候选。深度模型的执行分区已确认只有 QNN，
+测量边界与后续结果见 [官方 QAIRT 实机验证](../docs/performance/2026-09-09-stereo-lab/qairt-device.md)。
+旧的 vendor-copy 失败记录保留于
+[HTP 运行库兼容清单](../docs/performance/2026-09-09-stereo-lab/htp-runtime-compatibility.md)，
+不再代表当前部署状态。
 
 ## 模型与依赖
 

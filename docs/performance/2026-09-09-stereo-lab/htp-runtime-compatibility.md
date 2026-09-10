@@ -1,5 +1,10 @@
 # HTP V81 runtime compatibility inventory
 
+> Historical vendor-copy investigation. Superseded for current deployment by
+> [official QAIRT device validation](qairt-device.md): the complete SDK was
+> acquired and Direct QNN plus strict ORT execution now pass.
+
+
 This inventory freezes the depth model and quantization work. It records the
 runtime chain used by the Direct QNN probe on the Xiaomi `2509FPN0BC` device
 (Android 16, board `canoe`, `soc_model=660`). “Exists”, “app-readable”,

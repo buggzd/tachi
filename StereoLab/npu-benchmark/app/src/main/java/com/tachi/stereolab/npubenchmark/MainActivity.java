@@ -37,7 +37,7 @@ import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity {
     private static final String TAG = "TachiNpuBenchmark";
-    private static final String MODEL_ASSET = "models/depth-anything-v2-small-qnn-266-u8a-i8w.onnx";
+    private static final String MODEL_ASSET = "models/depth-anything-v2-small-qnn-266-u16a-i8w.onnx";
     private static final String SMOKE_MODEL_ASSET = "models/qnn-smoke-qdq-conv-relu.onnx";
     private static final String IO_SMOKE_MODEL_ASSET = "models/qnn-smoke-qdq-conv-relu-io.onnx";
     private static final String RELU_SMOKE_MODEL_ASSET = "models/qnn-smoke-relu.onnx";
@@ -46,7 +46,6 @@ public final class MainActivity extends Activity {
     private static final int SMOKE_WIDTH = 8;
     private static final int SMOKE_HEIGHT = 8;
     private static final int WARMUP_RUNS = 5;
-    private static final int MEASURED_RUNS = 30;
     private static final String QNN_VENDOR_DIRECTORY = "/vendor/lib64";
     private static final String[] QNN_VENDOR_LIBRARIES = {
             "libQnnSystem.so",
@@ -61,6 +60,8 @@ public final class MainActivity extends Activity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private TextView output;
     private String socModelOverride;
+    private String benchmarkStage = "direct";
+    private int measuredRuns = 30;
 
     static {
         System.loadLibrary("tachi_qnn_probe");
@@ -72,7 +73,16 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         Intent launchIntent = getIntent();
+        if (launchIntent != null)
+        {
+            measuredRuns = Math.max(30, Math.min(12000, launchIntent.getIntExtra("measured_runs", 30)));
+        }
         socModelOverride = launchIntent == null ? null : launchIntent.getStringExtra("soc_model");
+        String stage = launchIntent == null ? null : launchIntent.getStringExtra("benchmark_stage");
+        if ("smoke".equals(stage) || "depth".equals(stage))
+        {
+            benchmarkStage = stage;
+        }
         output = new TextView(this);
         output.setTextSize(12);
         output.setPadding(24, 24, 24, 24);
@@ -80,7 +90,19 @@ public final class MainActivity extends Activity {
         scroll.addView(output);
         setContentView(scroll);
         append("Starting QNN HTP benchmark; CPU fallback is disabled.\n");
-        executor.execute(this::runBenchmark);
+        Intent keepAlive = new Intent(this, BenchmarkKeepAliveService.class);
+        startForegroundService(keepAlive);
+        executor.execute(() ->
+        {
+            try
+            {
+                runBenchmark();
+            }
+            finally
+            {
+                stopService(keepAlive);
+            }
+        });
     }
 
     @Override
@@ -96,7 +118,7 @@ public final class MainActivity extends Activity {
 
     private void runBenchmark() {
         try {
-            append("DIRECT_PROBE_ONLY=true\n");
+            append("benchmarkStage=" + benchmarkStage + "\n");
             append(deviceSummary());
             configureAdspLibraryPath();
             File qnnBackend = prepareQnnBackend();
@@ -104,9 +126,35 @@ public final class MainActivity extends Activity {
             try {
                 String socModel = socModelOverride == null || socModelOverride.isEmpty()
                         ? "660" : socModelOverride;
-                append(nativeProbeQnn(qnnBackend.getParent(), Integer.parseInt(socModel)));
+                String directResult = nativeProbeQnn(qnnBackend.getParent(), Integer.parseInt(socModel));
+                append(directResult);
+                if (!directResult.contains("directProbeMarker=PASS") || "direct".equals(benchmarkStage))
+                {
+                    append("DIRECT_PROBE_COMPLETE=true\n");
+                    return;
+                }
+                OrtEnvironment environment = OrtEnvironment.getEnvironment();
+                if ("smoke".equals(benchmarkStage))
+                {
+                    runSession(environment, assetBytes(IO_SMOKE_MODEL_ASSET),
+                            Collections.singletonList(smokeInput()), true, "QNN_SMOKE", qnnBackend,
+                            SMOKE_WIDTH, SMOKE_HEIGHT, OnnxJavaType.UINT8);
+                }
+                else
+                {
+                    byte[] model = assetBytes(MODEL_ASSET);
+                    byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(model);
+                    StringBuilder hex = new StringBuilder();
+                    for (byte value : digest)
+                    {
+                        hex.append(String.format(Locale.US, "%02x", value & 0xff));
+                    }
+                    append("depthModelSha256=" + hex + "\n");
+                    runSession(environment, model, loadCalibrationInputs(), true, "QNN_DEPTH", qnnBackend);
+                }
+                append("benchmarkMarker=PASS stage=" + benchmarkStage + "\n");
             } catch (Throwable error) {
-                append("directProbeMarker=FAIL stage=jni\n");
+                append("benchmarkMarker=FAIL stage=" + benchmarkStage + "\n");
                 append("DIRECT_QNN_PROBE_FAILED=" + error + "\n");
                 Log.e(TAG, "Direct QNN probe failed", error);
             }
@@ -177,25 +225,71 @@ public final class MainActivity extends Activity {
 
                 String inputName = session.getInputNames().iterator().next();
                 List<Double> timings = new ArrayList<>();
+                List<Double> transferAndRunTimings = new ArrayList<>();
                 double checksum = 0.0;
-                for (int index = 0; index < WARMUP_RUNS + MEASURED_RUNS; index++) {
+                for (int index = 0; index < WARMUP_RUNS + measuredRuns; index++) {
                     float[] input = inputs.get(index % inputs.size());
+                    long transferStart = SystemClock.elapsedRealtimeNanos();
                     try (OnnxTensor tensor = createInputTensor(
                             environment, input, new long[]{1, 3, height, width}, inputType)) {
                         long start = SystemClock.elapsedRealtimeNanos();
                         try (OrtSession.Result result = session.run(
                                 Collections.singletonMap(inputName, tensor))) {
                             Object value = result.get(0).getValue();
-                            checksum += sampleChecksum(value);
+                            double sample = sampleChecksum(value);
+                            if (!Double.isFinite(sample))
+                            {
+                                throw new IllegalStateException("Nonfinite model output");
+                            }
+                            checksum += sample;
                             double elapsed = elapsedMs(start);
                             if (index >= WARMUP_RUNS) {
                                 timings.add(elapsed);
+                                transferAndRunTimings.add(elapsedMs(transferStart));
+                            }
+                            if (index == WARMUP_RUNS + measuredRuns - 1 && "QNN_DEPTH".equals(label))
+                            {
+                                try (java.io.DataOutputStream inputOutput = new java.io.DataOutputStream(
+                                        new FileOutputStream(new File(getFilesDir(), "depth-input-f32be.bin"))))
+                                {
+                                    for (float pixel : input)
+                                    {
+                                        inputOutput.writeFloat(pixel);
+                                    }
+                                }
+                                float[][] depth = ((float[][][]) value)[0];
+                                float lo = Float.POSITIVE_INFINITY, hi = Float.NEGATIVE_INFINITY;
+                                try (java.io.DataOutputStream output = new java.io.DataOutputStream(
+                                        new FileOutputStream(new File(getFilesDir(), "depth-output-f32be.bin"))))
+                                {
+                                    for (float[] row : depth)
+                                    {
+                                        for (float pixel : row)
+                                        {
+                                            if (!Float.isFinite(pixel))
+                                            {
+                                                throw new IllegalStateException("Nonfinite depth");
+                                            }
+                                            lo = Math.min(lo, pixel);
+                                            hi = Math.max(hi, pixel);
+                                            output.writeFloat(pixel);
+                                        }
+                                    }
+                                }
+                                if (hi - lo <= 0.00001f)
+                                {
+                                    throw new IllegalStateException("Constant depth output");
+                                }
+                                append("depthOutputInputIndex=" + (index % inputs.size())
+                                        + " height=" + depth.length + " width=" + depth[0].length
+                                        + " range=" + (hi - lo) + "\n");
                             }
                         }
                     }
                 }
                 String endedProfile = session.endProfiling();
                 printTiming(label, timings, checksum, endedProfile, strict);
+                printTiming(label + "_TENSOR_AND_RUN", transferAndRunTimings, checksum, endedProfile, strict);
             }
         }
     }
@@ -209,6 +303,13 @@ public final class MainActivity extends Activity {
      * Jellyfin APK never copies or loads vendor libraries.
      */
     private File prepareQnnBackend() throws IOException {
+        File packaged = new File(getApplicationInfo().nativeLibraryDir, "libQnnHtp.so");
+        if (packaged.isFile())
+        {
+            append("qnnRuntimeSource=packaged-qairt\n");
+            return packaged;
+        }
+        append("qnnRuntimeSource=legacy-vendor-probe\n");
         File directory = new File(getFilesDir(), "qnn-libs");
         if (!directory.isDirectory() && !directory.mkdirs()) {
             throw new IOException("cannot create " + directory);
@@ -230,7 +331,7 @@ public final class MainActivity extends Activity {
     }
 
     private void configureAdspLibraryPath() {
-        String path = "/vendor/lib/rfsa/adsp;/vendor/dsp/cdsp;/vendor/dsp/adsp"
+        String path = getApplicationInfo().nativeLibraryDir + ";/vendor/lib/rfsa/adsp;/vendor/dsp/cdsp;/vendor/dsp/adsp"
                 + ";/system/lib/rfsa/adsp;/dsp";
         try {
             Os.setenv("ADSP_LIBRARY_PATH", path, true);

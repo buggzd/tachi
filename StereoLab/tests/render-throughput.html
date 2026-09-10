@@ -45,7 +45,9 @@ window.runRenderBenchmark = async ({ sample, width, seconds, syncGpu = false }) 
                 video.pause();
                 renderer.gl.finish();
                 const elapsed = performance.now() - started, quality = video.getVideoPlaybackQuality();
-                resolve({ scope: 'android-chrome-compositor-only', depthSource: 'animated-synthetic-96x54',
+                resolve({ measurementStartEpochMs: performance.timeOrigin + started,
+                    measurementEndEpochMs: performance.timeOrigin + performance.now(),
+                    scope: 'android-chrome-compositor-only', depthSource: 'animated-synthetic-96x54',
                     npuInference: false, mediaTransport: 'fully-loaded-blob', eyeWidth: width, eyeHeight: width * 9 / 16,
                     sourceWidth: video.videoWidth, sourceHeight: video.videoHeight, seconds: elapsed / 1000,
                     frames, callbackFps: frames / elapsed * 1000, missedVideoCallbacks: missed, hiddenFrames,
