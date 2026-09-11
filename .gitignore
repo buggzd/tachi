@@ -11,6 +11,8 @@ local.properties
 .externalNativeBuild/
 .cxx/
 /AndroidApp/app/build/
+/AndroidApp/native-video/build/
+/AndroidApp/native-player-lab/build/
 /AndroidApp/build/
 /AndroidApp/app/release/
 

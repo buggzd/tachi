@@ -41,6 +41,15 @@ re-encoded without the original metadata.
 The license text is bundled in `CompanionUI/public/licenses/Apache-2.0.txt`.
 AndroidX annotations and the other transitive dependencies retain their original licenses.
 
+## Native playback laboratory
+
+The separate native playback laboratory uses AndroidX Media3 ExoPlayer and its
+HLS module, version 1.5.1, under the Apache License 2.0. These modules are not yet
+dependencies of the shipping application.
+
+- Source and license: <https://github.com/androidx/media/tree/1.5.1>
+- Apache License: <https://www.apache.org/licenses/LICENSE-2.0>
+
 ## Jellyfin
 
 Jellyfin names and trademarks belong to their respective owners. This

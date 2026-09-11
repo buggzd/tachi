@@ -10,6 +10,15 @@ storage keys, device IDs and WebView bridge identifiers (including
 `LucentNative` and `LumaNative`) retain their original spelling for compatibility;
 these are internal identifiers, not product branding.
 
+## Approved native playback migration
+
+The user approved moving playback, decoding, clocks and rendering out of HTML video
+on 2026-09-11. The topology below still describes the current shipping app. The new
+`native-video` library and separate `native-player-lab` APK establish an isolated
+Media3/MediaCodec/SurfaceTexture/GLES route; they are not yet wired into `:app`.
+The target retains WebView for catalog and controls and exactly one native player.
+See [native migration, implemented scope and acceptance gates](NATIVE_VIDEO.md).
+
 ## Runtime topology
 
 ```text

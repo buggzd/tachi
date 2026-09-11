@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "tachi"
 include(":app")
+
+include(":native-video", ":native-player-lab")

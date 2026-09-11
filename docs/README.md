@@ -13,6 +13,7 @@
 | 会话、桥接、显示状态、播放约束和设备回归矩阵 | [Android 架构](ANDROID_ARCHITECTURE.md) |
 | 主题、壁纸、焦点反馈、教学、时钟和音效 | [界面与交互](UI_GUIDE.md) |
 | SBS 视差、坐标单位、USB 控制和光学边界 | [虚拟银幕几何](SBS_GEOMETRY.md) |
+| 原生播放迁移与独立解码调试入口 | [原生视频](NATIVE_VIDEO.md) |
 | 已采用的性能措施、采样方法和证据范围 | [性能维护](PERFORMANCE.md) |
 | 已实现范围、待开发功能和待复核问题 | [功能路线图](JELLYFIN_FEATURE_ROADMAP.md) |
 | 实时 3D 开发构建与统一实机调试 | [实时 SBS](REALTIME_SBS.md) |
