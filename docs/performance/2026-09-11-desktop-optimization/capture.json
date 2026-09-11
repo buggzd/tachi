@@ -1,0 +1,242 @@
+{
+  "browser": "152.0.7977.83",
+  "results": [
+    {
+      "mode": "cpu2d",
+      "clip": 0,
+      "seconds": 8.00139999961853,
+      "completedFps": 23.870822607181996,
+      "stageCpuMs": {
+        "n": 191,
+        "mean": 9.116230385465771,
+        "p95": 12.40000057220459
+      },
+      "captureReadbackAgeMs": {
+        "n": 191,
+        "mean": 9.118324624306245,
+        "p95": 12.5
+      },
+      "busyDrops": 0,
+      "maxPending": 0,
+      "pboBytes": 0,
+      "videoFrames": 216,
+      "videoDropped": 0,
+      "renderer": null,
+      "errors": 0,
+      "validation": null,
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "webgl_sync",
+      "clip": 0,
+      "seconds": 8.002199999809266,
+      "completedFps": 23.9934018150729,
+      "stageCpuMs": {
+        "n": 192,
+        "mean": 3.304687485098839,
+        "p95": 4.199999809265137
+      },
+      "captureReadbackAgeMs": {
+        "n": 192,
+        "mean": 3.3057291557391486,
+        "p95": 4.199999809265137
+      },
+      "busyDrops": 0,
+      "maxPending": 0,
+      "pboBytes": 0,
+      "videoFrames": 215,
+      "videoDropped": 0,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "errors": 0,
+      "validation": {
+        "rgbaMAE": 0.010063714481007714
+      },
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "pbo",
+      "clip": 0,
+      "seconds": 8.001199999809264,
+      "completedFps": 23.99640054049105,
+      "stageCpuMs": {
+        "n": 192,
+        "mean": 0.7755207965771357,
+        "p95": 1.1000003814697266
+      },
+      "captureReadbackAgeMs": {
+        "n": 192,
+        "mean": 17.052083283662796,
+        "p95": 17.899999618530273
+      },
+      "busyDrops": 0,
+      "maxPending": 2,
+      "pboBytes": 327712,
+      "videoFrames": 215,
+      "videoDropped": 0,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "errors": 0,
+      "validation": {
+        "rgbaMAE": 0.010063714481007714
+      },
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "pbo",
+      "clip": 1,
+      "seconds": 8.0005,
+      "completedFps": 23.87350790575589,
+      "stageCpuMs": {
+        "n": 191,
+        "mean": 0.7628271492363895,
+        "p95": 1.1999998092651367
+      },
+      "captureReadbackAgeMs": {
+        "n": 191,
+        "mean": 17.03612564745998,
+        "p95": 17.90000057220459
+      },
+      "busyDrops": 0,
+      "maxPending": 1,
+      "pboBytes": 327712,
+      "videoFrames": 215,
+      "videoDropped": 0,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "errors": 0,
+      "validation": {
+        "rgbaMAE": 0.02193389317449468
+      },
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "webgl_sync",
+      "clip": 1,
+      "seconds": 8.00360000038147,
+      "completedFps": 24.114148631965765,
+      "stageCpuMs": {
+        "n": 193,
+        "mean": 3.294818631107943,
+        "p95": 4.300000190734863
+      },
+      "captureReadbackAgeMs": {
+        "n": 193,
+        "mean": 3.298963704875096,
+        "p95": 4.300000190734863
+      },
+      "busyDrops": 0,
+      "maxPending": 0,
+      "pboBytes": 0,
+      "videoFrames": 215,
+      "videoDropped": 0,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "errors": 0,
+      "validation": {
+        "rgbaMAE": 0.02193389317449468
+      },
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "cpu2d",
+      "clip": 1,
+      "seconds": 8.002400000572205,
+      "completedFps": 23.992802157636607,
+      "stageCpuMs": {
+        "n": 192,
+        "mean": 8.840104177594185,
+        "p95": 12.800000190734863
+      },
+      "captureReadbackAgeMs": {
+        "n": 192,
+        "mean": 8.842187513907751,
+        "p95": 12.800000190734863
+      },
+      "busyDrops": 0,
+      "maxPending": 0,
+      "pboBytes": 0,
+      "videoFrames": 216,
+      "videoDropped": 0,
+      "renderer": null,
+      "errors": 0,
+      "validation": null,
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "cpu2d",
+      "clip": 2,
+      "seconds": 8.001300000190735,
+      "completedFps": 24.87095846865587,
+      "stageCpuMs": {
+        "n": 199,
+        "mean": 7.834673363958771,
+        "p95": 10.800000190734863
+      },
+      "captureReadbackAgeMs": {
+        "n": 199,
+        "mean": 7.834673363958771,
+        "p95": 10.800000190734863
+      },
+      "busyDrops": 0,
+      "maxPending": 0,
+      "pboBytes": 0,
+      "videoFrames": 225,
+      "videoDropped": 0,
+      "renderer": null,
+      "errors": 0,
+      "validation": null,
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "webgl_sync",
+      "clip": 2,
+      "seconds": 8.001300000190735,
+      "completedFps": 24.99593815945314,
+      "stageCpuMs": {
+        "n": 200,
+        "mean": 2.5654999923706057,
+        "p95": 3.6999998092651367
+      },
+      "captureReadbackAgeMs": {
+        "n": 200,
+        "mean": 2.567499990463257,
+        "p95": 3.6999998092651367
+      },
+      "busyDrops": 0,
+      "maxPending": 0,
+      "pboBytes": 0,
+      "videoFrames": 224,
+      "videoDropped": 0,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "errors": 0,
+      "validation": {
+        "rgbaMAE": 0.018449126061908017
+      },
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    },
+    {
+      "mode": "pbo",
+      "clip": 2,
+      "seconds": 8.001400000572204,
+      "completedFps": 24.99562576370353,
+      "stageCpuMs": {
+        "n": 200,
+        "mean": 0.6510000038146972,
+        "p95": 1
+      },
+      "captureReadbackAgeMs": {
+        "n": 200,
+        "mean": 17.073499965667725,
+        "p95": 17.90000057220459
+      },
+      "busyDrops": 0,
+      "maxPending": 1,
+      "pboBytes": 327712,
+      "videoFrames": 224,
+      "videoDropped": 0,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "errors": 0,
+      "validation": {
+        "rgbaMAE": 0.018449126061908017
+      },
+      "limits": "Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup."
+    }
+  ]
+}

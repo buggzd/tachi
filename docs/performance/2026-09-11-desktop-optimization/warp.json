@@ -1,0 +1,160 @@
+{
+  "browser": "152.0.7977.83",
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+  "results": [
+    {
+      "scene": "smooth",
+      "variant": "gather33",
+      "gpuMs": {
+        "n": 12,
+        "mean": 2.4431974999999997,
+        "p95": 5.480875
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.008333365122477213,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 0,
+      "changedPixelFraction": 0,
+      "protectedError": 0
+    },
+    {
+      "scene": "smooth",
+      "variant": "inverse2",
+      "gpuMs": {
+        "n": 12,
+        "mean": 0.8167773333333334,
+        "p95": 1.362624
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.008333365122477213,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 1.7979287229938272,
+      "changedPixelFraction": 0.03906105324074074,
+      "protectedError": 0
+    },
+    {
+      "scene": "smooth",
+      "variant": "hybrid4",
+      "gpuMs": {
+        "n": 12,
+        "mean": 0.7346560000000001,
+        "p95": 1.318749
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.033333381017049156,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 1.755928337191358,
+      "changedPixelFraction": 0.03832320601851852,
+      "protectedError": 0
+    },
+    {
+      "scene": "occlusion",
+      "variant": "gather33",
+      "gpuMs": {
+        "n": 12,
+        "mean": 3.712037666666667,
+        "p95": 6.455041
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.016666650772094727,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 0,
+      "changedPixelFraction": 0,
+      "protectedError": 0
+    },
+    {
+      "scene": "occlusion",
+      "variant": "inverse2",
+      "gpuMs": {
+        "n": 12,
+        "mean": 0.45339199999999996,
+        "p95": 1.041792
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.008333365122477213,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 3.5795230516975307,
+      "changedPixelFraction": 0.058576388888888886,
+      "protectedError": 0
+    },
+    {
+      "scene": "occlusion",
+      "variant": "hybrid4",
+      "gpuMs": {
+        "n": 12,
+        "mean": 0.9615445833333333,
+        "p95": 1.346458
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0,
+        "p95": 0
+      },
+      "rgbMAE": 2.9480078125,
+      "changedPixelFraction": 0.04529513888888889,
+      "protectedError": 0
+    },
+    {
+      "scene": "thin-line",
+      "variant": "gather33",
+      "gpuMs": {
+        "n": 12,
+        "mean": 2.5360100833333337,
+        "p95": 4.545792
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.008333365122477213,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 0,
+      "changedPixelFraction": 0,
+      "protectedError": 0
+    },
+    {
+      "scene": "thin-line",
+      "variant": "inverse2",
+      "gpuMs": {
+        "n": 12,
+        "mean": 0.6445895833333333,
+        "p95": 0.802124
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.016666730244954426,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 9.948353105709877,
+      "changedPixelFraction": 0.22662471064814815,
+      "protectedError": 0
+    },
+    {
+      "scene": "thin-line",
+      "variant": "hybrid4",
+      "gpuMs": {
+        "n": 12,
+        "mean": 2.4267149999999997,
+        "p95": 4.643
+      },
+      "drawAndFinishMs": {
+        "n": 12,
+        "mean": 0.03333322207132975,
+        "p95": 0.10000038146972656
+      },
+      "rgbMAE": 0,
+      "changedPixelFraction": 0,
+      "protectedError": 0
+    }
+  ],
+  "limits": "Standalone desktop WebGL translation, static textures, full 2x1080p; not Android AGSL/HWUI or video capture. Comparison is against gather33, not ground-truth novel views. Hybrid sparse gradient samples are heuristic, not a convergence proof."
+}

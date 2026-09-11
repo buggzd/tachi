@@ -1,0 +1,55 @@
+{
+  "ort": "1.29.0",
+  "platform": "macOS-15.5-arm64-arm-64bit",
+  "modelSha256": "3a4faf23bffbdfed714116c0a2c375bdac9d69401af4f21953468e8ac5793b7b",
+  "availableProviders": [
+    "CoreMLExecutionProvider",
+    "AzureExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "limits": "ORT CoreML CPUAndNeuralEngine excludes GPU but permits CPU inside CoreML. EP profiling cannot prove ANE hardware placement. No QNN INT8 claim. Tensor input prepared before timing.",
+  "results": [
+    {
+      "variant": "cpu",
+      "initMs": 168.0196663364768,
+      "runMs": {
+        "mean": 25.82168770540092,
+        "p95": 32.242835918441415,
+        "n": 18
+      },
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "profileNodeEvents": {
+        "CPUExecutionProvider": 10038
+      },
+      "relativeOutputMAE": {
+        "mean": 0.0,
+        "p95": 0.0,
+        "n": 6
+      }
+    },
+    {
+      "variant": "coreml_cpu_ane",
+      "initMs": 18924.243500456214,
+      "runMs": {
+        "mean": 33.921798691153526,
+        "p95": 45.38224139250814,
+        "n": 18
+      },
+      "providers": [
+        "CoreMLExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "profileNodeEvents": {
+        "CoreMLExecutionProvider": 525,
+        "CPUExecutionProvider": 1008
+      },
+      "relativeOutputMAE": {
+        "mean": 2.5183123379216945e-06,
+        "p95": 4.574282741032221e-06,
+        "n": 6
+      }
+    }
+  ]
+}

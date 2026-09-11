@@ -1,0 +1,57 @@
+<!doctype html><meta charset="utf-8"><title>tachi desktop capture ablation</title>
+<video id="video" muted playsinline style="width:640px"></video>
+<script type="module">
+const W=266,H=154,N=W*H*4,video=document.querySelector('video');
+const summary=a=>{a.sort((a,b)=>a-b);return {n:a.length,mean:a.reduce((s,x)=>s+x,0)/a.length,p95:a[Math.floor(a.length*.95)]}};
+window.runCapture=async(mode,clip,seconds=8)=>{
+  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+  let gl,ctx,slots=[],stage=[],age=[],completed=0,busyDrops=0,maxPending=0,errors=0,callback=0,raf=0,stopped=false;
+  const buffer=new Uint8Array(N);let renderer=null;
+  if(mode==='cpu2d')ctx=canvas.getContext('2d',{willReadFrequently:true});
+  else {
+    gl=canvas.getContext('webgl2',{antialias:false,depth:false,preserveDrawingBuffer:false});if(!gl)throw Error('WebGL2 unavailable');
+    const ext=gl.getExtension('WEBGL_debug_renderer_info');renderer=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);
+    const shader=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error('shader');return s};
+    const p=gl.createProgram();gl.attachShader(p,shader(gl.VERTEX_SHADER,`#version 300 es
+    out vec2 uv;void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));uv=p;gl_Position=vec4(p*2.-1.,0,1);}`));
+    gl.attachShader(p,shader(gl.FRAGMENT_SHADER,`#version 300 es
+    precision highp float;in vec2 uv;uniform sampler2D image;out vec4 color;void main(){color=texture(image,uv);}`));
+    gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error('link');gl.useProgram(p);
+    gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());for(const a of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER])gl.texParameteri(gl.TEXTURE_2D,a,gl.LINEAR);
+    for(const a of [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T])gl.texParameteri(gl.TEXTURE_2D,a,gl.CLAMP_TO_EDGE);
+    if(mode==='pbo')for(let i=0;i<2;i++){const b=gl.createBuffer();gl.bindBuffer(gl.PIXEL_PACK_BUFFER,b);gl.bufferData(gl.PIXEL_PACK_BUFFER,N,gl.STREAM_READ);slots.push({buffer:b,sync:null})}gl.bindBuffer(gl.PIXEL_PACK_BUFFER,null);
+  }
+  video.src=`/samples/clip-${clip}.mp4`;video.loop=true;await video.play();await new Promise(r=>video.requestVideoFrameCallback(r));
+  // Same paused video-frame RGB validation outside timing, including row orientation.
+  let validation=null;
+  if(gl){video.pause();const ref=document.createElement('canvas');ref.width=W;ref.height=H;const c=ref.getContext('2d',{willReadFrequently:true});c.drawImage(video,0,0,W,H);const expected=c.getImageData(0,0,W,H).data;
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);gl.drawArrays(gl.TRIANGLES,0,3);
+    if(mode==='pbo'){
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER,slots[0].buffer);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,0);
+      const sync=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);gl.flush();
+      while(true){const status=gl.clientWaitSync(sync,0,0);if(status===gl.WAIT_FAILED)throw Error('validation fence failed');if(status!==gl.TIMEOUT_EXPIRED)break;await new Promise(r=>setTimeout(r,1));}
+      gl.getBufferSubData(gl.PIXEL_PACK_BUFFER,0,buffer);gl.bindBuffer(gl.PIXEL_PACK_BUFFER,null);gl.deleteSync(sync);
+    }else gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,buffer);
+    let sum=0;for(let i=0;i<N;i++)sum+=Math.abs(buffer[i]-expected[i]);validation={rgbaMAE:sum/N};if(sum/N>4)throw Error('Capture color/orientation mismatch');await video.play();}
+  const start=performance.now(),quality=video.getVideoPlaybackQuality();
+  const measured=()=>performance.now()-start>1000;
+  const poll=()=>{if(stopped)return;for(const slot of slots){if(!slot.sync)continue;const status=gl.clientWaitSync(slot.sync,0,0);if(status===gl.WAIT_FAILED)throw Error('fence failed');if(status===gl.TIMEOUT_EXPIRED)continue;
+      const t=performance.now();gl.bindBuffer(gl.PIXEL_PACK_BUFFER,slot.buffer);gl.getBufferSubData(gl.PIXEL_PACK_BUFFER,0,buffer);gl.bindBuffer(gl.PIXEL_PACK_BUFFER,null);gl.deleteSync(slot.sync);slot.sync=null;
+      if(slot.measure){stage.push(slot.submitMs+performance.now()-t);age.push(performance.now()-slot.started);completed++}}
+    raf=requestAnimationFrame(poll)};
+  const capture=()=>{if(stopped)return;callback=video.requestVideoFrameCallback(capture);const t=performance.now(),measure=measured();
+    const slot=mode==='pbo'?slots.find(s=>!s.sync):null;if(mode==='pbo'&&!slot){if(measure)busyDrops++;return;}
+    if(ctx){ctx.drawImage(video,0,0,W,H);ctx.getImageData(0,0,W,H);}
+    else{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);gl.drawArrays(gl.TRIANGLES,0,3);
+      if(slot){gl.bindBuffer(gl.PIXEL_PACK_BUFFER,slot.buffer);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,0);slot.sync=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);gl.flush();gl.bindBuffer(gl.PIXEL_PACK_BUFFER,null);Object.assign(slot,{started:t,submitMs:performance.now()-t,measure});maxPending=Math.max(maxPending,slots.filter(s=>s.sync).length)}
+      else gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,buffer);if(gl.getError()!==gl.NO_ERROR)errors++;
+    }
+    if(!slot&&measure){stage.push(performance.now()-t);age.push(performance.now()-t);completed++}
+  };
+  callback=video.requestVideoFrameCallback(capture);if(mode==='pbo')raf=requestAnimationFrame(poll);
+  await new Promise(r=>setTimeout(r,(seconds+1)*1000));stopped=true;video.cancelVideoFrameCallback(callback);cancelAnimationFrame(raf);video.pause();
+  const elapsed=(performance.now()-start-1000)/1000,q=video.getVideoPlaybackQuality();
+  if(gl){for(const s of slots){if(s.sync)gl.deleteSync(s.sync);gl.deleteBuffer(s.buffer)}gl.getExtension('WEBGL_lose_context')?.loseContext();}
+  return {mode,clip,seconds:elapsed,completedFps:completed/elapsed,stageCpuMs:summary(stage),captureReadbackAgeMs:summary(age),busyDrops,maxPending,pboBytes:slots.length*N,videoFrames:q.totalVideoFrames-quality.totalVideoFrames,videoDropped:q.droppedVideoFrames-quality.droppedVideoFrames,renderer,errors,validation,limits:'Readback only, no Base64 bridge/QNN/stereo rendering; age includes asynchronous polling delay; video counters include 1s warmup.'};
+};
+</script>

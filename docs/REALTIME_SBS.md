@@ -125,3 +125,9 @@ video。见 [脱敏记录](performance/2026-09-10-realtime-sbs/held-depth-delay.
 
 独立 NPU/合成并发基线见 [QAIRT 实机报告](performance/2026-09-09-stereo-lab/qairt-device.md)。
 上述设备清单通过前，此分支只能称为「已接入、待实机验收」，不能称为完整实时播放已通过。
+
+## 桌面优化候选
+
+[2026-09-11 开发环境优化报告](performance/2026-09-11-desktop-optimization/README.md)
+记录了按时间平滑、运动传播、保边细化、绘制与异步读回的对照结果，以及 M4 CoreML
+后端的分区限制。它们是独立实验候选，尚未替换上述 Android 实现，也未完成手机验收。

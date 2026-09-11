@@ -189,3 +189,9 @@ node StereoLab/verify-compositor.mjs --widths 1920 --seconds 60 --sync-gpu
 刷新周期；二者并行运行后仍满足帧率和深度年龄约束。24/25 fps 对应
 41.7/40 ms 合成预算；若要求每帧新深度，深度链路也须达到该吞吐。
 若使用低频深度加时间传播，则单独报告深度刷新率，不能称为逐帧 NPU 深度。
+
+## 桌面优化消融
+
+[2026-09-11 报告](../docs/performance/2026-09-11-desktop-optimization/README.md)
+与 [复现脚本](experiments/README.md) 对照时间常数、DIS 传播、保边、逆投影、PBO
+读回及 CoreML。测试不操作手机，不改变 Android 默认算法。

@@ -1,0 +1,49 @@
+<!doctype html><meta charset="utf-8"><title>tachi warp algorithm ablation</title>
+<script type="module">
+const W=1920,H=1080;
+const stats=a=>{a.sort((a,b)=>a-b);return {n:a.length,mean:a.reduce((s,x)=>s+x,0)/a.length,p95:a[Math.floor(a.length*.95)]}};
+window.warpBench=async()=>{
+ const canvas=document.createElement('canvas');canvas.width=W*2;canvas.height=H;
+ const gl=canvas.getContext('webgl2',{antialias:false,depth:false,preserveDrawingBuffer:true});
+ const timer=gl.getExtension('EXT_disjoint_timer_query_webgl2');const debug=gl.getExtension('WEBGL_debug_renderer_info');
+ const vertex=`#version 300 es
+ void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.-1.,0,1);}`;
+ const prefix=`#version 300 es
+ precision highp float;uniform sampler2D colorMap;uniform sampler2D depthMap;uniform float direction;uniform float eye;
+ out vec4 color;vec2 size=vec2(1920,1080);float depth(vec2 q){return texture(depthMap,q/size).r;}
+ bool inside(vec2 p){return p.x>=40.&&p.x<1880.&&p.y>=30.&&p.y<1050.;}
+ bool protectedPixel(vec2 p){return p.x>=83.&&p.x<417.&&p.y>=79.&&p.y<301.;}
+ float gather(vec2 p){float best=-1.,bestError=1e6,source=p.x;bool found=false;
+ for(int i=-16;i<=16;i++){vec2 q=p+vec2(float(i),0);if(inside(q)){
+ float d=depth(q);float error=abs(q.x+direction*(d-.5)*30.-p.x);
+ if(error<.75){if(!found||d>best){source=q.x;best=d;found=true;}}
+ else if(!found&&error<bestError){source=q.x;bestError=error;}}}return source;}
+ void main(){vec2 p=gl_FragCoord.xy-vec2(eye*1920.,0);float source=p.x;
+ if(inside(p)&&!protectedPixel(p)){`;
+ const suffix=`}color=texture(colorMap,vec2(source,p.y)/size);}`;
+ const bodies={gather33:'source=gather(p);',inverse2:'for(int i=0;i<2;i++)source=p.x-direction*(depth(vec2(source,p.y))-.5)*30.;',
+ hybrid4:`float a=depth(p-vec2(16,0)),b=depth(p+vec2(16,0)),c=depth(p);if(max(max(a,b),c)-min(min(a,b),c)>.08||p.x<56.||p.x>1864.)source=gather(p);else{for(int i=0;i<4;i++)source=p.x-direction*(depth(vec2(source,p.y))-.5)*30.;}`};
+ const compile=(type,src)=>{const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error('shader compile');return s};
+ const programs={};for(const [name,body] of Object.entries(bodies)){const p=gl.createProgram();gl.attachShader(p,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(p,compile(gl.FRAGMENT_SHADER,prefix+body+suffix));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error('link');programs[name]=p;}
+ const colors=new Uint8Array(W*H*4);for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=(y*W+x)*4;colors[i]=Math.round(127+110*Math.sin(x*.12));colors[i+1]=x%37<3?255:20;colors[i+2]=y%31<2?255:30;colors[i+3]=255;}
+ const bind=(unit,w,h,data)=>{gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,data);for(const k of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER])gl.texParameteri(gl.TEXTURE_2D,k,gl.LINEAR);for(const k of [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T])gl.texParameteri(gl.TEXTURE_2D,k,gl.CLAMP_TO_EDGE)};
+ bind(0,W,H,colors);
+ const results=[];
+ for(const scene of ['smooth','occlusion','thin-line']){
+  const data=new Uint8Array(266*154*4);for(let y=0;y<154;y++)for(let x=0;x<266;x++){const i=(y*266+x)*4;const d=scene==='smooth'?.5+.3*Math.sin(x/40):scene==='occlusion'?(x<133?.85:.15):(x%17<2?.9:.2);data.fill(Math.round(d*255),i,i+3);data[i+3]=255;}bind(1,266,154,data);
+  let reference;
+  for(const [name,p] of Object.entries(programs)){
+   gl.useProgram(p);gl.uniform1i(gl.getUniformLocation(p,'colorMap'),0);gl.uniform1i(gl.getUniformLocation(p,'depthMap'),1);
+   const draw=()=>{for(let eye=0;eye<2;eye++){gl.viewport(eye*W,0,W,H);gl.uniform1f(gl.getUniformLocation(p,'eye'),eye);gl.uniform1f(gl.getUniformLocation(p,'direction'),eye===0?1:-1);gl.drawArrays(gl.TRIANGLES,0,3)}};
+   for(let i=0;i<3;i++)draw();gl.finish();const gpu=[],wall=[];
+   for(let i=0;i<12;i++){let q;if(timer){q=gl.createQuery();gl.beginQuery(timer.TIME_ELAPSED_EXT,q)}const start=performance.now();draw();if(timer)gl.endQuery(timer.TIME_ELAPSED_EXT);gl.finish();wall.push(performance.now()-start);
+    if(q){while(!gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE))await new Promise(r=>setTimeout(r,1));if(!gl.getParameter(timer.GPU_DISJOINT_EXT))gpu.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);gl.deleteQuery(q)}}
+   const pixels=new Uint8Array(W*H*8);gl.readPixels(0,0,W*2,H,gl.RGBA,gl.UNSIGNED_BYTE,pixels);if(!reference)reference=pixels;
+   let error=0,changed=0,protectedError=0;for(let y=0;y<H;y++)for(let x=0;x<W*2;x++){const i=(y*W*2+x)*4;let e=0;for(let c=0;c<3;c++)e+=Math.abs(pixels[i+c]-reference[i+c]);error+=e;if(e>12)changed++;const local=x%W;if((local<40||local>=1880||y<30||y>=1050||(local>=83&&local<417&&y>=79&&y<301)))protectedError+=e;}
+   results.push({scene,variant:name,gpuMs:gpu.length?stats(gpu):null,drawAndFinishMs:stats(wall),rgbMAE:error/(W*H*2*3),changedPixelFraction:changed/(W*H*2),protectedError});
+   if(protectedError!==0)throw Error('UI/letterbox regression');
+  }
+ }
+ return {renderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):null,results,limits:'Standalone desktop WebGL translation, static textures, full 2x1080p; not Android AGSL/HWUI or video capture. Comparison is against gather33, not ground-truth novel views. Hybrid sparse gradient samples are heuristic, not a convergence proof.'};
+};
+</script>

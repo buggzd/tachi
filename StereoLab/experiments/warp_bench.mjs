@@ -1,0 +1,2 @@
+import {chromium} from 'playwright';import {writeFile} from 'node:fs/promises';
+const b=await chromium.launch({channel:'chrome',headless:true});try{const p=await b.newPage();await p.goto('http://127.0.0.1:4188/tests/warp-ablation.html');const result=await p.evaluate(()=>window.warpBench());await writeFile(process.argv[2],JSON.stringify({browser:b.version(),...result},null,2)+'\n')}finally{await b.close()}

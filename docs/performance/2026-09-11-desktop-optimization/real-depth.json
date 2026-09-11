@@ -1,0 +1,149 @@
+{
+  "results": [
+    {
+      "clip": 0,
+      "frames": 32,
+      "observationsHz": 7.992007992007992,
+      "modelCpuMs": {
+        "n": 29,
+        "mean": 25.86329445756715,
+        "p95": 33.55277478694915
+      },
+      "variants": [
+        {
+          "variant": "raw_normalized",
+          "correspondenceDisparityChange": {
+            "n": 46229,
+            "mean": 1.9156649522014397,
+            "p95": 9.254674911499016
+          },
+          "spatialDisparityStdMean": 9.399126827716827
+        },
+        {
+          "variant": "fixed",
+          "correspondenceDisparityChange": {
+            "n": 46229,
+            "mean": 2.1866885936248064,
+            "p95": 10.811792182922364
+          },
+          "spatialDisparityStdMean": 9.573868800885975
+        },
+        {
+          "variant": "time160",
+          "correspondenceDisparityChange": {
+            "n": 46229,
+            "mean": 1.9028593793401682,
+            "p95": 8.598695636853497
+          },
+          "spatialDisparityStdMean": 8.999777055811993
+        },
+        {
+          "variant": "time320",
+          "correspondenceDisparityChange": {
+            "n": 46229,
+            "mean": 1.8197704180219205,
+            "p95": 9.339421172644386
+          },
+          "spatialDisparityStdMean": 9.135769710683173
+        }
+      ]
+    },
+    {
+      "clip": 1,
+      "frames": 32,
+      "observationsHz": 7.992007992007992,
+      "modelCpuMs": {
+        "n": 29,
+        "mean": 23.969193952607696,
+        "p95": 29.96525019407272
+      },
+      "variants": [
+        {
+          "variant": "raw_normalized",
+          "correspondenceDisparityChange": {
+            "n": 51144,
+            "mean": 0.6888716538538334,
+            "p95": 3.273545718193052
+          },
+          "spatialDisparityStdMean": 7.961827412247658
+        },
+        {
+          "variant": "fixed",
+          "correspondenceDisparityChange": {
+            "n": 51144,
+            "mean": 0.5546658656937095,
+            "p95": 3.969252693653106
+          },
+          "spatialDisparityStdMean": 7.816221669316292
+        },
+        {
+          "variant": "time160",
+          "correspondenceDisparityChange": {
+            "n": 51144,
+            "mean": 0.5380743536621612,
+            "p95": 3.6029857262118266
+          },
+          "spatialDisparityStdMean": 7.932518492642811
+        },
+        {
+          "variant": "time320",
+          "correspondenceDisparityChange": {
+            "n": 51144,
+            "mean": 0.48065737574216055,
+            "p95": 3.7379958541139082
+          },
+          "spatialDisparityStdMean": 7.872249450183215
+        }
+      ]
+    },
+    {
+      "clip": 2,
+      "frames": 32,
+      "observationsHz": 8.333333333333334,
+      "modelCpuMs": {
+        "n": 29,
+        "mean": 24.270530019340843,
+        "p95": 29.39059995114803
+      },
+      "variants": [
+        {
+          "variant": "raw_normalized",
+          "correspondenceDisparityChange": {
+            "n": 59572,
+            "mean": 0.3454385250658926,
+            "p95": 1.032212287187576
+          },
+          "spatialDisparityStdMean": 11.034798949956894
+        },
+        {
+          "variant": "fixed",
+          "correspondenceDisparityChange": {
+            "n": 59572,
+            "mean": 0.2283128289704713,
+            "p95": 0.61198729276657
+          },
+          "spatialDisparityStdMean": 11.08002883195877
+        },
+        {
+          "variant": "time160",
+          "correspondenceDisparityChange": {
+            "n": 59572,
+            "mean": 0.2513511676127806,
+            "p95": 0.6769268073845416
+          },
+          "spatialDisparityStdMean": 11.045333920636828
+        },
+        {
+          "variant": "time320",
+          "correspondenceDisparityChange": {
+            "n": 59572,
+            "mean": 0.21011647410031706,
+            "p95": 0.5724316870869681
+          },
+          "spatialDisparityStdMean": 11.062662404988423
+        }
+      ]
+    }
+  ],
+  "limits": "First 96 decoded frames per local clip; one observation per 3 frames, CPU float model. Warp-aligned changes on trusted pixels mix errors with real depth motion; lower is not automatically better. Synthetic dynamic-step metrics must be consulted. No mobile pipeline timing."
+}

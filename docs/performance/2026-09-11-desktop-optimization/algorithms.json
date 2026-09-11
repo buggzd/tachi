@@ -1,0 +1,407 @@
+{
+  "environment": {
+    "platform": "macOS-15.5-arm64-arm-64bit",
+    "opencv": "4.11.0",
+    "numpy": "2.4.6",
+    "opencvThreads": 1,
+    "seed": 20260911
+  },
+  "temporal": [
+    {
+      "hz": 4,
+      "variant": "fixed",
+      "stableDisparityErrorP95": 0.3810418329654821,
+      "cleanStep90Ms": {
+        "0.04": 1250.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 14,
+        "mean": 1.2005116524440902,
+        "p95": 1.325779315084219
+      }
+    },
+    {
+      "hz": 4,
+      "variant": "time80",
+      "stableDisparityErrorP95": 0.6128139494385542,
+      "cleanStep90Ms": {
+        "0.04": 0.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 14,
+        "mean": 1.1800951989633697,
+        "p95": 1.2561419513076544
+      }
+    },
+    {
+      "hz": 4,
+      "variant": "time160",
+      "stableDisparityErrorP95": 0.5499017725669998,
+      "cleanStep90Ms": {
+        "0.04": 250.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 14,
+        "mean": 1.2670360239488738,
+        "p95": 1.6674624755978582
+      }
+    },
+    {
+      "hz": 4,
+      "variant": "time320",
+      "stableDisparityErrorP95": 0.46301294301261925,
+      "cleanStep90Ms": {
+        "0.04": 500.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 14,
+        "mean": 1.828107317643506,
+        "p95": 2.7855872176587577
+      }
+    },
+    {
+      "hz": 8,
+      "variant": "fixed",
+      "stableDisparityErrorP95": 0.39039485164357846,
+      "cleanStep90Ms": {
+        "0.04": 625.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 30,
+        "mean": 1.2251722626388073,
+        "p95": 1.4381146524101496
+      }
+    },
+    {
+      "hz": 8,
+      "variant": "time80",
+      "stableDisparityErrorP95": 0.5648367527740739,
+      "cleanStep90Ms": {
+        "0.04": 125.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 30,
+        "mean": 1.1796874304612477,
+        "p95": 1.2951625045388937
+      }
+    },
+    {
+      "hz": 8,
+      "variant": "time160",
+      "stableDisparityErrorP95": 0.4769765698299658,
+      "cleanStep90Ms": {
+        "0.04": 250.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 30,
+        "mean": 1.1874696239829063,
+        "p95": 1.3020168058574197
+      }
+    },
+    {
+      "hz": 8,
+      "variant": "time320",
+      "stableDisparityErrorP95": 0.3478480112768345,
+      "cleanStep90Ms": {
+        "0.04": 625.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 30,
+        "mean": 1.1899249628186226,
+        "p95": 1.3789484743028877
+      }
+    },
+    {
+      "hz": 16,
+      "variant": "fixed",
+      "stableDisparityErrorP95": 0.47861122645204307,
+      "cleanStep90Ms": {
+        "0.04": 312.5,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 62,
+        "mean": 1.2101391630788003,
+        "p95": 1.3155022636055944
+      }
+    },
+    {
+      "hz": 16,
+      "variant": "time80",
+      "stableDisparityErrorP95": 0.4976458030426349,
+      "cleanStep90Ms": {
+        "0.04": 125.0,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 62,
+        "mean": 1.2330180334468042,
+        "p95": 1.3098285533487797
+      }
+    },
+    {
+      "hz": 16,
+      "variant": "time160",
+      "stableDisparityErrorP95": 0.40159263003956036,
+      "cleanStep90Ms": {
+        "0.04": 312.5,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 62,
+        "mean": 1.2803528487922684,
+        "p95": 1.6207005828619
+      }
+    },
+    {
+      "hz": 16,
+      "variant": "time320",
+      "stableDisparityErrorP95": 0.2839652254653999,
+      "cleanStep90Ms": {
+        "0.04": 687.5,
+        "0.09": 0.0
+      },
+      "cpuMs": {
+        "n": 62,
+        "mean": 1.2835510555774934,
+        "p95": 1.4339818153530357
+      }
+    }
+  ],
+  "motion": {
+    "flowBothDirectionsMs": {
+      "n": 68,
+      "mean": 1.5640674186322618,
+      "p95": 2.2169023286551237
+    },
+    "results": [
+      {
+        "modelHz": 8.0,
+        "variant": "hold",
+        "disparityMAE": 0.42710673809051514,
+        "edgeDisparityMAE": 5.151724179585774,
+        "newlyRevealedDisparityMAE": 18.0,
+        "propagationMs": {
+          "n": 68,
+          "mean": 0.0009999802226529403,
+          "p95": 0.00295848585665226
+        }
+      },
+      {
+        "modelHz": 8.0,
+        "variant": "dis_unchecked",
+        "disparityMAE": 0.05774932490153746,
+        "edgeDisparityMAE": 1.0184268653392792,
+        "newlyRevealedDisparityMAE": 4.779264747193365,
+        "propagationMs": {
+          "n": 68,
+          "mean": 0.22422797594438582,
+          "p95": 0.49629975110292435
+        }
+      },
+      {
+        "modelHz": 8.0,
+        "variant": "dis_confident",
+        "disparityMAE": 0.11028316712966471,
+        "edgeDisparityMAE": 1.9097710757544546,
+        "newlyRevealedDisparityMAE": 11.891364256540934,
+        "propagationMs": {
+          "n": 68,
+          "mean": 0.24445645292015636,
+          "p95": 0.5126172676682472
+        }
+      },
+      {
+        "modelHz": 12.0,
+        "variant": "hold",
+        "disparityMAE": 0.35592228174209595,
+        "edgeDisparityMAE": 5.089655160903931,
+        "newlyRevealedDisparityMAE": 18.0,
+        "propagationMs": {
+          "n": 68,
+          "mean": 0.0013958471005453782,
+          "p95": 0.003164401277899742
+        }
+      },
+      {
+        "modelHz": 12.0,
+        "variant": "dis_unchecked",
+        "disparityMAE": 0.04569142633541064,
+        "edgeDisparityMAE": 0.8067673228003762,
+        "newlyRevealedDisparityMAE": 3.600549384500041,
+        "propagationMs": {
+          "n": 68,
+          "mean": 0.27652399833588037,
+          "p95": 0.47609847970306873
+        }
+      },
+      {
+        "modelHz": 12.0,
+        "variant": "dis_confident",
+        "disparityMAE": 0.09438860709920074,
+        "edgeDisparityMAE": 1.6566579639911652,
+        "newlyRevealedDisparityMAE": 10.566282843098495,
+        "propagationMs": {
+          "n": 68,
+          "mean": 0.30713051776675615,
+          "p95": 0.525349797680974
+        }
+      }
+    ],
+    "limits": "Ideal noiseless model depth; two-frame delivery delay; no texture acquisition cost; rejected regions hold nonzero old disparity."
+  },
+  "affine": {
+    "results": [
+      {
+        "variant": "least_squares",
+        "disparityMAE": 1.0518250569111158,
+        "cpuMs": 0.24074967950582504,
+        "scale": 0.7050697742864837,
+        "shift": 0.13232128591923517
+      },
+      {
+        "variant": "huber_bounded",
+        "disparityMAE": 0.03892191660943864,
+        "cpuMs": 1.3872087001800537,
+        "scale": 0.8735399321314238,
+        "shift": 0.04344049890091721
+      }
+    ],
+    "limits": "One synthetic correspondence fit with 20% outliers; not proof that registration preserves real forward motion. Not enabled in temporal pipeline."
+  },
+  "cut": {
+    "results": [
+      {
+        "variant": "fixed",
+        "newObservationResidual": 0.0,
+        "heldOldSceneMsBeforeObservation": 83.33333333333333
+      },
+      {
+        "variant": "time160",
+        "newObservationResidual": 0.0,
+        "heldOldSceneMsBeforeObservation": 83.33333333333333
+      }
+    ],
+    "limits": "Obvious photometric cut; ideal two-display-frame delivery delay. No guarantee for similar-color cuts; no claim that old scene disappears before new observation."
+  },
+  "upsampling": [
+    {
+      "variant": "bilinear",
+      "cpuMs": {
+        "n": 10,
+        "mean": 0.16084574162960052,
+        "p95": 0.1717875711619854
+      },
+      "disparityMAE": 0.030156288295984268,
+      "edgeF1": 1.0,
+      "textureLeakageStd": 8.726767077860131e-07
+    },
+    {
+      "variant": "guided",
+      "cpuMs": {
+        "n": 10,
+        "mean": 4.234629403799772,
+        "p95": 4.520981712266803
+      },
+      "disparityMAE": 0.03315297141671181,
+      "edgeF1": 1.0,
+      "textureLeakageStd": 3.3540852655278286e-06
+    },
+    {
+      "variant": "joint_bilateral",
+      "cpuMs": {
+        "n": 10,
+        "mean": 20.350791979581118,
+        "p95": 20.618891529738903
+      },
+      "disparityMAE": 0.026504648849368095,
+      "edgeF1": 0.6186770428015564,
+      "textureLeakageStd": 2.700499635466258e-06
+    }
+  ],
+  "realMotion": [
+    {
+      "clip": 0,
+      "frames": 96,
+      "flowMs": {
+        "n": 92,
+        "mean": 1.4146204997339975,
+        "p95": 1.4878856483846903
+      },
+      "trustedFraction": {
+        "n": 95,
+        "mean": 0.8949254544426686,
+        "p95": 0.9936944634313055
+      },
+      "unwarpedPhotometricMAE": {
+        "n": 95,
+        "mean": 2.0533099866286078,
+        "p95": 8.45763625195443
+      },
+      "warpedPhotometricMAE": {
+        "n": 95,
+        "mean": 1.0965127808289592,
+        "p95": 2.3618759971523713
+      },
+      "limits": "RGB correspondence diagnostic on trusted pixels only, not geometric depth truth; decode/downsample excluded."
+    },
+    {
+      "clip": 1,
+      "frames": 96,
+      "flowMs": {
+        "n": 92,
+        "mean": 1.3927753063161736,
+        "p95": 1.496035186573863
+      },
+      "trustedFraction": {
+        "n": 95,
+        "mean": 0.9136569208393505,
+        "p95": 0.9926960257787325
+      },
+      "unwarpedPhotometricMAE": {
+        "n": 94,
+        "mean": 1.7574486664921998,
+        "p95": 7.396425924890391
+      },
+      "warpedPhotometricMAE": {
+        "n": 94,
+        "mean": 0.6464055130680593,
+        "p95": 3.2410736809819514
+      },
+      "limits": "RGB correspondence diagnostic on trusted pixels only, not geometric depth truth; decode/downsample excluded."
+    },
+    {
+      "clip": 2,
+      "frames": 96,
+      "flowMs": {
+        "n": 92,
+        "mean": 1.400466097275848,
+        "p95": 1.5130145940929651
+      },
+      "trustedFraction": {
+        "n": 95,
+        "mean": 0.9688437601179983,
+        "p95": 0.993609022556391
+      },
+      "unwarpedPhotometricMAE": {
+        "n": 95,
+        "mean": 1.6398623562851267,
+        "p95": 2.9811481833263818
+      },
+      "warpedPhotometricMAE": {
+        "n": 95,
+        "mean": 1.0862295864539586,
+        "p95": 1.9114080033594278
+      },
+      "limits": "RGB correspondence diagnostic on trusted pixels only, not geometric depth truth; decode/downsample excluded."
+    }
+  ]
+}
