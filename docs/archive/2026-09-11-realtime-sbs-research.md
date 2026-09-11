@@ -211,3 +211,36 @@ btoa 样本不到 1 ms，不能仅凭数据量就把它排在已测数十毫秒�
 
 真实光学体验、Android HWUI/GPU 吞吐、QNN 并发与非充电热态只能待手机恢复后验收。
 本轮推荐先做 P0 的离线对照，不增加模型尺寸，也不重新开启正常慢帧的平面回退。
+
+## 补充：动漫特化深度模型
+
+检索后确认存在明确的动漫特化权重：
+[See-through: Single-image Layer Decomposition for Anime Characters](https://arxiv.org/html/2602.03749v1)
+（SIGGRAPH 2026）、[官方代码](https://github.com/shitagaki-lab/see-through)、
+[公开 Marigold 权重](https://huggingface.co/layerdifforg/seethroughv0.0.1_marigold)。
+官方旧地址 `24yearsold/seethroughv0.0.1_marigold` 现重定向至 `layerdifforg`；模型页
+标注 Diffusers / MarigoldDepthPipeline、约 1B 参数、BF16，没有独立 model card。
+
+论文 §4.2.1 与附录 C.3 明确描述：微调 Marigold，按语义人物部件预测像素伪深度，
+随后以跨部件注意力统一相互遮挡关系。监督来自 Live2D ArtMesh 的绘制顺序，归一化
+后的 Z-order 是伪深度，不是物理距离，也不是普通整场景深度标签。训练分辨率为
+768×768；论文使用 19 类部件，后续仓库发布版本扩展了部件分层。
+
+它能为刘海/脸/后发、手臂/衣服等复杂交错提供动漫先验，但不能将图层序号直接按
+线性比例映射成 SBS 视差：相邻绘制序号不表示相等的空间距离。论文以单幅角色插画
+分解为任务，没有证据说明它对整集动画的背景、镜头运动或视频时序稳定已经解决。
+完整分层管线的耗时/显存不能混同为独立深度模块成本；目前也无该权重的手机 QNN
+实时证据。
+
+对 tachi 更合理的用途是：在角色区域做离线前后次序/遮挡对照，必要时将可靠的排序
+监督蒸馏到现有小模型；保留通用深度估计负责场景结构。背景、多角色、运动、切镜
+仍需单独覆盖，不能用只在立绘上表现好来判定番剧播放可用。
+
+还核查了 [iw3](https://github.com/nagadomi/nunif/tree/master/iw3)：它与我们的 SBS
+用途接近，但其 README 列出的深度后端是 ZoeDepth、Depth Anything 系列、Depth Pro、
+Distill Any Depth、Video Depth Anything 等，不能把“可用于动漫 SBS”当作“动漫特化
+深度权重”。其前景边缘扩张与归一化稳定策略值得作为工程对照，具有预读未来帧的
+设置则不能直接用于低延迟因果播放。
+
+本轮确认了一个公开动漫特化候选，未据此断言不存在其他候选；尚未下载大权重、运行
+模型或操作手机。推荐先做离线角色深度排序对照，不直接替换当前 NPU 后端。
