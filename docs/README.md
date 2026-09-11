@@ -32,6 +32,7 @@
 | [2026-09-10 QPM 与取帧实验](performance/2026-09-10-stereo-lab/frame-capture-and-qpm.md) | QPM 真实登录门槛，以及共享模型读回派生运动缩略图的前后对照 |
 | [2026-09-10 实时 SBS 集成调试](performance/2026-09-10-realtime-sbs/README.md) | 实际 QNN、WebView 取帧和双眼输出跑通，约 8 fps 深度更新瓶颈与系统显示禁用问题 |
 | [v0.3.0 发布说明](releases/v0.3.0.md) | 已发布版本的能力快照；其他版本见 [GitHub Releases](https://github.com/buggzd/tachi/releases) |
+| [2026-09-11 实时 SBS 论文调研](archive/2026-09-11-realtime-sbs-research.md) | 视频深度时序、运动传播、保边上采样与取帧/绘制候选；未实机验证 |
 
 历史中的“当前代码”“下一步”和测试数量只对应其日期与提交。实现范围以路线图及现行源码为准；测试通过不等于覆盖了架构文档的全部设备验收。
 
