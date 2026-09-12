@@ -38,9 +38,15 @@ public final class NativeVideoEngine implements AutoCloseable
     private final FrameSlot slot = new FrameSlot();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ThreadPoolExecutor samples = new ThreadPoolExecutor(1, 1, 0,
-            TimeUnit.SECONDS, new ArrayBlockingQueue<>(1));
+            TimeUnit.SECONDS, new ArrayBlockingQueue<>(2)); // One frame lease plus ordered shutdown.
     private final Listener listener;
     private final SampleConsumer consumer;
+    private final NativeDepthProcessor depthProcessor;
+    private final ReadbackTimings depthTimings = new ReadbackTimings("preprocess", "inference", "stabilize");
+    private volatile boolean depthReady;
+    private volatile String depthState;
+    private volatile long discardedDepth;
+    private volatile int diagnosticDelayMs;
     private volatile boolean closed;
     private volatile long sampleCount;
     private boolean failed;
@@ -60,9 +66,18 @@ public final class NativeVideoEngine implements AutoCloseable
 
     public NativeVideoEngine(Context context, Listener listener, SampleConsumer consumer)
     {
+        this(context, listener, consumer, null);
+    }
+
+    public NativeVideoEngine(Context context, Listener listener, SampleConsumer consumer,
+            NativeDepthProcessor depthProcessor)
+    {
         requireMain();
         this.listener = listener;
         this.consumer = consumer;
+        this.depthProcessor = depthProcessor;
+        depthReady = depthProcessor == null;
+        depthState = depthProcessor == null ? "disabled" : "initializing";
         DefaultRenderersFactory renderers = new DefaultRenderersFactory(context)
                 .setEnableDecoderFallback(false)
                 .setMediaCodecSelector((mime, secure, tunnel) ->
@@ -89,7 +104,7 @@ public final class NativeVideoEngine implements AutoCloseable
             }
 
             @Override
-            public void sample(ByteBuffer bytes, long timestamp, long lease, long generation)
+            public void sample(ByteBuffer bytes, long timestamp, long capturedNs, long lease, long generation)
             {
                 try
                 {
@@ -99,14 +114,29 @@ public final class NativeVideoEngine implements AutoCloseable
                         {
                             if (!closed && slot.current(lease, generation))
                             {
-                                consumer.consume(bytes, NativeVideoView.SAMPLE_WIDTH,
+                                consumer.consume(bytes.asReadOnlyBuffer(), NativeVideoView.SAMPLE_WIDTH,
                                         NativeVideoView.SAMPLE_HEIGHT, timestamp);
                                 sampleCount++;
+                                if (depthProcessor != null && depthReady)
+                                {
+                                    DepthResult result = depthProcessor.process(bytes, generation);
+                                    depthTimings.record(result.preprocessNs, result.inferenceNs, result.stabilizeNs);
+                                    int delay = diagnosticDelayMs;
+                                    if (delay > 0) Thread.sleep(delay);
+                                    if (!closed && slot.current(lease, generation))
+                                    {
+                                        if (result.map != null) view.offerDepth(result.map, generation, capturedNs);
+                                    }
+                                    else discardedDepth++;
+                                }
                             }
                         }
-                        catch (RuntimeException error)
+                        catch (Exception | LinkageError error)
                         {
-                            main.post(() -> fail());
+                            main.post(() ->
+                            {
+                                if (!closed && slot.generation() == generation) depthFailed();
+                            });
                         }
                         finally
                         {
@@ -126,6 +156,7 @@ public final class NativeVideoEngine implements AutoCloseable
                 fail();
             }
         }, slot);
+        view.suspendSampling(!depthReady);
         player.addListener(new Player.Listener()
         {
             @Override
@@ -140,7 +171,54 @@ public final class NativeVideoEngine implements AutoCloseable
                 fail(); // Never forward URL, headers, tokens or raw exception details to UI.
             }
         });
+        if (depthProcessor != null)
+        {
+            samples.execute(() ->
+            {
+                try
+                {
+                    depthProcessor.prepare();
+                    main.post(() ->
+                    {
+                        if (closed) return;
+                        depthReady = true;
+                        depthState = "ready";
+                        view.suspendSampling(failed);
+                    });
+                }
+                catch (Exception | LinkageError error)
+                {
+                    main.post(this::depthFailed);
+                }
+            });
+        }
         main.post(tick);
+    }
+
+    public String depthState()
+    {
+        return depthState;
+    }
+
+    public String depthTimingsJson()
+    {
+        return "{\"state\":\"" + depthState + "\",\"discarded\":" + discardedDepth
+                + ",\"diagnosticDelayMs\":" + diagnosticDelayMs + ",\"worker\":" + depthTimings.json()
+                + ",\"render\":" + view.depthStatusJson() + "}";
+    }
+
+    public void setDiagnosticDepthDelayMs(int delay)
+    {
+        requireMain();
+        diagnosticDelayMs = Math.max(0, Math.min(500, delay));
+    }
+
+    private void depthFailed()
+    {
+        if (closed) return;
+        depthReady = false;
+        depthState = "error";
+        view.suspendSampling(true); // Visible error, hold any valid map; never retry/fallback on a timer.
     }
 
     public NativeVideoView view()
@@ -158,7 +236,7 @@ public final class NativeVideoEngine implements AutoCloseable
             throw new IllegalArgumentException("unsupported source");
         }
         view.invalidateFrames();
-        view.suspendSampling(false);
+        view.suspendSampling(!depthReady);
         failed = false;
         sampleCount = 0;
         player.setMediaItem(MediaItem.fromUri(uri));
@@ -202,6 +280,14 @@ public final class NativeVideoEngine implements AutoCloseable
         player.clearVideoSurface();
         player.release();
         view.close();
+        if (depthProcessor != null)
+        {
+            samples.execute(() ->
+            {
+                try { depthProcessor.close(); }
+                catch (Exception ignored) { /* Session already unavailable; no raw diagnostics. */ }
+            });
+        }
         samples.shutdown();
     }
 

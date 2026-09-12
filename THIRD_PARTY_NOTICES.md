@@ -50,6 +50,16 @@ dependencies of the shipping application.
 - Source and license: <https://github.com/androidx/media/tree/1.5.1>
 - Apache License: <https://www.apache.org/licenses/LICENSE-2.0>
 
+## Optional QNN depth runtime
+
+The opt-in realtime and native QNN laboratory builds use the local artifacts
+pinned by `AndroidApp/realtime-sbs-runtime.json`; these binaries are not tracked.
+
+- ONNX Runtime 1.22.0 / QNN execution provider — MIT — <https://github.com/microsoft/onnxruntime>
+- Depth Anything V2 Small upstream model — Apache License 2.0 — <https://github.com/DepthAnything/Depth-Anything-V2>
+- Qualcomm QAIRT/QNN runtime — Qualcomm SDK terms accepted during local SDK installation.
+  The model and runtime hashes identify the validated quantized deployment artifacts.
+
 ## Jellyfin
 
 Jellyfin names and trademarks belong to their respective owners. This

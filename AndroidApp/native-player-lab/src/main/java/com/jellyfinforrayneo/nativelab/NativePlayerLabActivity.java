@@ -20,7 +20,9 @@ public final class NativePlayerLabActivity extends Activity
     private NativeVideoEngine engine;
     private LinearLayout layout;
     private TextView status;
-    private boolean stereo;
+    private boolean stereo = BuildConfig.NATIVE_QNN;
+    private boolean debugDepth = true;
+    private boolean slowDepth;
     private volatile long checksum;
     private volatile String quadrants = "[]";
     private long lastReportMs;
@@ -40,9 +42,9 @@ public final class NativePlayerLabActivity extends Activity
         });
         layout.setBackgroundColor(0xff101010);
         status = new TextView(this);
-        status.setLines(4);
+        status.setLines(5);
         status.setTextColor(0xffffffff);
-        status.setText("Native video lab: GPU decode texture / bounded RGBA readback. No NPU or depth conversion yet.");
+        status.setText("Native video lab · initializing");
         layout.addView(status);
         EditText address = new EditText(this);
         address.setSingleLine(true);
@@ -75,12 +77,27 @@ public final class NativePlayerLabActivity extends Activity
         LinearLayout controls = new LinearLayout(this);
         controls.addView(button("Play/pause", () -> { if (engine != null) engine.togglePlayback(); }));
         controls.addView(button("+10s", () -> { if (engine != null) engine.seekBy(10000); }));
-        controls.addView(button("SBS preview", () ->
+        controls.addView(button("SBS / 2D", () ->
         {
             stereo = !stereo;
             if (engine != null) engine.view().setStereoPreview(stereo);
         }));
         layout.addView(controls);
+        if (BuildConfig.NATIVE_QNN)
+        {
+            LinearLayout depthControls = new LinearLayout(this);
+            depthControls.addView(button("Depth map", () ->
+            {
+                debugDepth = !debugDepth;
+                if (engine != null) engine.view().setDepthDebug(debugDepth);
+            }));
+            depthControls.addView(button("Slow depth", () ->
+            {
+                slowDepth = !slowDepth;
+                if (engine != null) engine.setDiagnosticDepthDelayMs(slowDepth ? 250 : 0);
+            }));
+            layout.addView(depthControls);
+        }
         setContentView(layout);
     }
 
@@ -91,15 +108,18 @@ public final class NativePlayerLabActivity extends Activity
         engine = new NativeVideoEngine(this, (state, position, duration, samples) ->
         {
                 status.setText(String.format(Locale.ROOT,
-                        "Native %s · %.1f / %.1f s · samples %d · checksum %d\nSBS preview duplicates the video; no depth or USB mode switch.",
-                        state, position / 1000.0, duration / 1000.0, samples, checksum));
+                        "Native %s · %.1f / %.1f s\nQNN %s · samples %d\n%s\n%s · %s · delay %d ms",
+                        state, position / 1000.0, duration / 1000.0,
+                        engine == null ? "initializing" : engine.depthState(), samples,
+                        engine == null ? "" : engine.view().depthSummary(),
+                        stereo ? "SBS" : "2D", debugDepth ? "depth shown" : "depth hidden", slowDepth ? 250 : 0));
                 long now = android.os.SystemClock.elapsedRealtime();
                 if (engine != null && now - lastReportMs >= 1000)
                 {
                     lastReportMs = now;
                     android.util.Log.i("NativeVideoLab", String.format(Locale.ROOT,
-                            "{\"state\":\"%s\",\"elapsedMs\":%d,\"positionMs\":%d,\"samples\":%d,\"quadrantsRgb\":%s,\"readback\":%s}",
-                            state, now, position, samples, quadrants, engine.view().readbackTimingsJson()));
+                            "{\"state\":\"%s\",\"elapsedMs\":%d,\"positionMs\":%d,\"samples\":%d,\"quadrantsRgb\":%s,\"readback\":%s,\"depth\":%s}",
+                            state, now, position, samples, quadrants, engine.view().readbackTimingsJson(), engine.depthTimingsJson()));
                 }
         },
                 (rgba, width, height, timestamp) ->
@@ -117,9 +137,12 @@ public final class NativePlayerLabActivity extends Activity
                                 | ((rgba.get(offset + 1) & 255) << 8) | (rgba.get(offset + 2) & 255);
                     }
                     quadrants = java.util.Arrays.toString(colors);
-                });
+                }, LabDepthProcessor.create(this));
         engine.view().setSampling(true);
+        engine.view().setRender1080PerEye(BuildConfig.NATIVE_QNN);
         engine.view().setStereoPreview(stereo);
+        engine.view().setDepthDebug(BuildConfig.NATIVE_QNN && debugDepth);
+        engine.setDiagnosticDepthDelayMs(slowDepth ? 250 : 0);
         layout.addView(engine.view(), new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
     }

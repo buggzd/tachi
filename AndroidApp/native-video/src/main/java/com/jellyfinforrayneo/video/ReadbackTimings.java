@@ -10,6 +10,17 @@ final class ReadbackTimings
     private int size;
     private int cursor;
     private long count;
+    private final String[] names;
+
+    ReadbackTimings()
+    {
+        this("submit", "fenceObserved", "mapCopy");
+    }
+
+    ReadbackTimings(String first, String second, String third)
+    {
+        names = new String[]{first, second, third};
+    }
 
     synchronized void record(long submit, long observed, long copy)
     {
@@ -23,7 +34,6 @@ final class ReadbackTimings
 
     synchronized String json()
     {
-        String[] names = {"submit", "fenceObserved", "mapCopy"};
         StringBuilder json = new StringBuilder("{\"count\":").append(count)
                 .append(",\"window\":").append(size);
         for (int stage = 0; stage < names.length; stage++)

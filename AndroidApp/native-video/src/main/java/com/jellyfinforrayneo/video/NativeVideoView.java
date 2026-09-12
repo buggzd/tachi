@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -25,7 +26,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         // Main thread. Consumer must detach the old decoder Surface before it is released.
         void surfaceReady(Surface surface);
         // GL thread. Bytes are tightly packed, top-row-first RGBA; valid until releaseSample.
-        void sample(ByteBuffer bytes, long textureTimestampNs, long lease, long generation);
+        void sample(ByteBuffer bytes, long textureTimestampNs, long capturedNs, long lease, long generation);
         void failure();
     }
 
@@ -47,6 +48,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private long pendingLease;
     private long pendingGeneration;
     private long pendingTimestamp;
+    private long pendingCapturedNs;
     private boolean hasImage;
     private boolean failed;
     private volatile boolean closed;
@@ -60,6 +62,75 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private final ReadbackTimings timings = new ReadbackTimings();
     private long pendingSubmitNs;
     private long pendingSubmitCostNs;
+    private int depthTexture;
+    private final ByteBuffer depthUpload = ByteBuffer.allocateDirect(SAMPLE_WIDTH * SAMPLE_HEIGHT);
+    private final AtomicReference<DepthPacket> pendingDepth = new AtomicReference<>();
+    private volatile long depthGeneration = -1;
+    private volatile long depthCapturedNs;
+    private volatile long depthUploads;
+    private volatile boolean debugDepth;
+    private volatile boolean render1080;
+    private int stereoFbo;
+    private int stereoTexture;
+    private final GpuTimer gpuTimer = new GpuTimer();
+    private final ReadbackTimings presentationTimings = new ReadbackTimings("captureToUpload", "upload", "drawSubmit");
+
+    private static final class DepthPacket
+    {
+        final byte[] map;
+        final long generation;
+        final long capturedNs;
+
+        DepthPacket(byte[] map, long generation, long capturedNs)
+        {
+            this.map = map;
+            this.generation = generation;
+            this.capturedNs = capturedNs;
+        }
+    }
+
+    void offerDepth(byte[] map, long generation, long capturedNs)
+    {
+        if (!closed && generation == slot.generation())
+        {
+            pendingDepth.set(new DepthPacket(map, generation, capturedNs));
+            requestRender();
+        }
+    }
+
+    public void setDepthDebug(boolean enabled)
+    {
+        debugDepth = enabled;
+        requestRender();
+    }
+
+    /** Must be set before attaching the view. Exercises full eye resolution even on the phone. */
+    public void setRender1080PerEye(boolean enabled)
+    {
+        render1080 = enabled;
+    }
+
+    private boolean hasCurrentDepth()
+    {
+        return depthGeneration == slot.generation();
+    }
+
+    public String depthStatusJson()
+    {
+        boolean valid = hasCurrentDepth();
+        return "{\"valid\":" + valid + ",\"uploads\":" + depthUploads
+                + ",\"ageMs\":" + (valid ? (System.nanoTime() - depthCapturedNs) / 1_000_000 : -1)
+                + ",\"stereo\":" + stereoPreview + ",\"debug\":" + debugDepth
+                + ",\"eyeTargetWidth\":" + (render1080 ? 1920 : width / (stereoPreview ? 2 : 1))
+                + ",\"gpuRender\":" + gpuTimer.json()
+                + ",\"timings\":" + presentationTimings.json() + "}";
+    }
+
+    public String depthSummary()
+    {
+        return hasCurrentDepth() ? "Depth " + depthUploads + " · age "
+                + (System.nanoTime() - depthCapturedNs) / 1_000_000 + " ms" : "Waiting for valid depth";
+    }
 
     /** Numerical diagnostics only; no source addresses or image content. */
     public String readbackTimingsJson()
@@ -106,6 +177,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     void invalidateFrames()
     {
         slot.invalidate();
+        pendingDepth.set(null);
+        requestRender();
     }
 
     // The owning player must already have detached its video surface on the main thread.
@@ -114,6 +187,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         closed = true;
         sampling = false;
         slot.invalidate();
+        pendingDepth.set(null);
         queueEvent(this::releaseGl);
         requestRender();
     }
@@ -129,6 +203,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             pendingLease = 0;
             fence = 0;
             slot.invalidate();
+            pendingDepth.set(null);
+            depthGeneration = -1;
             Surface previousSurface = surface;
             SurfaceTexture previousTexture = texture;
             hasImage = false;
@@ -179,6 +255,33 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
             GLES30.glBufferData(GLES30.GL_PIXEL_PACK_BUFFER, SAMPLE_BYTES, null, GLES30.GL_STREAM_READ);
             GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
+            GLES30.glGenTextures(1, name, 0);
+            depthTexture = name[0];
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTexture);
+            parameters(GLES30.GL_TEXTURE_2D);
+            GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 1);
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_R8, SAMPLE_WIDTH,
+                    SAMPLE_HEIGHT, 0, GLES30.GL_RED, GLES30.GL_UNSIGNED_BYTE, null);
+            stereoFbo = 0;
+            stereoTexture = 0;
+            if (render1080)
+            {
+                GLES30.glGenTextures(1, name, 0);
+                stereoTexture = name[0];
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, stereoTexture);
+                parameters(GLES30.GL_TEXTURE_2D);
+                GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA8, 3840, 1080,
+                        0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+                GLES30.glGenFramebuffers(1, name, 0);
+                stereoFbo = name[0];
+                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, stereoFbo);
+                GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                        GLES30.GL_TEXTURE_2D, stereoTexture, 0);
+                if (GLES30.glCheckFramebufferStatus(GLES30.GL_FRAMEBUFFER) != GLES30.GL_FRAMEBUFFER_COMPLETE)
+                    throw new IllegalStateException();
+                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
+            }
+            gpuTimer.create();
         }
         catch (RuntimeException error)
         {
@@ -212,14 +315,61 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             GLES30.glClearColor(0, 0, 0, 1);
             GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
             if (!hasImage || width <= 0 || height <= 0) return;
+            DepthPacket packet = pendingDepth.getAndSet(null);
+            long uploadCost = 0;
+            long captureAge = 0;
+            if (packet != null && packet.generation == slot.generation())
+            {
+                long start = System.nanoTime();
+                depthUpload.clear();
+                depthUpload.put(packet.map).flip();
+                GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTexture);
+                GLES30.glTexSubImage2D(GLES30.GL_TEXTURE_2D, 0, 0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
+                        GLES30.GL_RED, GLES30.GL_UNSIGNED_BYTE, depthUpload);
+                depthCapturedNs = packet.capturedNs;
+                depthGeneration = packet.generation;
+                depthUploads++;
+                uploadCost = System.nanoTime() - start;
+                captureAge = System.nanoTime() - packet.capturedNs;
+            }
+            long drawStart = System.nanoTime();
+            gpuTimer.begin();
+            if (render1080)
+            {
+                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, stereoFbo);
+                GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+            }
             int eyes = stereoPreview ? 2 : 1;
             for (int eye = 0; eye < eyes; eye++)
             {
-                int eyeWidth = width / eyes;
-                int[] rect = VideoGeometry.contain(eyeWidth, height, videoAspect);
+                int eyeWidth = render1080 ? 1920 : width / eyes;
+                int[] rect = VideoGeometry.contain(eyeWidth, render1080 ? 1080 : height, videoAspect);
                 GLES30.glViewport(eye * eyeWidth + rect[0], rect[1], rect[2], rect[3]);
-                draw(false);
+                draw(false, eyes == 2 && hasCurrentDepth() ? (eye == 0 ? 1 : -1) : 0, false);
+                if (debugDepth && hasCurrentDepth())
+                {
+                    GLES30.glViewport(eye * eyeWidth + rect[0], rect[1], Math.max(1, rect[2] / 3),
+                            Math.max(1, rect[3] / 3));
+                    draw(false, 0, true);
+                }
             }
+            if (render1080)
+            {
+                GLES30.glBindFramebuffer(GLES30.GL_READ_FRAMEBUFFER, stereoFbo);
+                GLES30.glBindFramebuffer(GLES30.GL_DRAW_FRAMEBUFFER, 0);
+                for (int eye = 0; eye < eyes; eye++)
+                {
+                    int eyeWidth = width / eyes;
+                    int[] rect = VideoGeometry.contain(eyeWidth, height, 16f / 9f);
+                    int x = eye * eyeWidth + rect[0];
+                    GLES30.glBlitFramebuffer(eye * 1920, 0, (eye + 1) * 1920, 1080,
+                            x, rect[1], x + rect[2], rect[1] + rect[3], GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_LINEAR);
+                }
+                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
+            }
+            gpuTimer.end();
+            if (uploadCost > 0) presentationTimings.record(captureAge, uploadCost, System.nanoTime() - drawStart);
             long now = System.nanoTime();
             if (fresh && sampling && !samplingSuspended && fence == 0 && cadence.due(now))
             {
@@ -229,11 +379,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     pendingLease = lease;
                     pendingGeneration = slot.generationOf(lease);
                     pendingTimestamp = texture.getTimestamp();
+                    pendingCapturedNs = now;
                     cadence.submitted(now);
                     long submitStart = System.nanoTime();
                     GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
                     GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
-                    draw(true);
+                    draw(true, 0, false); // Always sample the original image, never the warped output.
                     GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
                     GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
                             GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
@@ -292,15 +443,20 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         }
         sampleBytes.flip();
         timings.record(pendingSubmitCostNs, observedNs, System.nanoTime() - copyStart);
-        host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, lease, pendingGeneration);
+        host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, pendingCapturedNs, lease, pendingGeneration);
     }
 
-    private void draw(boolean topRowFirst)
+    private void draw(boolean topRowFirst, float eye, boolean depthOnly)
     {
         GLES30.glUseProgram(program);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oes);
         GLES30.glUniform1i(GLES30.glGetUniformLocation(program, "video"), 0);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTexture);
+        GLES30.glUniform1i(GLES30.glGetUniformLocation(program, "depthMap"), 1);
+        GLES30.glUniform1f(GLES30.glGetUniformLocation(program, "eye"), eye);
+        GLES30.glUniform1i(GLES30.glGetUniformLocation(program, "depthOnly"), depthOnly ? 1 : 0);
         GLES30.glUniform1f(GLES30.glGetUniformLocation(program, "flipY"), topRowFirst ? 1 : 0);
         GLES30.glUniformMatrix4fv(GLES30.glGetUniformLocation(program, "texMatrix"), 1, false, textureMatrix, 0);
         int position = GLES30.glGetAttribLocation(program, "position");
@@ -321,12 +477,20 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
 
     private static int program()
     {
-        String vertex = "#version 300 es\nin vec2 position; out vec2 uv; uniform mat4 texMatrix; uniform float flipY;"
+        String vertex = "#version 300 es\nin vec2 position; out vec2 uv; uniform float flipY;"
                 + "void main(){ vec2 p=(position+1.0)*0.5; if(flipY>0.5)p.y=1.0-p.y;"
-                + "uv=(texMatrix*vec4(p,0,1)).xy; gl_Position=vec4(position,0,1);}";
+                + "uv=p; gl_Position=vec4(position,0,1);}";
         String fragment = "#version 300 es\n#extension GL_OES_EGL_image_external_essl3 : require\n"
-                + "precision mediump float; uniform samplerExternalOES video; in vec2 uv; out vec4 color;"
-                + "void main(){color=texture(video,uv);}";
+                + "precision highp float; uniform samplerExternalOES video; uniform sampler2D depthMap;"
+                + "uniform mat4 texMatrix; uniform float eye; uniform int depthOnly; in vec2 uv; out vec4 color;"
+                + "float depthAt(vec2 p){return texture(depthMap,vec2(p.x,1.0-p.y)).r;}"
+                + "void main(){if(depthOnly==1){color=vec4(vec3(depthAt(uv)),1);return;}"
+                + "vec2 source=uv; if(eye!=0.0){float best=-1.0;float bestError=1e6;bool found=false;"
+                + "for(int i=-16;i<=16;i++){vec2 q=uv+vec2(float(i)/1920.0,0);"
+                + "if(q.x>=0.0 && q.x<=1.0){float d=depthAt(q);float error=abs(q.x+eye*(d-0.5)*0.016-uv.x);"
+                + "if(error<0.75/1920.0){if(!found || d>best){source=q;best=d;found=true;}}"
+                + "else if(!found && error<bestError){source=q;bestError=error;}}}}"
+                + "color=texture(video,(texMatrix*vec4(source,0,1)).xy);}";
         int vs = shader(GLES30.GL_VERTEX_SHADER, vertex);
         int fs = shader(GLES30.GL_FRAGMENT_SHADER, fragment);
         int result = GLES30.glCreateProgram();
@@ -368,9 +532,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         pendingLease = 0;
         if (texture != null) texture.release();
         if (surface != null) surface.release();
+        gpuTimer.close();
         GLES30.glDeleteBuffers(1, new int[]{pbo}, 0);
-        GLES30.glDeleteFramebuffers(1, new int[]{fbo}, 0);
-        GLES30.glDeleteTextures(2, new int[]{oes, sampleTexture}, 0);
+        GLES30.glDeleteFramebuffers(2, new int[]{fbo, stereoFbo}, 0);
+        GLES30.glDeleteTextures(4, new int[]{oes, sampleTexture, depthTexture, stereoTexture}, 0);
         GLES30.glDeleteProgram(program);
     }
 }

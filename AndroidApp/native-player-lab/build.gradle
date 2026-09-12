@@ -1,4 +1,8 @@
 plugins { id "com.android.application" }
+def nativeQnn = providers.gradleProperty("nativeQnn").getOrElse("false") == "true"
+def runtimeManifest = new groovy.json.JsonSlurper().parse(rootProject.file("realtime-sbs-runtime.json"))
+def npuRoot = new File(rootProject.projectDir.parentFile, "StereoLab/.local/npu")
+def generatedQnn = layout.buildDirectory.dir("generated/qnn")
 android {
     namespace "com.jellyfinforrayneo.nativelab"
     compileSdk 35
@@ -8,6 +12,17 @@ android {
         targetSdk 35
         versionCode 1
         versionName "0.1.0"
+        buildConfigField "boolean", "NATIVE_QNN", nativeQnn.toString()
+        buildConfigField "String", "MODEL_SHA256", "\"${runtimeManifest.modelSha256}\""
+        ndk { abiFilters "arm64-v8a" }
+    }
+    buildFeatures { buildConfig true }
+    packaging {
+        jniLibs {
+            useLegacyPackaging true
+            // Preserve the validated vendor/DSP binaries byte-for-byte; do not run AGP strip on them.
+            keepDebugSymbols += ["**/libQnn*.so", "**/libCalculator_skel.so"]
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
@@ -16,3 +31,28 @@ android {
     lint { abortOnError true }
 }
 dependencies { implementation project(":native-video") }
+android.sourceSets.main.java.srcDir(nativeQnn ? "src/qnn/java" : "src/standard/java")
+if (nativeQnn) {
+    def model = new File(npuRoot, "depth-anything-v2-small-qnn-266-u16a-i8w.onnx")
+    def ort = new File(npuRoot, "onnxruntime-android-qnn-1.22.0.aar")
+    def runtime = new File(npuRoot, "qairt-runtime/arm64-v8a")
+    def verifyHash = { File dependency, String expected ->
+        if (!dependency.isFile()) throw new GradleException("Missing local QNN dependency; see docs/NATIVE_VIDEO.md")
+        def actual = dependency.withInputStream { java.security.MessageDigest.getInstance("SHA-256").digest(it.bytes).encodeHex().toString() }
+        if (actual != expected) throw new GradleException("QNN dependency differs from the validated manifest")
+    }
+    verifyHash(model, runtimeManifest.modelSha256)
+    verifyHash(ort, runtimeManifest.ortSha256)
+    runtimeManifest.libraries.each { name, digest -> verifyHash(new File(runtime, name), digest) }
+    tasks.register("prepareNativeQnn", Sync) {
+        from(model) { rename { "depth.onnx" }; into("assets/realtime-sbs") }
+        from(runtime) { include runtimeManifest.libraries.keySet().toList(); into("jniLibs/arm64-v8a") }
+        into(generatedQnn)
+    }
+    android.sourceSets.main.assets.srcDir(files(generatedQnn.map { it.dir("assets") }).builtBy("prepareNativeQnn"))
+    android.sourceSets.main.jniLibs.srcDir(files(generatedQnn.map { it.dir("jniLibs") }).builtBy("prepareNativeQnn"))
+    android.sourceSets.debug.manifest.srcFile("src/qnn/AndroidManifest.xml")
+    android.sourceSets.release.manifest.srcFile("src/qnn/AndroidManifest.xml")
+    tasks.named("preBuild").configure { dependsOn "prepareNativeQnn" }
+    dependencies { implementation files(ort) }
+}

@@ -1,0 +1,307 @@
+{
+  "baseCommit": "873935d",
+  "device": {
+    "soc": "SM8850",
+    "model": "2509FPN0BC",
+    "android": "16",
+    "charging": true
+  },
+  "configuration": {
+    "input": "Existing Jellyfin animation excerpt, local HTTP MP4 loop; 1920x1080 H264/AAC at 24000/1001 fps",
+    "depthShape": [
+      266,
+      154
+    ],
+    "depthScheduleHz": 12,
+    "eyeRenderTarget": [
+      1920,
+      1080
+    ],
+    "display": "Offscreen 3840x1080 FBO, blit to phone preview",
+    "debugDepth": true,
+    "cpuEpFallback": false,
+    "ioQuantizationOffload": false,
+    "qnnSocModel": 660
+  },
+  "runtime": {
+    "qairtVersion": "2.50.40.260831",
+    "qnnApi": "2.39.0",
+    "soc": "SM8850",
+    "dsp": "V81",
+    "ortVersion": "1.22.0",
+    "ortSha256": "8be5cc2e5a56bf44673582661ca0e3731c12a9d57fae789c92f367e67755275f",
+    "modelSha256": "7cbe36d72ec5931c362e759274cdbbd0757dd1ddfb6b6c5fb37e918b006db19d",
+    "libraries": {
+      "libCalculator_skel.so": "50ec62aa4d8e811a0a84f636515a1a4a24bda33176190772322ae9d40f47273c",
+      "libQnnHtp.so": "d299323d79868adbb18997c8e99ae18f961005589ab137f56a51d27e67d6bf0f",
+      "libQnnHtpNetRunExtensions.so": "2923a52c9c3d4039ee181fc3978aff7546aa34ea970de939b0793954ae9c2345",
+      "libQnnHtpPrepare.so": "c59eb2c24dbc797d86963f02180baab0ad09bc7e2177db895010f2fd5930db75",
+      "libQnnHtpV81.so": "c626100f79fac84fa3a1493cc3be297cb2b4c2c83e7ac79b3140877ee17d7fe3",
+      "libQnnHtpV81CalculatorStub.so": "7729c3d166b5116fc6c1a9007170c1d60d928826917c5e3e181e56525fecf5c8",
+      "libQnnHtpV81Skel.so": "0df1a63f7fcf60b2f6ca419228c36bb97dc225ba69b24ea3a150a533e9bf3f5f",
+      "libQnnHtpV81Stub.so": "8cfb232be5f3f09d732805a8cfe222515460625a00267ed6648667e140be8a31",
+      "libQnnSystem.so": "b30bd9880dc48f6c5349185a7d45b326f8a064b10072e60094354fa23d9a2027"
+    }
+  },
+  "observedLoadedLibraries": [
+    "libQnnHtp.so",
+    "libQnnHtpPrepare.so",
+    "libQnnHtpV81Stub.so",
+    "libonnxruntime.so",
+    "libonnxruntime4j_jni.so"
+  ],
+  "normal": {
+    "observationSeconds": 66.803,
+    "depthUploadHz": 11.945571306677843,
+    "lastRollingWindow": {
+      "state": "playing",
+      "elapsedMs": 104136,
+      "positionMs": 72193,
+      "samples": 864,
+      "readback": {
+        "count": 864,
+        "window": 512,
+        "submitMs": {
+          "mean": 15.0404,
+          "p95": 21.1495
+        },
+        "fenceObservedMs": {
+          "mean": 8.8846,
+          "p95": 15.0461
+        },
+        "mapCopyMs": {
+          "mean": 0.0648,
+          "p95": 0.098
+        }
+      },
+      "depth": {
+        "state": "ready",
+        "discarded": 0,
+        "diagnosticDelayMs": 0,
+        "worker": {
+          "count": 863,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.9033,
+            "p95": 1.4224
+          },
+          "inferenceMs": {
+            "mean": 18.4294,
+            "p95": 19.9011
+          },
+          "stabilizeMs": {
+            "mean": 20.1955,
+            "p95": 24.3686
+          }
+        },
+        "render": {
+          "valid": true,
+          "uploads": 863,
+          "ageMs": 118,
+          "stereo": true,
+          "debug": true,
+          "eyeTargetWidth": 1920,
+          "gpuRender": {
+            "count": 2527,
+            "window": 512,
+            "disjoint": 0,
+            "meanMs": 11.0309,
+            "p95Ms": 11.9643
+          },
+          "timings": {
+            "count": 863,
+            "window": 512,
+            "captureToUploadMs": {
+              "mean": 64.3965,
+              "p95": 73.2251
+            },
+            "uploadMs": {
+              "mean": 0.1295,
+              "p95": 0.2784
+            },
+            "drawSubmitMs": {
+              "mean": 0.229,
+              "p95": 0.3722
+            }
+          }
+        }
+      }
+    }
+  },
+  "slowDepth": {
+    "injectedDelayMs": 250,
+    "recordedPointsBeforeSeek": 19,
+    "allRecordedPointsKeptDepth": true,
+    "minRecordedDepthAgeMs": 381,
+    "maxRecordedDepthAgeMs": 505,
+    "depthUploadHz": 2.9608509705011516
+  },
+  "regression": {
+    "staleResultRejectedAfterSeek": 1,
+    "longestRecordedPausedDepthAgeMs": 67525,
+    "hlsAfter404": {
+      "state": "ended",
+      "elapsedMs": 279338,
+      "positionMs": 20063,
+      "samples": 236,
+      "readback": {
+        "count": 1211,
+        "window": 512,
+        "submitMs": {
+          "mean": 16.1496,
+          "p95": 25.3613
+        },
+        "fenceObservedMs": {
+          "mean": 9.1058,
+          "p95": 15.8417
+        },
+        "mapCopyMs": {
+          "mean": 0.0736,
+          "p95": 0.1033
+        }
+      },
+      "depth": {
+        "state": "ready",
+        "discarded": 1,
+        "diagnosticDelayMs": 0,
+        "worker": {
+          "count": 1211,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.9332,
+            "p95": 1.4032
+          },
+          "inferenceMs": {
+            "mean": 18.6374,
+            "p95": 20.2466
+          },
+          "stabilizeMs": {
+            "mean": 21.2001,
+            "p95": 24.2678
+          }
+        },
+        "render": {
+          "valid": true,
+          "uploads": 1210,
+          "ageMs": 337,
+          "stereo": true,
+          "debug": true,
+          "eyeTargetWidth": 1920,
+          "gpuRender": {
+            "count": 4184,
+            "window": 512,
+            "disjoint": 0,
+            "meanMs": 10.8418,
+            "p95Ms": 11.9648
+          },
+          "timings": {
+            "count": 1210,
+            "window": 512,
+            "captureToUploadMs": {
+              "mean": 117.9477,
+              "p95": 325.1296
+            },
+            "uploadMs": {
+              "mean": 0.1519,
+              "p95": 0.3405
+            },
+            "drawSubmitMs": {
+              "mean": 0.2543,
+              "p95": 0.4136
+            }
+          }
+        }
+      }
+    },
+    "decoderReleasedOnBackground": true
+  },
+  "imageCheck": {
+    "eyeImageMeanAbsoluteRgbDifference": 4.806031825376989,
+    "eyeImagePixelsDifferent": 135016,
+    "eyeImagePixelsCompared": 160040,
+    "depthOverlayMeanAbsoluteRgbDifference": 0.0
+  },
+  "limitations": [
+    "No production Jellyfin session/UI integration or external Presentation/USB mode change",
+    "No timestamp-to-media-PTS alignment proof",
+    "No optical flow or inpainting; temporal/occlusion quality still needs viewing tests",
+    "GPU duration includes debug inset and blit, excludes depth input readback and SurfaceFlinger",
+    "PBO submission wall time includes driver waits; stages overlap and their P95 values cannot be summed",
+    "12 Hz depth is not 60 Hz depth; 4K60 and long thermal/noncharging power not tested"
+  ],
+  "finalApkSmoke": {
+    "state": "ended",
+    "positionMs": 20059,
+    "samples": 239,
+    "readback": {
+      "count": 239,
+      "window": 239,
+      "submitMs": {
+        "mean": 14.8802,
+        "p95": 21.2145
+      },
+      "fenceObservedMs": {
+        "mean": 8.5362,
+        "p95": 14.5576
+      },
+      "mapCopyMs": {
+        "mean": 0.0787,
+        "p95": 0.1205
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 0,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 239,
+        "window": 239,
+        "preprocessMs": {
+          "mean": 0.9415,
+          "p95": 1.5633
+        },
+        "inferenceMs": {
+          "mean": 18.3138,
+          "p95": 19.8845
+        },
+        "stabilizeMs": {
+          "mean": 19.5686,
+          "p95": 24.296
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 239,
+        "ageMs": 578,
+        "stereo": true,
+        "debug": true,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 707,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 10.881,
+          "p95Ms": 11.9392
+        },
+        "timings": {
+          "count": 239,
+          "window": 239,
+          "captureToUploadMs": {
+            "mean": 63.3537,
+            "p95": 71.5113
+          },
+          "uploadMs": {
+            "mean": 0.1622,
+            "p95": 0.415
+          },
+          "drawSubmitMs": {
+            "mean": 0.2514,
+            "p95": 0.408
+          }
+        }
+      }
+    }
+  },
+  "finalApkSha256": "d615027ea043d99caa8cf3fe8ba1c41b423b568c2fdfe6bafe1c0bc5301a50cc",
+  "packagingVerification": "Final APK model and all 9 vendor library hashes match runtime manifest; AGP strip disabled for vendor/DSP libraries. Normal long trace predates that packaging-only correction; final smoke uses preserved binaries."
+}
