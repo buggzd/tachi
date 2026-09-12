@@ -135,6 +135,7 @@ public final class NativeVideoEngine implements AutoCloseable
                 {
                     samples.execute(() ->
                     {
+                        boolean rendererOwnsLease = false;
                         try
                         {
                             if (!closed && slot.current(lease, generation))
@@ -150,7 +151,9 @@ public final class NativeVideoEngine implements AutoCloseable
                                     if (delay > 0) Thread.sleep(delay);
                                     if (!closed && slot.current(lease, generation))
                                     {
-                                        if (result.map != null) view.offerDepth(result.map, generation, capturedNs);
+                                        if (result.raw != null)
+                                            rendererOwnsLease = view.offerRawDepth(result.raw, generation, capturedNs, lease);
+                                        else if (result.map != null) view.offerDepth(result.map, generation, capturedNs);
                                     }
                                     else discardedDepth++;
                                 }
@@ -165,7 +168,7 @@ public final class NativeVideoEngine implements AutoCloseable
                         }
                         finally
                         {
-                            slot.release(lease);
+                            if (!rendererOwnsLease) slot.release(lease);
                         }
                     });
                 }
@@ -179,6 +182,12 @@ public final class NativeVideoEngine implements AutoCloseable
             public void failure()
             {
                 fail("surface");
+            }
+
+            @Override
+            public void depthFailure(long generation)
+            {
+                if (!closed && slot.generation() == generation) depthFailed();
             }
         }, slot);
         view.suspendSampling(!depthReady);

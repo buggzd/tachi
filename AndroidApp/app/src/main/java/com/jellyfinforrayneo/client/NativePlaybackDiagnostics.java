@@ -95,7 +95,7 @@ final class NativePlaybackDiagnostics
                 JSONObject render = depth.optJSONObject("render");
                 if (render != null)
                 {
-                    copyBooleans(render, row, "valid", "stereo", "debug");
+                    copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization");
                     copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight");
                     JSONObject timing = render.optJSONObject("timings");
                     if (timing != null) timings(timing, row, "captureToUploadMs", "uploadMs", "drawSubmitMs");
@@ -105,6 +105,23 @@ final class NativePlaybackDiagnostics
                         number(gpu, "meanMs", row, "gpuMeanMs");
                         number(gpu, "p95Ms", row, "gpuP95Ms");
                         number(gpu, "disjoint", row, "gpuDisjoint");
+                    }
+                    JSONObject stabilize = render.optJSONObject("gpuStabilize");
+                    if (stabilize != null)
+                    {
+                        number(stabilize, "meanMs", row, "gpuStabilizeMeanMs");
+                        number(stabilize, "p95Ms", row, "gpuStabilizeP95Ms");
+                        number(stabilize, "disjoint", row, "gpuStabilizeDisjoint");
+                    }
+                    JSONObject stages = render.optJSONObject("gpuStages");
+                    if (stages != null)
+                    {
+                        JSONObject complete = stages.optJSONObject("completionMs");
+                        if (complete != null)
+                        {
+                            number(complete, "mean", row, "gpuStabilizeCompletionMeanMs");
+                            number(complete, "p95", row, "gpuStabilizeCompletionP95Ms");
+                        }
                     }
                 }
             }
@@ -120,7 +137,8 @@ final class NativePlaybackDiagnostics
         StringBuilder out = new StringBuilder("nativePlaybackSchema=2\n")
                 .append("nativePlaybackRetention=last 120 samples; at most 1 Hz plus state changes; current app process; separate last 64 events and 32 failures\n")
                 .append("nativePlaybackClock=milliseconds since app diagnostic clock started; same clock as events\n")
-                .append("nativePlaybackTiming=milliseconds; rolling 512 samples; GPU timer excludes compositor; depth age is not end-to-end latency\n");
+                .append("nativePlaybackTiming=milliseconds; rolling 512 samples; GPU timer excludes compositor; depth age is not end-to-end latency\n")
+                .append("nativePlaybackGpuStabilization=when true, worker stabilizeMs measures raw-depth handoff; GPU completion includes submit and GL scheduling\n");
         for (JSONObject row : events) out.append("playbackEvent=").append(row).append('\n');
         for (JSONObject row : failures) out.append("playbackFailure=").append(row).append('\n');
         for (JSONObject row : samples) out.append("nativePlayback=").append(row).append('\n');

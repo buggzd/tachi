@@ -1,0 +1,89 @@
+{
+  "shape": [
+    392,
+    224
+  ],
+  "rows": 102,
+  "durationSeconds": 102.97,
+  "depthHz": 11.411090608915218,
+  "positionAdvanceMs": 102969,
+  "ageMedianMs": 117.0,
+  "ageP95Ms": 164,
+  "lastWindowWorker": {
+    "count": 1348,
+    "window": 512,
+    "preprocessMs": {
+      "mean": 1.9543,
+      "p95": 2.7999
+    },
+    "inferenceMs": {
+      "mean": 32.7664,
+      "p95": 34.5274
+    },
+    "stabilizeMs": {
+      "mean": 0.2492,
+      "p95": 0.4076
+    }
+  },
+  "lastWindowRender": {
+    "valid": true,
+    "uploads": 1348,
+    "ageMs": 124,
+    "stereo": true,
+    "debug": true,
+    "depthWidth": 392,
+    "depthHeight": 224,
+    "eyeTargetWidth": 1920,
+    "gpuRender": {
+      "count": 5019,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 8.1823,
+      "p95Ms": 10.0992
+    },
+    "gpuStabilization": true,
+    "gpuStabilize": {
+      "count": 1347,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 0.0067,
+      "p95Ms": 0.009
+    },
+    "timings": {
+      "count": 1348,
+      "window": 512,
+      "captureToUploadMs": {
+        "mean": 71.7305,
+        "p95": 87.6223
+      },
+      "uploadMs": {
+        "mean": 2.9334,
+        "p95": 15.3482
+      },
+      "drawSubmitMs": {
+        "mean": 0.1759,
+        "p95": 0.2787
+      }
+    }
+  },
+  "lastWindowReadback": {
+    "count": 1349,
+    "window": 512,
+    "submitMs": {
+      "mean": 16.3544,
+      "p95": 24.0039
+    },
+    "fenceObservedMs": {
+      "mean": 5.6877,
+      "p95": 15.9339
+    },
+    "mapCopyMs": {
+      "mean": 0.0704,
+      "p95": 0.1343
+    }
+  },
+  "limits": "Rate and age exclude the first 15s of playing+ready by default. Stage values are the final rolling windows, possibly including startup. Depth age is wall clock, not media PTS mismatch. GPU overlaps CPU stages; these are not display frame-rate measurements.",
+  "batteryTemperatureC": 32.2,
+  "build": "non-debuggable lab, ART speed",
+  "timingBoundary": "CPU baseline: texture upload submitted; GPU: compute fence observed. Not optical latency or media PTS lag."
+}

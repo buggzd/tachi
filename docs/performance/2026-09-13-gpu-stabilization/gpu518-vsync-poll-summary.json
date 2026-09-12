@@ -1,0 +1,105 @@
+{
+  "shape": [
+    518,
+    294
+  ],
+  "rows": 103,
+  "durationSeconds": 103.89,
+  "depthHz": 8.056598325151603,
+  "positionAdvanceMs": 103883,
+  "ageMedianMs": 171,
+  "ageP95Ms": 225,
+  "lastWindowWorker": {
+    "count": 965,
+    "window": 512,
+    "preprocessMs": {
+      "mean": 3.3673,
+      "p95": 5.0801
+    },
+    "inferenceMs": {
+      "mean": 57.2005,
+      "p95": 58.5747
+    },
+    "stabilizeMs": {
+      "mean": 0.3858,
+      "p95": 0.5093
+    }
+  },
+  "lastWindowRender": {
+    "valid": true,
+    "uploads": 965,
+    "ageMs": 166,
+    "stereo": true,
+    "debug": true,
+    "depthWidth": 518,
+    "depthHeight": 294,
+    "eyeTargetWidth": 1920,
+    "gpuRender": {
+      "count": 3835,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 8.8695,
+      "p95Ms": 11.2621
+    },
+    "gpuStabilization": true,
+    "gpuStabilize": {
+      "count": 964,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 0.007,
+      "p95Ms": 0.0093
+    },
+    "gpuStages": {
+      "count": 965,
+      "window": 512,
+      "submitMs": {
+        "mean": 0.8498,
+        "p95": 1.3802
+      },
+      "completionMs": {
+        "mean": 16.2755,
+        "p95": 35.8969
+      },
+      "statusReadMs": {
+        "mean": 0.0514,
+        "p95": 0.0744
+      }
+    },
+    "timings": {
+      "count": 965,
+      "window": 512,
+      "captureToUploadMs": {
+        "mean": 105.4807,
+        "p95": 121.5877
+      },
+      "uploadMs": {
+        "mean": 0.8511,
+        "p95": 1.381
+      },
+      "drawSubmitMs": {
+        "mean": 0.155,
+        "p95": 0.2542
+      }
+    }
+  },
+  "lastWindowReadback": {
+    "count": 965,
+    "window": 512,
+    "submitMs": {
+      "mean": 19.0625,
+      "p95": 27.6594
+    },
+    "fenceObservedMs": {
+      "mean": 8.2839,
+      "p95": 14.9699
+    },
+    "mapCopyMs": {
+      "mean": 0.1071,
+      "p95": 0.1704
+    }
+  },
+  "limits": "Rate and age exclude the first 15s of playing+ready by default. Stage values are the final rolling windows, possibly including startup. Depth age is wall clock, not media PTS mismatch. GPU overlaps CPU stages; these are not display frame-rate measurements.",
+  "batteryTemperatureC": 32.5,
+  "build": "non-debuggable lab, ART speed",
+  "timingBoundary": "CPU baseline: texture upload submitted; GPU: compute fence observed. Not optical latency or media PTS lag."
+}

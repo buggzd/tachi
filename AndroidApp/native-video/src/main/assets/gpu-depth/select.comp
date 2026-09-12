@@ -1,0 +1,25 @@
+layout(local_size_x=1) in;
+uniform int shift;
+void main() {
+    for(uint rank=0u;rank<2u;rank++) {
+        uint remaining=s[rank==0u?LRANK:HRANK];
+        for(uint bin=0u;bin<256u;bin++) {
+            uint count=s[rank*256u+bin];
+            if(remaining<count) {
+                s[rank==0u?LO:HI]|=bin<<uint(shift);
+                s[rank==0u?LRANK:HRANK]=remaining;
+                break;
+            }
+            remaining-=count;
+        }
+    }
+    if(shift==0) {
+        float lo=unordered(s[LO]), hi=unordered(s[HI]);
+        if(s[BAD]!=0u || hi-lo<0.00001) return;
+        bool reset=s[INITIAL]==0u || s[DIFF]>uint(N*3*35);
+        float oldLo=uintBitsToFloat(s[LOW]), oldHi=uintBitsToFloat(s[HIGH]);
+        s[LOW]=floatBitsToUint(reset?lo:oldLo+0.15*(lo-oldLo));
+        s[HIGH]=floatBitsToUint(reset?hi:oldHi+0.15*(hi-oldHi));
+        s[RESET]=reset?1u:0u; s[ACCEPT]=1u; s[INITIAL]=1u;
+    }
+}

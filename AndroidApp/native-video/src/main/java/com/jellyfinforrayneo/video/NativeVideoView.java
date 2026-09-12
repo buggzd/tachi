@@ -28,6 +28,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         // GL thread. Bytes are tightly packed, top-row-first RGBA; valid until releaseSample.
         void sample(ByteBuffer bytes, long textureTimestampNs, long capturedNs, long lease, long generation);
         void failure();
+        void depthFailure(long generation);
     }
 
     private final Host host;
@@ -68,6 +69,18 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private int depthTexture;
     private final ByteBuffer depthUpload = ByteBuffer.allocateDirect(SAMPLE_WIDTH * SAMPLE_HEIGHT);
     private final AtomicReference<DepthPacket> pendingDepth = new AtomicReference<>();
+    private final Object rawDepthLock = new Object();
+    private RawDepthPacket pendingRawDepth;
+    private RawDepthPacket activeRawDepth;
+    private volatile GpuTemporalDepth gpuStabilizer;
+    private long gpuHistoryGeneration = -1;
+    private long gpuSubmitCost;
+    private long gpuCompletedCost;
+    private long gpuCompletedAge;
+    private long gpuDrawSubmitCost;
+    private boolean gpuPollScheduled;
+    private long gpuObserverSerial;
+    private long gpuSubmissionSerial;
     private volatile long depthGeneration = -1;
     private volatile long depthCapturedNs;
     private volatile long depthUploads;
@@ -89,6 +102,44 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             this.map = map;
             this.generation = generation;
             this.capturedNs = capturedNs;
+        }
+    }
+
+    private static final class RawDepthPacket
+    {
+        final float[] raw;
+        final long generation;
+        final long capturedNs;
+        final long lease;
+
+        RawDepthPacket(float[] raw, long generation, long capturedNs, long lease)
+        {
+            this.raw = raw;
+            this.generation = generation;
+            this.capturedNs = capturedNs;
+            this.lease = lease;
+        }
+    }
+
+    /** Transfers the capture lease, preserving the exact RGB texture paired with this inference. */
+    boolean offerRawDepth(float[] raw, long generation, long capturedNs, long lease)
+    {
+        synchronized (rawDepthLock)
+        {
+            if (closed || !slot.current(lease, generation)) return false;
+            if (pendingRawDepth != null) throw new IllegalStateException("raw depth queue");
+            pendingRawDepth = new RawDepthPacket(raw, generation, capturedNs, lease);
+        }
+        requestRender();
+        return true;
+    }
+
+    private void clearPendingRawDepth()
+    {
+        synchronized (rawDepthLock)
+        {
+            if (pendingRawDepth != null) slot.release(pendingRawDepth.lease);
+            pendingRawDepth = null;
         }
     }
 
@@ -121,12 +172,16 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     public String depthStatusJson()
     {
         boolean valid = hasCurrentDepth();
+        GpuTemporalDepth stabilizer = gpuStabilizer;
         return "{\"valid\":" + valid + ",\"uploads\":" + depthUploads
                 + ",\"ageMs\":" + (valid ? (System.nanoTime() - depthCapturedNs) / 1_000_000 : -1)
                 + ",\"stereo\":" + stereoPreview + ",\"debug\":" + debugDepth
                 + ",\"depthWidth\":" + SAMPLE_WIDTH + ",\"depthHeight\":" + SAMPLE_HEIGHT
                 + ",\"eyeTargetWidth\":" + (render1080 ? 1920 : width / (stereoPreview ? 2 : 1))
                 + ",\"gpuRender\":" + gpuTimer.json()
+                + ",\"gpuStabilization\":" + BuildConfig.GPU_DEPTH_STABILIZATION
+                + ",\"gpuStabilize\":" + (stabilizer == null ? "null" : stabilizer.timingsJson())
+                + ",\"gpuStages\":" + (stabilizer == null ? "null" : stabilizer.stageTimingsJson())
                 + ",\"timings\":" + presentationTimings.json() + "}";
     }
 
@@ -198,6 +253,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     {
         slot.invalidate();
         pendingDepth.set(null);
+        clearPendingRawDepth();
         requestRender();
     }
 
@@ -208,6 +264,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         sampling = false;
         slot.invalidate();
         pendingDepth.set(null);
+        clearPendingRawDepth();
         queueEvent(this::releaseGl);
         requestRender();
     }
@@ -224,6 +281,13 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             fence = 0;
             slot.invalidate();
             pendingDepth.set(null);
+            clearPendingRawDepth();
+            if (activeRawDepth != null) slot.release(activeRawDepth.lease);
+            activeRawDepth = null;
+            gpuStabilizer = null; // The old GL names belonged to the lost context.
+            gpuHistoryGeneration = -1;
+            gpuObserverSerial++;
+            gpuPollScheduled = false;
             depthGeneration = -1;
             Surface previousSurface = surface;
             SurfaceTexture previousTexture = texture;
@@ -302,8 +366,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
             }
             gpuTimer.create();
+            if (BuildConfig.GPU_DEPTH_STABILIZATION)
+                gpuStabilizer = new GpuTemporalDepth(getContext(), SAMPLE_WIDTH, SAMPLE_HEIGHT);
         }
-        catch (RuntimeException error)
+        catch (Exception error)
         {
             fail();
         }
@@ -323,6 +389,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         try
         {
             pollSample();
+            processGpuDepth();
             boolean fresh = framePending.getAndSet(false);
             if (fresh)
             {
@@ -336,8 +403,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
             if (!hasImage || width <= 0 || height <= 0) return;
             DepthPacket packet = pendingDepth.getAndSet(null);
-            long uploadCost = 0;
-            long captureAge = 0;
+            long uploadCost = gpuCompletedCost;
+            long captureAge = gpuCompletedAge;
             if (packet != null && packet.generation == slot.generation())
             {
                 long start = System.nanoTime();
@@ -396,6 +463,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
             }
             gpuTimer.end();
+            if (activeRawDepth != null && gpuDrawSubmitCost == 0)
+                gpuDrawSubmitCost = System.nanoTime() - drawStart;
             if (uploadCost > 0) presentationTimings.record(captureAge, uploadCost, System.nanoTime() - drawStart);
             long now = System.nanoTime();
             if (fresh && sampling && !samplingSuspended && fence == 0 && cadence.due(now))
@@ -473,6 +542,97 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, pendingCapturedNs, lease, pendingGeneration);
     }
 
+    private void processGpuDepth()
+    {
+        gpuCompletedCost = 0;
+        gpuCompletedAge = 0;
+        if (gpuStabilizer == null) return;
+        if (activeRawDepth != null)
+        {
+            GpuTemporalDepth.Result result = gpuStabilizer.poll();
+            if (result != null)
+            {
+                RawDepthPacket packet = activeRawDepth;
+                activeRawDepth = null;
+                if (result.accepted && packet.generation == slot.generation())
+                {
+                    depthCapturedNs = packet.capturedNs;
+                    depthGeneration = packet.generation;
+                    depthUploads++;
+                    gpuCompletedCost = gpuSubmitCost;
+                    gpuCompletedAge = System.nanoTime() - packet.capturedNs;
+                }
+                if (result.invalid && packet.generation == slot.generation())
+                    post(() -> host.depthFailure(packet.generation));
+                slot.release(packet.lease);
+            }
+        }
+        if (activeRawDepth != null) return;
+        RawDepthPacket packet;
+        synchronized (rawDepthLock)
+        {
+            packet = pendingRawDepth;
+            pendingRawDepth = null;
+        }
+        if (packet == null) return;
+        if (!slot.current(packet.lease, packet.generation))
+        {
+            slot.release(packet.lease);
+            return;
+        }
+        activeRawDepth = packet;
+        long start = System.nanoTime();
+        // The lease is still occupied: sampleTexture cannot have been overwritten by another capture.
+        gpuStabilizer.submit(packet.raw, sampleTexture, packet.generation != gpuHistoryGeneration);
+        // submit queued an independent GPU RGB snapshot, so capture/NPU may now overlap compute.
+        slot.release(packet.lease);
+        gpuSubmissionSerial++;
+        gpuHistoryGeneration = packet.generation;
+        gpuSubmitCost = System.nanoTime() - start;
+        gpuDrawSubmitCost = 0;
+        scheduleGpuPoll();
+    }
+
+    /** Poll a tiny control fence without repeating a full SBS draw or waiting for the next vsync. */
+    private void scheduleGpuPoll()
+    {
+        if (gpuPollScheduled || closed || activeRawDepth == null) return;
+        gpuPollScheduled = true;
+        long observer = gpuObserverSerial;
+        postDelayed(() ->
+        {
+            if (closed) return;
+            queueEvent(() ->
+            {
+                if (observer != gpuObserverSerial) return;
+                gpuPollScheduled = false;
+                if (closed || failed || activeRawDepth == null) return;
+                try
+                {
+                    boolean wasValid = hasCurrentDepth();
+                    long submission = gpuSubmissionSerial;
+                    long completedDrawCost = gpuDrawSubmitCost;
+                    processGpuDepth();
+                    if (gpuCompletedCost > 0)
+                    {
+                        presentationTimings.record(gpuCompletedAge, gpuCompletedCost, completedDrawCost);
+                        gpuCompletedCost = 0;
+                        gpuCompletedAge = 0;
+                        // Subsequent updates were already drawn after submit on the same GL queue.
+                        // The first accepted map needs a draw to turn on depth/debug rendering.
+                        if (!wasValid) requestRender();
+                    }
+                    if (gpuSubmissionSerial != submission) requestRender();
+                    scheduleGpuPoll();
+                }
+                catch (RuntimeException error)
+                {
+                    fail();
+                }
+            });
+        }, 2);
+    }
+
     private void draw(boolean topRowFirst, float eye, boolean depthOnly)
     {
         GLES30.glUseProgram(program);
@@ -480,7 +640,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oes);
         GLES30.glUniform1i(GLES30.glGetUniformLocation(program, "video"), 0);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTexture);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, gpuStabilizer == null ? depthTexture : gpuStabilizer.texture());
         GLES30.glUniform1i(GLES30.glGetUniformLocation(program, "depthMap"), 1);
         GLES30.glUniform1f(GLES30.glGetUniformLocation(program, "eye"), eye);
         GLES30.glUniform1i(GLES30.glGetUniformLocation(program, "depthOnly"), depthOnly ? 1 : 0);
@@ -548,15 +708,25 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         failed = true;
         if (pendingLease != 0) slot.release(pendingLease);
         pendingLease = 0;
+        clearPendingRawDepth();
+        if (activeRawDepth != null) slot.release(activeRawDepth.lease);
+        activeRawDepth = null;
         post(host::failure);
     }
 
     private void releaseGl()
     {
+        gpuObserverSerial++;
+        gpuPollScheduled = false;
         if (fence != 0) GLES30.glDeleteSync(fence);
         if (pendingLease != 0) slot.release(pendingLease);
         fence = 0;
         pendingLease = 0;
+        clearPendingRawDepth();
+        if (activeRawDepth != null) slot.release(activeRawDepth.lease);
+        activeRawDepth = null;
+        if (gpuStabilizer != null) gpuStabilizer.close();
+        gpuStabilizer = null;
         if (texture != null) texture.release();
         if (surface != null) surface.release();
         gpuTimer.close();

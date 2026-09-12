@@ -1,0 +1,1303 @@
+{
+  "started": {
+    "state": "playing",
+    "elapsedMs": 197431255,
+    "positionMs": 0,
+    "samples": 1,
+    "readback": {
+      "count": 1,
+      "window": 1,
+      "submitMs": {
+        "mean": 2.9583,
+        "p95": 2.9583
+      },
+      "fenceObservedMs": {
+        "mean": 15.9245,
+        "p95": 15.9245
+      },
+      "mapCopyMs": {
+        "mean": 0.0672,
+        "p95": 0.0672
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 0,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 1,
+        "window": 1,
+        "preprocessMs": {
+          "mean": 0.9256,
+          "p95": 0.9256
+        },
+        "inferenceMs": {
+          "mean": 33.3647,
+          "p95": 33.3647
+        },
+        "stabilizeMs": {
+          "mean": 0.1141,
+          "p95": 0.1141
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 1,
+        "ageMs": 130,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 2,
+          "window": 2,
+          "disjoint": 0,
+          "meanMs": 0.7103,
+          "p95Ms": 0.7126
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 0,
+          "window": 0,
+          "disjoint": 0,
+          "meanMs": 0.0,
+          "p95Ms": 0.0
+        },
+        "gpuStages": {
+          "count": 1,
+          "window": 1,
+          "submitMs": {
+            "mean": 2.0606,
+            "p95": 2.0606
+          },
+          "completionMs": {
+            "mean": 6.8967,
+            "p95": 6.8967
+          },
+          "statusReadMs": {
+            "mean": 0.0323,
+            "p95": 0.0323
+          }
+        },
+        "timings": {
+          "count": 1,
+          "window": 1,
+          "captureToUploadMs": {
+            "mean": 62.9557,
+            "p95": 62.9557
+          },
+          "uploadMs": {
+            "mean": 2.0613,
+            "p95": 2.0613
+          },
+          "drawSubmitMs": {
+            "mean": 0.1409,
+            "p95": 0.1409
+          }
+        }
+      }
+    }
+  },
+  "slow": {
+    "state": "playing",
+    "elapsedMs": 197432279,
+    "positionMs": 906,
+    "samples": 9,
+    "readback": {
+      "count": 9,
+      "window": 9,
+      "submitMs": {
+        "mean": 15.811,
+        "p95": 30.4919
+      },
+      "fenceObservedMs": {
+        "mean": 8.3698,
+        "p95": 15.9245
+      },
+      "mapCopyMs": {
+        "mean": 0.0607,
+        "p95": 0.0826
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 0,
+      "diagnosticDelayMs": 250,
+      "worker": {
+        "count": 9,
+        "window": 9,
+        "preprocessMs": {
+          "mean": 2.0691,
+          "p95": 6.078
+        },
+        "inferenceMs": {
+          "mean": 32.3404,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.3314,
+          "p95": 1.3473
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 8,
+        "ageMs": 379,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 30,
+          "window": 30,
+          "disjoint": 0,
+          "meanMs": 9.0304,
+          "p95Ms": 11.8946
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 7,
+          "window": 7,
+          "disjoint": 0,
+          "meanMs": 0.0057,
+          "p95Ms": 0.0066
+        },
+        "gpuStages": {
+          "count": 8,
+          "window": 8,
+          "submitMs": {
+            "mean": 0.9206,
+            "p95": 2.0606
+          },
+          "completionMs": {
+            "mean": 14.1252,
+            "p95": 34.5545
+          },
+          "statusReadMs": {
+            "mean": 0.0495,
+            "p95": 0.0735
+          }
+        },
+        "timings": {
+          "count": 8,
+          "window": 8,
+          "captureToUploadMs": {
+            "mean": 74.7812,
+            "p95": 91.8713
+          },
+          "uploadMs": {
+            "mean": 0.922,
+            "p95": 2.0613
+          },
+          "drawSubmitMs": {
+            "mean": 0.2113,
+            "p95": 0.5525
+          }
+        }
+      }
+    }
+  },
+  "slowHeld": {
+    "state": "playing",
+    "elapsedMs": 197434320,
+    "positionMs": 2951,
+    "samples": 15,
+    "readback": {
+      "count": 15,
+      "window": 15,
+      "submitMs": {
+        "mean": 17.3906,
+        "p95": 30.4919
+      },
+      "fenceObservedMs": {
+        "mean": 9.2564,
+        "p95": 16.2401
+      },
+      "mapCopyMs": {
+        "mean": 0.067,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 0,
+      "diagnosticDelayMs": 250,
+      "worker": {
+        "count": 15,
+        "window": 15,
+        "preprocessMs": {
+          "mean": 2.2752,
+          "p95": 6.078
+        },
+        "inferenceMs": {
+          "mean": 32.576,
+          "p95": 35.7444
+        },
+        "stabilizeMs": {
+          "mean": 0.3136,
+          "p95": 1.3473
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 14,
+        "ageMs": 621,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 84,
+          "window": 84,
+          "disjoint": 0,
+          "meanMs": 10.6122,
+          "p95Ms": 11.9798
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 13,
+          "window": 13,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 14,
+          "window": 14,
+          "submitMs": {
+            "mean": 0.8323,
+            "p95": 2.0606
+          },
+          "completionMs": {
+            "mean": 15.4192,
+            "p95": 34.5545
+          },
+          "statusReadMs": {
+            "mean": 0.0514,
+            "p95": 0.1012
+          }
+        },
+        "timings": {
+          "count": 14,
+          "window": 14,
+          "captureToUploadMs": {
+            "mean": 186.0,
+            "p95": 353.8477
+          },
+          "uploadMs": {
+            "mean": 0.8339,
+            "p95": 2.0613
+          },
+          "drawSubmitMs": {
+            "mean": 0.1824,
+            "p95": 0.5525
+          }
+        }
+      }
+    }
+  },
+  "seek": {
+    "state": "playing",
+    "elapsedMs": 197435337,
+    "positionMs": 13726,
+    "samples": 19,
+    "readback": {
+      "count": 19,
+      "window": 19,
+      "submitMs": {
+        "mean": 16.4531,
+        "p95": 30.4919
+      },
+      "fenceObservedMs": {
+        "mean": 8.6802,
+        "p95": 16.2401
+      },
+      "mapCopyMs": {
+        "mean": 0.0644,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 250,
+      "worker": {
+        "count": 18,
+        "window": 18,
+        "preprocessMs": {
+          "mean": 2.1975,
+          "p95": 6.078
+        },
+        "inferenceMs": {
+          "mean": 32.5588,
+          "p95": 35.7444
+        },
+        "stabilizeMs": {
+          "mean": 0.2919,
+          "p95": 1.3473
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 17,
+        "ageMs": 369,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 111,
+          "window": 111,
+          "disjoint": 0,
+          "meanMs": 9.634,
+          "p95Ms": 11.9656
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 16,
+          "window": 16,
+          "disjoint": 0,
+          "meanMs": 0.0059,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 17,
+          "window": 17,
+          "submitMs": {
+            "mean": 0.8319,
+            "p95": 2.0606
+          },
+          "completionMs": {
+            "mean": 14.3179,
+            "p95": 34.5545
+          },
+          "statusReadMs": {
+            "mean": 0.0479,
+            "p95": 0.1012
+          }
+        },
+        "timings": {
+          "count": 17,
+          "window": 17,
+          "captureToUploadMs": {
+            "mean": 207.8086,
+            "p95": 353.8477
+          },
+          "uploadMs": {
+            "mean": 0.8336,
+            "p95": 2.0613
+          },
+          "drawSubmitMs": {
+            "mean": 0.1761,
+            "p95": 0.5525
+          }
+        }
+      }
+    }
+  },
+  "discardDelta": 1,
+  "normal": {
+    "state": "playing",
+    "elapsedMs": 197436359,
+    "positionMs": 14733,
+    "samples": 22,
+    "readback": {
+      "count": 22,
+      "window": 22,
+      "submitMs": {
+        "mean": 16.7015,
+        "p95": 25.8728
+      },
+      "fenceObservedMs": {
+        "mean": 9.0951,
+        "p95": 15.9245
+      },
+      "mapCopyMs": {
+        "mean": 0.0649,
+        "p95": 0.0969
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 22,
+        "window": 22,
+        "preprocessMs": {
+          "mean": 2.0858,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.5858,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2746,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 20,
+        "ageMs": 411,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 135,
+          "window": 135,
+          "disjoint": 0,
+          "meanMs": 10.0101,
+          "p95Ms": 11.9609
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 19,
+          "window": 19,
+          "disjoint": 0,
+          "meanMs": 0.0059,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 20,
+          "window": 20,
+          "submitMs": {
+            "mean": 0.8432,
+            "p95": 1.4394
+          },
+          "completionMs": {
+            "mean": 14.2564,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0472,
+            "p95": 0.0735
+          }
+        },
+        "timings": {
+          "count": 20,
+          "window": 20,
+          "captureToUploadMs": {
+            "mean": 225.5542,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.845,
+            "p95": 1.4418
+          },
+          "drawSubmitMs": {
+            "mean": 0.1785,
+            "p95": 0.2239
+          }
+        }
+      }
+    }
+  },
+  "paused1": {
+    "state": "paused",
+    "elapsedMs": 197439412,
+    "positionMs": 15327,
+    "samples": 27,
+    "readback": {
+      "count": 27,
+      "window": 27,
+      "submitMs": {
+        "mean": 16.4021,
+        "p95": 27.2213
+      },
+      "fenceObservedMs": {
+        "mean": 9.7927,
+        "p95": 16.508
+      },
+      "mapCopyMs": {
+        "mean": 0.088,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 27,
+        "window": 27,
+        "preprocessMs": {
+          "mean": 2.109,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.3303,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2591,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 26,
+        "ageMs": 2470,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 156,
+          "window": 156,
+          "disjoint": 0,
+          "meanMs": 9.9657,
+          "p95Ms": 11.955
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 25,
+          "window": 25,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 26,
+          "window": 26,
+          "submitMs": {
+            "mean": 0.8351,
+            "p95": 1.4676
+          },
+          "completionMs": {
+            "mean": 13.1064,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0468,
+            "p95": 0.0871
+          }
+        },
+        "timings": {
+          "count": 26,
+          "window": 26,
+          "captureToUploadMs": {
+            "mean": 200.0566,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.8368,
+            "p95": 1.469
+          },
+          "drawSubmitMs": {
+            "mean": 0.192,
+            "p95": 0.4787
+          }
+        }
+      }
+    }
+  },
+  "paused2": {
+    "state": "paused",
+    "elapsedMs": 197441443,
+    "positionMs": 15327,
+    "samples": 27,
+    "readback": {
+      "count": 27,
+      "window": 27,
+      "submitMs": {
+        "mean": 16.4021,
+        "p95": 27.2213
+      },
+      "fenceObservedMs": {
+        "mean": 9.7927,
+        "p95": 16.508
+      },
+      "mapCopyMs": {
+        "mean": 0.088,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 27,
+        "window": 27,
+        "preprocessMs": {
+          "mean": 2.109,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.3303,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2591,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 26,
+        "ageMs": 4500,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 156,
+          "window": 156,
+          "disjoint": 0,
+          "meanMs": 9.9657,
+          "p95Ms": 11.955
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 25,
+          "window": 25,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 26,
+          "window": 26,
+          "submitMs": {
+            "mean": 0.8351,
+            "p95": 1.4676
+          },
+          "completionMs": {
+            "mean": 13.1064,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0468,
+            "p95": 0.0871
+          }
+        },
+        "timings": {
+          "count": 26,
+          "window": 26,
+          "captureToUploadMs": {
+            "mean": 200.0566,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.8368,
+            "p95": 1.469
+          },
+          "drawSubmitMs": {
+            "mean": 0.192,
+            "p95": 0.4787
+          }
+        }
+      }
+    }
+  },
+  "twoD": {
+    "state": "paused",
+    "elapsedMs": 197442458,
+    "positionMs": 15327,
+    "samples": 27,
+    "readback": {
+      "count": 27,
+      "window": 27,
+      "submitMs": {
+        "mean": 16.4021,
+        "p95": 27.2213
+      },
+      "fenceObservedMs": {
+        "mean": 9.7927,
+        "p95": 16.508
+      },
+      "mapCopyMs": {
+        "mean": 0.088,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 27,
+        "window": 27,
+        "preprocessMs": {
+          "mean": 2.109,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.3303,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2591,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 26,
+        "ageMs": 5515,
+        "stereo": false,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 157,
+          "window": 157,
+          "disjoint": 0,
+          "meanMs": 9.9782,
+          "p95Ms": 11.955
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 25,
+          "window": 25,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 26,
+          "window": 26,
+          "submitMs": {
+            "mean": 0.8351,
+            "p95": 1.4676
+          },
+          "completionMs": {
+            "mean": 13.1064,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0468,
+            "p95": 0.0871
+          }
+        },
+        "timings": {
+          "count": 26,
+          "window": 26,
+          "captureToUploadMs": {
+            "mean": 200.0566,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.8368,
+            "p95": 1.469
+          },
+          "drawSubmitMs": {
+            "mean": 0.192,
+            "p95": 0.4787
+          }
+        }
+      }
+    }
+  },
+  "sbs": {
+    "state": "paused",
+    "elapsedMs": 197443480,
+    "positionMs": 15327,
+    "samples": 27,
+    "readback": {
+      "count": 27,
+      "window": 27,
+      "submitMs": {
+        "mean": 16.4021,
+        "p95": 27.2213
+      },
+      "fenceObservedMs": {
+        "mean": 9.7927,
+        "p95": 16.508
+      },
+      "mapCopyMs": {
+        "mean": 0.088,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 27,
+        "window": 27,
+        "preprocessMs": {
+          "mean": 2.109,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.3303,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2591,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 26,
+        "ageMs": 6537,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 158,
+          "window": 158,
+          "disjoint": 0,
+          "meanMs": 9.9177,
+          "p95Ms": 11.955
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 25,
+          "window": 25,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 26,
+          "window": 26,
+          "submitMs": {
+            "mean": 0.8351,
+            "p95": 1.4676
+          },
+          "completionMs": {
+            "mean": 13.1064,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0468,
+            "p95": 0.0871
+          }
+        },
+        "timings": {
+          "count": 26,
+          "window": 26,
+          "captureToUploadMs": {
+            "mean": 200.0566,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.8368,
+            "p95": 1.469
+          },
+          "drawSubmitMs": {
+            "mean": 0.192,
+            "p95": 0.4787
+          }
+        }
+      }
+    }
+  },
+  "sourceFailure": {
+    "state": "error",
+    "elapsedMs": 197449602,
+    "positionMs": 0,
+    "samples": 0,
+    "readback": {
+      "count": 27,
+      "window": 27,
+      "submitMs": {
+        "mean": 16.4021,
+        "p95": 27.2213
+      },
+      "fenceObservedMs": {
+        "mean": 9.7927,
+        "p95": 16.508
+      },
+      "mapCopyMs": {
+        "mean": 0.088,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 27,
+        "window": 27,
+        "preprocessMs": {
+          "mean": 2.109,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.3303,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2591,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": false,
+        "uploads": 26,
+        "ageMs": -1,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 159,
+          "window": 159,
+          "disjoint": 0,
+          "meanMs": 9.9306,
+          "p95Ms": 11.9609
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 25,
+          "window": 25,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0079
+        },
+        "gpuStages": {
+          "count": 26,
+          "window": 26,
+          "submitMs": {
+            "mean": 0.8351,
+            "p95": 1.4676
+          },
+          "completionMs": {
+            "mean": 13.1064,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0468,
+            "p95": 0.0871
+          }
+        },
+        "timings": {
+          "count": 26,
+          "window": 26,
+          "captureToUploadMs": {
+            "mean": 200.0566,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.8368,
+            "p95": 1.469
+          },
+          "drawSubmitMs": {
+            "mean": 0.192,
+            "p95": 0.4787
+          }
+        }
+      }
+    }
+  },
+  "sourceRecovered": {
+    "state": "playing",
+    "elapsedMs": 197452672,
+    "positionMs": 174,
+    "samples": 3,
+    "readback": {
+      "count": 30,
+      "window": 30,
+      "submitMs": {
+        "mean": 16.2753,
+        "p95": 27.2213
+      },
+      "fenceObservedMs": {
+        "mean": 9.3999,
+        "p95": 16.508
+      },
+      "mapCopyMs": {
+        "mean": 0.084,
+        "p95": 0.1245
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 1,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 30,
+        "window": 30,
+        "preprocessMs": {
+          "mean": 2.0345,
+          "p95": 4.779
+        },
+        "inferenceMs": {
+          "mean": 32.3009,
+          "p95": 34.0851
+        },
+        "stabilizeMs": {
+          "mean": 0.2541,
+          "p95": 0.6536
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 29,
+        "ageMs": 72,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 169,
+          "window": 169,
+          "disjoint": 0,
+          "meanMs": 9.6895,
+          "p95Ms": 11.955
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 28,
+          "window": 28,
+          "disjoint": 0,
+          "meanMs": 0.0061,
+          "p95Ms": 0.0085
+        },
+        "gpuStages": {
+          "count": 29,
+          "window": 29,
+          "submitMs": {
+            "mean": 0.8125,
+            "p95": 1.4676
+          },
+          "completionMs": {
+            "mean": 12.6949,
+            "p95": 25.9854
+          },
+          "statusReadMs": {
+            "mean": 0.0486,
+            "p95": 0.0911
+          }
+        },
+        "timings": {
+          "count": 29,
+          "window": 29,
+          "captureToUploadMs": {
+            "mean": 186.0133,
+            "p95": 342.8615
+          },
+          "uploadMs": {
+            "mean": 0.8142,
+            "p95": 1.469
+          },
+          "drawSubmitMs": {
+            "mean": 0.1878,
+            "p95": 0.4787
+          }
+        }
+      }
+    }
+  },
+  "foregroundRecovered": {
+    "state": "playing",
+    "elapsedMs": 197465183,
+    "positionMs": 6876,
+    "samples": 7,
+    "readback": {
+      "count": 7,
+      "window": 7,
+      "submitMs": {
+        "mean": 17.1963,
+        "p95": 27.713
+      },
+      "fenceObservedMs": {
+        "mean": 10.8059,
+        "p95": 16.0341
+      },
+      "mapCopyMs": {
+        "mean": 0.0692,
+        "p95": 0.1364
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 0,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 7,
+        "window": 7,
+        "preprocessMs": {
+          "mean": 0.5429,
+          "p95": 0.7709
+        },
+        "inferenceMs": {
+          "mean": 33.6169,
+          "p95": 35.6008
+        },
+        "stabilizeMs": {
+          "mean": 0.089,
+          "p95": 0.1299
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 6,
+        "ageMs": 146,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 170,
+          "window": 170,
+          "disjoint": 0,
+          "meanMs": 1.6336,
+          "p95Ms": 9.9447
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 6,
+          "window": 6,
+          "disjoint": 0,
+          "meanMs": 0.0071,
+          "p95Ms": 0.0101
+        },
+        "gpuStages": {
+          "count": 6,
+          "window": 6,
+          "submitMs": {
+            "mean": 1.1291,
+            "p95": 2.1355
+          },
+          "completionMs": {
+            "mean": 12.127,
+            "p95": 30.1323
+          },
+          "statusReadMs": {
+            "mean": 0.0509,
+            "p95": 0.0751
+          }
+        },
+        "timings": {
+          "count": 6,
+          "window": 6,
+          "captureToUploadMs": {
+            "mean": 77.7049,
+            "p95": 109.1044
+          },
+          "uploadMs": {
+            "mean": 1.1313,
+            "p95": 2.1375
+          },
+          "drawSubmitMs": {
+            "mean": 0.1693,
+            "p95": 0.2144
+          }
+        }
+      }
+    }
+  },
+  "leftPaused": {
+    "state": "paused",
+    "elapsedMs": 197468228,
+    "positionMs": 7346,
+    "samples": 13,
+    "readback": {
+      "count": 13,
+      "window": 13,
+      "submitMs": {
+        "mean": 15.0624,
+        "p95": 27.713
+      },
+      "fenceObservedMs": {
+        "mean": 10.7014,
+        "p95": 16.3801
+      },
+      "mapCopyMs": {
+        "mean": 0.0634,
+        "p95": 0.1364
+      }
+    },
+    "depth": {
+      "state": "ready",
+      "discarded": 0,
+      "diagnosticDelayMs": 0,
+      "worker": {
+        "count": 13,
+        "window": 13,
+        "preprocessMs": {
+          "mean": 1.1305,
+          "p95": 2.5258
+        },
+        "inferenceMs": {
+          "mean": 32.6953,
+          "p95": 35.6008
+        },
+        "stabilizeMs": {
+          "mean": 0.0809,
+          "p95": 0.1649
+        }
+      },
+      "render": {
+        "valid": true,
+        "uploads": 13,
+        "ageMs": 2610,
+        "stereo": true,
+        "debug": true,
+        "depthWidth": 392,
+        "depthHeight": 224,
+        "eyeTargetWidth": 1920,
+        "gpuRender": {
+          "count": 188,
+          "window": 188,
+          "disjoint": 0,
+          "meanMs": 2.4523,
+          "p95Ms": 10.4717
+        },
+        "gpuStabilization": true,
+        "gpuStabilize": {
+          "count": 12,
+          "window": 12,
+          "disjoint": 0,
+          "meanMs": 0.006,
+          "p95Ms": 0.0101
+        },
+        "gpuStages": {
+          "count": 13,
+          "window": 13,
+          "submitMs": {
+            "mean": 0.8843,
+            "p95": 2.1355
+          },
+          "completionMs": {
+            "mean": 8.1162,
+            "p95": 30.1323
+          },
+          "statusReadMs": {
+            "mean": 0.043,
+            "p95": 0.0751
+          }
+        },
+        "timings": {
+          "count": 13,
+          "window": 13,
+          "captureToUploadMs": {
+            "mean": 69.483,
+            "p95": 109.1044
+          },
+          "uploadMs": {
+            "mean": 0.8861,
+            "p95": 2.1375
+          },
+          "drawSubmitMs": {
+            "mean": 0.1522,
+            "p95": 0.2144
+          }
+        }
+      }
+    }
+  }
+}

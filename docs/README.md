@@ -38,6 +38,7 @@
 | [MyGO 新版诊断与画质回传](performance/2026-09-12-user-diagnostics/mygo-followup.md) | 原生 HLS 大小写校验缺陷、重复字幕解析与鬼影证据 |
 | [SBS 匿名评分与 392 深度试验](performance/2026-09-12-quality-trials/README.md) | 新诊断、可评分对照页、实际高分辨率模型与测试 APK；392 尚未实机验证 |
 | [2026-09-13 实机分辨率扫描](performance/2026-09-13-resolution-sweep/README.md) | 322–770 的共享原生管线测试、QNN 编译内存边界，以及非调试构建/ART 预编译对照 |
+| [2026-09-13 GPU 深度稳定](performance/2026-09-13-gpu-stabilization/README.md) | 精确分位数与历史融合的 compute 实现、颜色快照配对、CPU/GPU 数值检查及实机并发对照 |
 | [SBS 伪影量化与首轮优化](performance/2026-09-12-artifact-evaluation/README.md) | 论文指标、真实 Java 消融、真值合成/真实片段代理量与已知退化；未实机验收 |
 | [DLSS / FSR 时序重建研究](archive/2026-09-12-dlss-fsr-sbs.md) | 最新公开集成资料、历史裁剪及 SBS 迁移边界 |
 | [2026-09-12 用户诊断与双包测量](performance/2026-09-12-user-diagnostics/README.md) | 成功播放样本的证据边界、失败记录缺失及 Lite/Full 包体实测 |

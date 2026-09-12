@@ -1,0 +1,12 @@
+layout(local_size_x=256) in;
+uniform int shift;
+uniform int resetHistory;
+void main() {
+    uint i=gl_GlobalInvocationID.x;
+    s[i]=0u;
+    if(i==0u && shift==24) {
+        s[LO]=0u; s[HI]=0u; s[LRANK]=uint(N/20); s[HRANK]=uint(N*19/20);
+        s[BAD]=0u; s[DIFF]=0u; s[ACCEPT]=0u;
+        if(resetHistory!=0) s[INITIAL]=0u;
+    }
+}

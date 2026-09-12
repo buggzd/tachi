@@ -1,0 +1,19 @@
+layout(local_size_x=256) in;
+layout(rgba8,binding=0) writeonly uniform highp image2D outputDepth;
+void main() {
+    uint i=gl_GlobalInvocationID.x;
+    if(i>=uint(N) || s[ACCEPT]==0u) return;
+    float lo=uintBitsToFloat(s[LOW]), hi=uintBitsToFloat(s[HIGH]);
+    float value=clamp((raw[i]-lo)/(hi-lo),0.0,1.0);
+    uvec3 color=rgb(i);
+    if(s[RESET]==0u && abs(value-previous[i])<0.12) {
+        float loss=clamp((float(colorDifference(i,color))-6.0)/36.0,0.0,1.0);
+        loss*=loss*(3.0-2.0*loss);
+        float weight=0.35+0.65*loss;
+        value=previous[i]+weight*(value-previous[i]);
+    }
+    previous[i]=value;
+    previousColor[i]=color.r|(color.g<<8u)|(color.b<<16u);
+    float quantized=floor(value*255.0+0.5)/255.0;
+    imageStore(outputDepth,ivec2(int(i)%W,int(i)/W),vec4(quantized,quantized,quantized,1.0));
+}

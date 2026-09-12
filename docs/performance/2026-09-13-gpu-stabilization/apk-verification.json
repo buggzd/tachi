@@ -1,0 +1,45 @@
+{
+  "integrated392.apk": {
+    "bytes": 77530182,
+    "sha256": "c41d446dffe8fd2d4b07a1c58b8c04b8969553258f9de1ed02b7a25ab3d9e4a5",
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "integrated518.apk": {
+    "bytes": 77530314,
+    "sha256": "42ac75af13d8dc172df8873895c1c6b438a06c1b38d06b44808f43e6b2a699a3",
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "vendorLibrariesMatch": true
+  },
+  "overlap518.apk": {
+    "bytes": 77531054,
+    "sha256": "bafd46841866c2cc2fc716f0d7ce740f08c308a0eab79029b91e225ba62d6151",
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "vendorLibrariesMatch": true
+  },
+  "cpu518-control.apk": {
+    "bytes": 77530462,
+    "sha256": "8c5495eef75155716cf54887883c5971ac713e6028224bc707ded767d30e1f05",
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "vendorLibrariesMatch": true
+  },
+  "final392.apk": {
+    "bytes": 77531282,
+    "sha256": "516a98b5d608e0ea961dc628eef35597a0e64ab8de3c18db4d2a912a2f563f5d",
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "verified392.apk": {
+    "bytes": 77531682,
+    "sha256": "606a1545b9e9b4b785139b8e7d6faf7b2c56ad6f3d4ce5afa2c7f7f8414f9c18",
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "tachi-gpu-stabilization392-20260913-full-debug.apk": {
+    "bytes": 105932455,
+    "sha256": "843628c8fb9bc7ff1f44c302b21fca5c5bf3a4465a784a57dbfd1ef5bc4a91b8",
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true,
+    "deviceTested": false
+  }
+}

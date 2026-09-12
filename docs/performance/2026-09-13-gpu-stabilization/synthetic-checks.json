@@ -1,0 +1,62 @@
+[
+  {
+    "passed": true,
+    "width": 518,
+    "height": 294,
+    "frames": 80,
+    "rejected": 6,
+    "pixelsCompared": 11878776,
+    "sourceOverwriteCases": 40,
+    "maxR8Error": 1,
+    "meanR8Error": 2.272961456634926e-06,
+    "cpuMedianMs": 8.990312,
+    "gpuSubmitToObservedMedianMs": 3.289375,
+    "gpu": {
+      "count": 79,
+      "window": 79,
+      "disjoint": 0,
+      "meanMs": 0.0049,
+      "p95Ms": 0.0071
+    }
+  },
+  {
+    "passed": true,
+    "width": 392,
+    "height": 224,
+    "frames": 80,
+    "rejected": 6,
+    "pixelsCompared": 6849024,
+    "sourceOverwriteCases": 40,
+    "maxR8Error": 1,
+    "meanR8Error": 1.4600620467967408e-06,
+    "cpuMedianMs": 5.575156,
+    "gpuSubmitToObservedMedianMs": 2.261458,
+    "gpu": {
+      "count": 79,
+      "window": 79,
+      "disjoint": 0,
+      "meanMs": 0.0047,
+      "p95Ms": 0.0073
+    }
+  },
+  {
+    "passed": true,
+    "width": 392,
+    "height": 224,
+    "frames": 80,
+    "rejected": 6,
+    "pixelsCompared": 6849024,
+    "sourceOverwriteCases": 40,
+    "maxR8Error": 1,
+    "meanR8Error": 1.4600620467967408e-06,
+    "cpuMedianMs": 6.4425,
+    "gpuSubmitToObservedMedianMs": 2.586614,
+    "gpu": {
+      "count": 79,
+      "window": 79,
+      "disjoint": 0,
+      "meanMs": 0.0052,
+      "p95Ms": 0.0074
+    }
+  }
+]

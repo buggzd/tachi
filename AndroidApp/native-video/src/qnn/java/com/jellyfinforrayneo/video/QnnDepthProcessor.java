@@ -115,6 +115,12 @@ public final class QnnDepthProcessor implements NativeDepthProcessor
             output.get(raw);
         }
         long inferred = System.nanoTime();
+        if (BuildConfig.GPU_DEPTH_STABILIZATION)
+        {
+            // Immutable handoff; the capture lease also preserves the matching GPU RGB texture.
+            float[] owned = raw.clone();
+            return DepthResult.raw(owned, preprocessed - start, inferred - preprocessed, System.nanoTime() - inferred);
+        }
         byte[] map = stabilizer.update(raw, rgbaBytes);
         return new DepthResult(map, preprocessed - start, inferred - preprocessed, System.nanoTime() - inferred);
     }

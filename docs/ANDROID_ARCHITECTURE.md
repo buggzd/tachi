@@ -620,6 +620,16 @@ Stop, logout and renderer loss release the engine; background releases codecs/ba
 then returning reopens at the stored position in a paused state. SessionRepository stays
 the only account owner. Native 401/403 events use the existing unauthorized generation check.
 
+An opt-in `-PgpuDepthStabilization=true` build moves depth percentiles, appearance/cut
+statistics, normalization, temporal history and 8-bit output to GLES 3.1 compute.
+The default remains the CPU reference. The capture lease transfers with the raw result
+until a GPU-only RGB snapshot has been queued; a later capture cannot change that
+inference's color reference. At most one GPU job and one pending raw handoff exist,
+with the existing one-slot capture backpressure. Generation changes still discard old
+results and reset history. Completion polling is nonblocking and does not repeatedly
+draw SBS. QNN input preparation and host-buffer transfers remain; this is not zero-copy.
+See [device comparison and numerical limits](performance/2026-09-13-gpu-stabilization/README.md).
+
 The existing phone diagnostic share includes whitelisted native playback samples: latest
 120 entries, at most 1 Hz plus status/subtitle-error changes. Samples survive player teardown
 within the same Activity/process, but not a force stop; already exported cache files are separate. Formats, decoder, numeric errors,

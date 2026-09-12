@@ -6,6 +6,7 @@ android {
         minSdk 26
         buildConfigField "int", "DEPTH_SAMPLE_WIDTH", "${rootProject.depthProfile.width}"
         buildConfigField "int", "DEPTH_SAMPLE_HEIGHT", "${rootProject.depthProfile.height}"
+        buildConfigField "boolean", "GPU_DEPTH_STABILIZATION", providers.gradleProperty("gpuDepthStabilization").getOrElse("false")
     }
     buildFeatures { buildConfig true }
     compileOptions {

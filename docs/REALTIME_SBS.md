@@ -68,6 +68,13 @@ CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 
 ## 操作与边界
 
+GPU 稳定实验：额外传 `-PgpuDepthStabilization=true` 可将精确分位范围、切镜/颜色差、
+归一化及历史融合放到 GPU，输出纹理直接用于 SBS。默认关闭，保留 CPU 对照；
+要求 GLES 3.1 和至少 256 个工作组线程。QNN 仍通过主机缓冲交换输入/输出。
+实机证据及实验构建命令见 [GPU 稳定验证](performance/2026-09-13-gpu-stabilization/README.md)。
+诊断的 `gpuStabilization` 为 true 时，CPU `stabilizeMs` 只记录原始深度交接，
+实际 GPU 完成观察耗时见 `gpuStabilizeCompletionMeanMs/P95Ms`，不能将两者混为一项。
+
 先在手机选择 SBS 虚拟银幕并确认系统允许外接输出，再播放视频，在眼镜控制栏开启
 「实时 3D」。首次准备模型后开始更新，目标约 12 Hz；字幕无需关闭。
 「视频信息」同时打开两眼的实际深度小窗，白色表示较近。
