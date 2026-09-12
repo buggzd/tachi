@@ -25,6 +25,23 @@ AndroidApp/gradlew -p AndroidApp -PrealtimeSbs=true :app:assembleDebug
 原生播放器，但不包含深度模型和 QNN 后端。原生 lab 仍可独立通过 `-PnativeQnn=true`
 构建，两个应用 ID 不同。
 
+## 两种发行包
+
+- `lite`：原生 2D 和平面 SBS，移除模型、ORT 与 QNN，不提供实时 2D 转 3D，也没有在线下载模型入口。
+- `full`：包含固定模型和运行库，可使用实时深度。当前只验证 SM8850/V81。
+
+两版同应用 ID、同版本号与签名，可覆盖切换并保留设置；不能同时作为两款应用安装。
+完整构建与包内容验证：
+
+```bash
+./scripts/build-android.sh all lite
+./scripts/build-android.sh all full
+```
+
+两次构建共用 Gradle 输出位置，保存前一个 APK 后再构建下一版。GitHub 发布工作流会自动分别保存
+`tachi-<version>-lite-arm64-v8a.apk` 和 `tachi-<version>-full-arm64-v8a.apk` 与校验文件，
+CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
+
 ## 操作与边界
 
 先在手机选择 SBS 虚拟银幕并确认系统允许外接输出，再播放视频，在眼镜控制栏开启

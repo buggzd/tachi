@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build and publish signed APK
+    name: Build and publish signed Lite and Full APKs
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -104,35 +104,42 @@ jobs:
           chmod 600 "${signing_file}"
           echo "ANDROID_KEYSTORE_PATH=${signing_file}" >> "${GITHUB_ENV}"
 
-      - name: Build release APK
-        shell: bash
-        run: ./scripts/build-android.sh release
-
-      - name: Verify source tree remains clean and APK signature
+      - name: Restore pinned realtime SBS inputs
+        env:
+          REALTIME_SBS_BUNDLE_URL: ${{ secrets.REALTIME_SBS_BUNDLE_URL }}
         shell: bash
         run: |
           set -euo pipefail
-          git diff --exit-code
-          apk_path="AndroidApp/app/build/outputs/apk/release/app-release.apk"
-          test -f "${apk_path}"
-          "${ANDROID_HOME}/build-tools/34.0.0/apksigner" verify --verbose "${apk_path}"
+          if [[ -z "${REALTIME_SBS_BUNDLE_URL}" ]]; then
+            echo "Missing REALTIME_SBS_BUNDLE_URL; see docs/RELEASE.md" >&2
+            exit 1
+          fi
+          bundle="${RUNNER_TEMP}/realtime-sbs.zip"
+          curl --proto '=https' --proto-redir '=https' --fail --silent --show-error \
+            --location --max-time 600 --max-filesize 536870912 \
+            --output "${bundle}" "${REALTIME_SBS_BUNDLE_URL}"
+          python3 scripts/realtime-sbs-bundle.py install "${bundle}"
+          rm "${bundle}"
 
-      - name: Prepare release assets
+      - name: Build and verify both release APKs
         shell: bash
         run: |
           set -euo pipefail
-          version="${RELEASE_TAG#v}"
-          asset_name="tachi-${version}-arm64-v8a.apk"
           release_directory="${RUNNER_TEMP}/release"
           mkdir -p "${release_directory}"
-          cp AndroidApp/app/build/outputs/apk/release/app-release.apk \
-            "${release_directory}/${asset_name}"
-          (
-            cd "${release_directory}"
-            sha256sum "${asset_name}" > "${asset_name}.sha256"
-          )
+          for variant in lite full; do
+            ./scripts/build-android.sh release "${variant}"
+            apk_path="AndroidApp/app/build/outputs/apk/release/app-release.apk"
+            "${ANDROID_HOME}/build-tools/34.0.0/apksigner" verify --verbose "${apk_path}"
+            asset_name="tachi-${RELEASE_TAG#v}-${variant}-arm64-v8a.apk"
+            cp "${apk_path}" "${release_directory}/${asset_name}"
+            (cd "${release_directory}" && sha256sum "${asset_name}" > "${asset_name}.sha256")
+          done
           echo "RELEASE_DIRECTORY=${release_directory}" >> "${GITHUB_ENV}"
-          echo "RELEASE_ASSET=${asset_name}" >> "${GITHUB_ENV}"
+
+      - name: Verify source tree remains clean
+        shell: bash
+        run: git diff --exit-code
 
       - name: Publish GitHub Release
         env:
@@ -144,7 +151,7 @@ jobs:
             --verify-tag
             --generate-notes
             --title "tachi ${RELEASE_TAG}"
-            --notes "正式签名的 ARM64 APK；安装前可使用随附 SHA-256 文件校验下载。"
+            --notes "正式签名 ARM64 双版本：Full 内置深度模型与 QNN（当前验证 SM8850/V81）；Lite 不带模型及 QNN，支持原生 2D 与平面 SBS，不支持实时 2D 转 3D。两版同签名同包名，可覆盖切换并保留设置。请使用随附 SHA-256 校验下载。"
           )
           if [[ "${RELEASE_TAG}" == *-* ]]; then
             release_flags+=(--prerelease)
@@ -152,6 +159,5 @@ jobs:
             release_flags+=(--latest)
           fi
           gh release create "${RELEASE_TAG}" \
-            "${RELEASE_DIRECTORY}/${RELEASE_ASSET}#Signed ARM64 APK" \
-            "${RELEASE_DIRECTORY}/${RELEASE_ASSET}.sha256#SHA-256 checksum" \
+            "${RELEASE_DIRECTORY}"/*.apk "${RELEASE_DIRECTORY}"/*.sha256 \
             "${release_flags[@]}"

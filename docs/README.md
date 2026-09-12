@@ -35,6 +35,7 @@
 | [2026-09-11 桌面优化实验](performance/2026-09-11-desktop-optimization/README.md) | 时间平滑、DIS、保边、逆投影、异步读回及 M4 CoreML 对照；未操作手机 |
 | [2026-09-12 原生播放实机调试](performance/2026-09-12-native-video/README.md) | Media3 硬解、GLES/PBO 取帧、固定采样节拍与错误恢复；尚未接入 NPU/深度合成 |
 | [2026-09-12 原生 QNN SBS 全链路](performance/2026-09-12-native-qnn-sbs/README.md) | 纯 QNN 深度、每眼 1080p GLES 合成、GPU 计时、慢帧保持及旧结果丢弃 |
+| [2026-09-12 用户诊断与双包测量](performance/2026-09-12-user-diagnostics/README.md) | 成功播放样本的证据边界、失败记录缺失及 Lite/Full 包体实测 |
 | [v0.3.0 发布说明](releases/v0.3.0.md) | 已发布版本的能力快照；其他版本见 [GitHub Releases](https://github.com/buggzd/tachi/releases) |
 | [2026-09-11 实时 SBS 论文调研](archive/2026-09-11-realtime-sbs-research.md) | 视频深度时序、运动传播、保边上采样与取帧/绘制候选；未实机验证 |
 

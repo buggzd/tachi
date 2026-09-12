@@ -30,7 +30,7 @@ https://github.com/user-attachments/assets/5dd75ead-3682-4bb2-9181-6368b4049c73
 
 You need an accessible Jellyfin server, RayNeo Air glasses, and a compatible Android phone. Building from source also requires JDK 17+, Node.js/npm, Python 3, Android SDK platform 35, and build tools 34.0.0.
 
-1. Download the signed ARM64 APK from [GitHub Releases](https://github.com/buggzd/tachi/releases). To build a debug APK yourself:
+1. Download the signed ARM64 APK from [GitHub Releases](https://github.com/buggzd/tachi/releases). Dual builds offer Lite (native 2D / flat SBS) and Full (adds the depth model and QNN; currently validated on SM8850/V81). See the [build guide](docs/REALTIME_SBS.md). To build a debug APK yourself:
 
    ```bash
    git clone https://github.com/buggzd/tachi.git

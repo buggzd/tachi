@@ -11,7 +11,7 @@
 
 证书指纹和 alias 不是秘密，可以用于核对发布身份。keystore、私钥和密码必须保密；后续 APK 必须继续使用同一私钥，才能覆盖升级 `v0.2.0` 及之后的安装。
 
-改名保留原 application ID、签名证书与持久化键名，现有用户可继续覆盖升级。后续发布附件使用 `tachi-<versionName>-arm64-v8a.apk`；已发布的旧版标签和附件保持原样。
+改名保留原 application ID、签名证书与持久化键名，现有用户可继续覆盖升级。后续发布附件使用 `tachi-<versionName>-{lite,full}-arm64-v8a.apk`；已发布的旧版标签和附件保持原样。
 
 ## 发布前准备
 
@@ -21,10 +21,37 @@
    - `ANDROID_KEYSTORE_PASSWORD`
    - `ANDROID_KEY_ALIAS`
    - `ANDROID_KEY_PASSWORD`
+   - `REALTIME_SBS_BUNDLE_URL`（见下节；两个版本全部通过才发布）
 3. 使用 JDK 17+、Node.js 和 Android platform 35/build tools 34.0.0。
 4. 确认 `main` 已同步，且没有混入与本次发布无关的修改。
 
 GitHub Secrets 是只写的 CI 配置，不是可下载的备份。不要仅依赖 GitHub 保存签名材料。
+
+## 实时深度构建输入
+
+GitHub runner 没有开发机的 `.local/npu`。发布 Full 前，需要从已经验证的本地依赖生成 CI 输入包：
+
+```bash
+python3 scripts/realtime-sbs-bundle.py pack StereoLab/.local/tachi-realtime-sbs-ci.zip
+```
+
+脚本只收集 `AndroidApp/realtime-sbs-runtime.json` 固定的模型、ORT AAR 和九个厂商库，逐个核对 SHA-256，
+不会打包整个 SDK、账号文件或编译缓存。将此 ZIP 放到你管理的、CI 可访问的 HTTPS 存储，
+把下载 URL 配置为仓库 Secret `REALTIME_SBS_BUNDLE_URL`。URL 可携带限时访问授权，应保证发布时未过期；
+不能将 URL 或 ZIP 提交 Git。模型/SDK 的分发须遵循各自许可，输入包不是公开的 Release 附件。
+
+工作流下载后先验证文件清单、大小和每个文件哈希，再安装到忽略目录。构建脚本会重建选定的 APK 容器，
+包校验还会拒绝超过 8 MiB 的 ZIP 开销，防止增量打包残留的无引用数据使 Lite 膨胀。缺失 Secret、过期链接、
+多余文件或哈希不匹配都会中止发布，不会只发布一半。换模型或 SDK 时，先完成设备验证，再更新清单和输入包。
+本地可验证输入包：
+
+```bash
+python3 scripts/realtime-sbs-bundle.py install StereoLab/.local/tachi-realtime-sbs-ci.zip
+```
+
+Lite 不带模型及 QNN/ORT，但仍使用原生视频播放器，支持 2D 与平面 SBS；Full 增加实时深度转换，
+当前验证设备为 SM8850/V81。Lite 没有在线模型安装功能，需要实时 3D 时覆盖安装 Full。
+两版同版本号、应用 ID 与正式签名，保留设置，不能并排安装。已有旧版本 Release 附件保持原样。
 
 ## 更新版本
 
@@ -67,7 +94,9 @@ git diff --cached
 ## 完整构建与提交
 
 ```bash
-./scripts/build-android.sh all
+./scripts/build-android.sh all lite
+# 先保存 Lite APK（Gradle 两种配置使用同一输出路径）
+./scripts/build-android.sh all full
 git diff --exit-code
 git status --short
 ```
@@ -96,21 +125,21 @@ git push origin v<versionName>
 标签推送后，[Signed Android release](../.github/workflows/release.yml) 会执行以下步骤：
 
 1. 验证 SemVer、`versionCode`、annotated tag 和 `main` 可达性；
-2. 恢复临时 keystore 并构建正式签名的 ARM64 Release APK；
+2. 恢复临时 keystore 和固定 QNN 输入，依次构建正式签名的 Lite/Full ARM64 Release APK；
 3. 验证构建没有改写源码、APK 内前端资源与本次构建一致且通过边界检查，并使用 `apksigner` 验签；
-4. 生成 SHA-256 文件并创建 GitHub Release。
+4. 验证 Lite 无模型/QNN/ORT 残留、Full 模型和厂商库字节匹配清单；生成各自 SHA-256 文件并创建 GitHub Release。
 
 CI 不会发布 unsigned APK，也不会回退到 Debug 证书。
 
 ## 验收 GitHub Release
 
-确认 Actions 成功、Release 不是 Draft，并同时存在 APK 与 `.sha256`。下载后校验：
+确认 Actions 成功、Release 不是 Draft，并同时存在两个 APK 与各自 `.sha256`。下载后校验：
 
 ```bash
 gh release download v<versionName> --repo buggzd/tachi
-shasum -a 256 --check tachi-<versionName>-arm64-v8a.apk.sha256
+shasum -a 256 --check tachi-<versionName>-full-arm64-v8a.apk.sha256
 ${ANDROID_HOME}/build-tools/34.0.0/apksigner verify \
-  --verbose --print-certs tachi-<versionName>-arm64-v8a.apk
+  --verbose --print-certs tachi-<versionName>-full-arm64-v8a.apk
 ```
 
 Linux 可将 `shasum -a 256 --check` 替换为 `sha256sum --check`。验签结果必须至少显示 v2 scheme 为 `true`、签名者数量为 1，证书 SHA-256 必须与本文记录一致。最后在目标手机完成一次安装或覆盖升级烟雾测试。
