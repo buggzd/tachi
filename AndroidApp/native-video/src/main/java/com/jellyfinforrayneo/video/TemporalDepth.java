@@ -30,8 +30,16 @@ public final class TemporalDepth
         for (int i = 0; i < pixels; i++)
         {
             float value = Math.max(0f, Math.min(1f, (raw[i] - low) / (high - low)));
-            if (!reset && difference(rgba, i) <= 18 && Math.abs(value - previous[i]) < .12f)
-                value = previous[i] + .35f * (value - previous[i]);
+            if (!reset && Math.abs(value - previous[i]) < .12f)
+            {
+                // A hard appearance gate makes nearby pixels/frames alternate between
+                // smoothing and a disparity jump. Keep large-depth-change rejection:
+                // softening that boundary introduced trails in the offline edge tests.
+                float confidenceLoss = ramp(difference(rgba, i), 6f, 42f);
+                confidenceLoss *= confidenceLoss * (3f - 2f * confidenceLoss);
+                float currentWeight = .35f + .65f * confidenceLoss;
+                value = previous[i] + currentWeight * (value - previous[i]);
+            }
             current[i] = value;
             result[i] = (byte) Math.round(value * 255f);
         }
@@ -39,6 +47,11 @@ public final class TemporalDepth
         if (previousRgba == null) previousRgba = new byte[pixels * 4];
         System.arraycopy(rgba, 0, previousRgba, 0, rgba.length);
         return result;
+    }
+
+    private static float ramp(float value, float start, float end)
+    {
+        return Math.max(0f, Math.min(1f, (value - start) / (end - start)));
     }
 
     private int difference(byte[] rgba, int pixel)

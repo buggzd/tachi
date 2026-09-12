@@ -1,0 +1,82 @@
+{
+  "modelSha256": "3a4faf23bffbdfed714116c0a2c375bdac9d69401af4f21953468e8ac5793b7b",
+  "productionSha256": "0f533be3c26798737b5ad96afe2d11b0128a9085b654eea7a1431b59947d21dd",
+  "numpy": "2.4.6",
+  "opencv": "4.11.0",
+  "onnxruntime": "1.29.0",
+  "results": [
+    {
+      "clip": 0,
+      "clipSha256": "677c20a9acbe5a4a4e71b8c06be07c837dae945f82e51a390e80dddfa16cd374",
+      "frames": 48,
+      "observationsHz": 11.988011988011989,
+      "variant": "BaselineDepth",
+      "trustedCoverage": 0.8915013557870702,
+      "trustedFlowChangeMeanPx": 2.0143234729766846,
+      "trustedFlowChangeP95Px": 10.601411819458008,
+      "spatialDepthStd": 0.3277937173843384,
+      "desktopJavaMedianMs": 1.4644789999999999
+    },
+    {
+      "clip": 0,
+      "clipSha256": "677c20a9acbe5a4a4e71b8c06be07c837dae945f82e51a390e80dddfa16cd374",
+      "frames": 48,
+      "observationsHz": 11.988011988011989,
+      "variant": "TemporalDepth",
+      "trustedCoverage": 0.8915013557870702,
+      "trustedFlowChangeMeanPx": 1.9966835975646973,
+      "trustedFlowChangeP95Px": 10.58825969696045,
+      "spatialDepthStd": 0.3271401822566986,
+      "desktopJavaMedianMs": 1.5103119999999999
+    },
+    {
+      "clip": 1,
+      "clipSha256": "14d799b87677bb9e9bc838a66e0b0f7e9a4581502e0eef655cbc388456eefb9c",
+      "frames": 48,
+      "observationsHz": 11.988011988011989,
+      "variant": "BaselineDepth",
+      "trustedCoverage": 0.9072662926046383,
+      "trustedFlowChangeMeanPx": 0.40006783604621887,
+      "trustedFlowChangeP95Px": 1.204705834388733,
+      "spatialDepthStd": 0.25086960196495056,
+      "desktopJavaMedianMs": 2.2694375
+    },
+    {
+      "clip": 1,
+      "clipSha256": "14d799b87677bb9e9bc838a66e0b0f7e9a4581502e0eef655cbc388456eefb9c",
+      "frames": 48,
+      "observationsHz": 11.988011988011989,
+      "variant": "TemporalDepth",
+      "trustedCoverage": 0.9072662926046383,
+      "trustedFlowChangeMeanPx": 0.4036893844604492,
+      "trustedFlowChangeP95Px": 1.6865880489349365,
+      "spatialDepthStd": 0.25112801790237427,
+      "desktopJavaMedianMs": 1.6118545
+    },
+    {
+      "clip": 2,
+      "clipSha256": "be2c7ace9b425116b59203ab074e8b378ee30ed43a29ab581ae1d2930cf31cb0",
+      "frames": 48,
+      "observationsHz": 12.5,
+      "variant": "BaselineDepth",
+      "trustedCoverage": 0.9454179905307726,
+      "trustedFlowChangeMeanPx": 0.20515550673007965,
+      "trustedFlowChangeP95Px": 0.576707124710083,
+      "spatialDepthStd": 0.3810235857963562,
+      "desktopJavaMedianMs": 2.0471874999999997
+    },
+    {
+      "clip": 2,
+      "clipSha256": "be2c7ace9b425116b59203ab074e8b378ee30ed43a29ab581ae1d2930cf31cb0",
+      "frames": 48,
+      "observationsHz": 12.5,
+      "variant": "TemporalDepth",
+      "trustedCoverage": 0.9454179905307726,
+      "trustedFlowChangeMeanPx": 0.19966955482959747,
+      "trustedFlowChangeP95Px": 0.5232952833175659,
+      "spatialDepthStd": 0.3810245990753174,
+      "desktopJavaMedianMs": 1.6484375
+    }
+  ],
+  "limits": "First 96 decoded frames of three local clips, stride 2. Float CPU inference, not quantized QNN. Flow changes include real motion and depth changes; lower is not necessarily better. No reference depth, rendered eye views, NPU timing or measured viewing quality."
+}
