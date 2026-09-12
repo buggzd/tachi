@@ -183,7 +183,7 @@ public final class MainActivity extends Activity
                     @Override
                     public void onNativePlaybackState(JSONObject state)
                     {
-                        nativePlaybackDiagnostics.record(state, android.os.SystemClock.elapsedRealtime());
+                        nativePlaybackDiagnostics.record(state, diagnosticLog.elapsedMilliseconds());
                     }
 
                     @Override
@@ -980,7 +980,7 @@ public final class MainActivity extends Activity
     {
         StringBuilder result = new StringBuilder();
         result.append(getString(R.string.app_name)).append(" diagnostics\n");
-        appendDiagnostic(result, "format", "3");
+        appendDiagnostic(result, "format", "4");
         appendDiagnostic(result, "appVersion", BuildConfig.VERSION_NAME);
         appendDiagnostic(result, "appVersionCode", String.valueOf(BuildConfig.VERSION_CODE));
         appendDiagnostic(result, "androidSdk", String.valueOf(Build.VERSION.SDK_INT));
@@ -1017,7 +1017,9 @@ public final class MainActivity extends Activity
         }
         DisplayOutputGeometry output = glassesPresentation == null
                 ? DisplayOutputGeometry.EMPTY : glassesPresentation.getOutputGeometry();
-        appendDiagnostic(result, "stereoOutput", output.toJson().toString());
+        // Fixed numeric/boolean geometry schema; do not truncate JSON as free-form text.
+        result.append("stereoOutput=").append(output.toJson()).append('\n');
+        appendDiagnostic(result, "realtimeSbsBundled", booleanText(RealtimeDepthBackend.available()));
         if (sessions != null)
         {
             appendDiagnostic(result, "stereoScreen", sessions.getStereoScreenSettings().toJson().toString());

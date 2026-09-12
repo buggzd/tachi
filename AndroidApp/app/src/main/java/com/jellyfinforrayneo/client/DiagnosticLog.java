@@ -73,8 +73,13 @@ final class DiagnosticLog
         {
             entries.removeFirst();
         }
-        long elapsed = Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
+        long elapsed = elapsedMilliseconds();
         entries.addLast(new Entry(elapsed, event));
+    }
+
+    long elapsedMilliseconds()
+    {
+        return Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
     }
 
     synchronized String exportEvents()

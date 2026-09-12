@@ -50,4 +50,40 @@ public class NativePlaybackDiagnosticsTests
         assertFalse(log.export().contains("secret"));
         assertTrue(log.export().length() < 200_000);
     }
+
+    @Test
+    public void failedAttemptSurvivesLaterLongPlaybackWithoutIdentity() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        log.record(new JSONObject("{\"event\":\"prepare\"}"), 0);
+        log.record(new JSONObject("{\"event\":\"open\",\"status\":\"buffering\"}"), 1);
+        log.record(new JSONObject("{\"status\":\"error\",\"httpStatus\":404,\"errorCode\":2004,\"token\":\"private-secret\"}"), 2);
+        log.record(new JSONObject("{\"event\":\"prepare\"}"), 3);
+        log.record(new JSONObject("{\"event\":\"open\",\"status\":\"buffering\"}"), 4);
+        for (int i = 0; i < 500; i++) log.record(new JSONObject("{\"status\":\"playing\"}"), 1000L * (i + 1));
+        String report = log.export();
+        String failure = report.lines().filter(line -> line.startsWith("playbackFailure=")).findFirst().get();
+        assertTrue(failure.contains("\"httpStatus\":404"));
+        assertTrue(failure.contains("\"attempt\":1"));
+        assertTrue(failure.contains("\"source\":1"));
+        assertFalse(report.contains("private"));
+        assertFalse(report.lines().filter(line -> line.startsWith("nativePlayback=")).anyMatch(line -> line.contains("\"httpStatus\":404")));
+    }
+
+    @Test
+    public void eventBridgeRejectsStaleGenerationAndRetainsOnlyTechnicalFields() throws Exception
+    {
+        JSONObject bootstrap = new JSONObject("{\"session\":{},\"catalogGeneration\":3}");
+        assertNull(NativePlaybackDiagnostics.parseEvent("{\"generation\":2,\"event\":\"prepare\"}", bootstrap));
+        assertNull(NativePlaybackDiagnostics.parseEvent("{\"generation\":3.5,\"event\":\"prepare\"}", bootstrap));
+        assertNull(NativePlaybackDiagnostics.parseEvent("{\"generation\":3,\"event\":\"private-secret\"}", bootstrap));
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        for (int i = 0; i < 200; i++)
+            log.record(NativePlaybackDiagnostics.parseEvent("{\"generation\":3,\"event\":\"prepare_error\",\"failureCode\":\"http\",\"httpStatus\":503,\"url\":\"private-secret\"}", bootstrap), i);
+        String report = log.export();
+        assertEquals(NativePlaybackDiagnostics.MAX_EVENTS, report.lines().filter(line -> line.startsWith("playbackEvent=")).count());
+        assertEquals(NativePlaybackDiagnostics.MAX_FAILURES, report.lines().filter(line -> line.startsWith("playbackFailure=")).count());
+        assertTrue(report.contains("503"));
+        assertFalse(report.contains("private"));
+    }
 }

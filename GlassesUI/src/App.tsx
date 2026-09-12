@@ -1,3 +1,4 @@
+import { describeJellyfinFailure } from './jellyfin'
 import { hasNativePlayback, NativePlayback, type PlaybackSurface } from './nativePlayback'
 import { useNativeSbs } from './useNativeSbs'
 import { useRealtimeSbs, DepthPreview } from './useRealtimeSbs'
@@ -1900,6 +1901,7 @@ function PlayerPage({
     selection: PlaybackSelection = {},
     shouldPlay = true,
   ) => {
+    if (videoRef.current instanceof NativePlayback) videoRef.current.diagnose('prepare')
     const generation = ++prepareGeneration.current
     desiredPlaying.current = shouldPlay
     fallbackUsed.current = false
@@ -1918,12 +1920,19 @@ function PlayerPage({
     try {
       const next = await preparePlayback(item, requestedPositionTicks, selection)
       if (generation !== prepareGeneration.current) return
+      if (videoRef.current instanceof NativePlayback) videoRef.current.diagnose('plan_ready', {
+        hls: next.transcoding, fallbackAvailable: Boolean(next.fallback), duration: next.durationTicks / jellyfinTicksPerSecond,
+      })
       planRef.current = next
       setPlan(next)
       setTotal((next.durationTicks || item.runtimeTicks || 0) / jellyfinTicksPerSecond)
       updateStatus('buffering')
     } catch (reason) {
       if (generation !== prepareGeneration.current) return
+      if (videoRef.current instanceof NativePlayback) {
+        const failure = describeJellyfinFailure(reason)
+        videoRef.current.diagnose('prepare_error', { failureCode: failure.code, httpStatus: failure.httpStatus })
+      }
       planRef.current = null
       setPlan(null)
       setError(reason instanceof Error ? reason.message : t("无法准备 Jellyfin 播放。"))
@@ -1946,6 +1955,7 @@ function PlayerPage({
   const failPlayback = useCallback((message: string) => {
     const active = planRef.current
     if (active?.fallback && !fallbackUsed.current) {
+      if (videoRef.current instanceof NativePlayback) videoRef.current.diagnose('fallback')
       fallbackUsed.current = true
       stopPlan(active, true)
       const fallback: PlaybackPlan = {
@@ -1963,6 +1973,7 @@ function PlayerPage({
       return
     }
 
+    if (videoRef.current instanceof NativePlayback) videoRef.current.diagnose('playback_error')
     stopPlan(active, true)
     setError(message || t("媒体流无法播放，请返回后重试。"))
     updateStatus('error')

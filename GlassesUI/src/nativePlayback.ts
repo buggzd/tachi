@@ -80,6 +80,11 @@ export class NativePlayback extends EventTarget implements PlaybackSurface {
       subtitleKind: plan.subtitleBurnedIn ? 'burned' : plan.subtitleFormat ?? 'off',
       audioOrdinal: plan.transcoding ? -1 : plan.audioTracks.findIndex(track => track.index === plan.audioStreamIndex) })
   }
+  diagnose(event: 'prepare' | 'prepare_error' | 'plan_ready' | 'fallback' | 'playback_error', fields: {
+    failureCode?: string; httpStatus?: number; hls?: boolean; fallbackAvailable?: boolean; duration?: number
+  } = {}) {
+    try { window.RayNeoGlasses?.playbackDiagnostic?.(JSON.stringify({ event, generation: this.generation, ...fields })) } catch { /* Diagnostics cannot block playback. */ }
+  }
   play() { this.command('play'); return Promise.resolve() }
   pause() { this.command('pause') }
   setSubtitleError(failed: boolean) { this.command('subtitle', { subtitleError: failed }) }

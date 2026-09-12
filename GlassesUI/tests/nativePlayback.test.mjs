@@ -44,3 +44,14 @@ test('seek acknowledgement rejects stale clock samples and pause emits only from
   send({status:'playing',position:120,seekId});player.pause();assert.equal(commands.at(-1).operation,'pause')
   send({status:'paused',position:121,seekId});assert.equal(pauses,2)
 })
+
+test('preparation failures can be reported before native open without the media URL or token', t => {
+  const { player } = setup(t)
+  player.stop()
+  const events = []
+  window.RayNeoGlasses.playbackDiagnostic = json => events.push(JSON.parse(json))
+  player.diagnose('prepare_error', { failureCode: 'http', httpStatus: 503 })
+  assert.deepEqual(events, [{ event: 'prepare_error', generation: 3, failureCode: 'http', httpStatus: 503 }])
+  window.RayNeoGlasses.playbackDiagnostic = () => { throw new Error('bridge unavailable') }
+  assert.doesNotThrow(() => player.diagnose('prepare'))
+})

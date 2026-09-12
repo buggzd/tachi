@@ -198,7 +198,7 @@ const requestTimeoutMs = 20_000
 class JellyfinRequestError extends Error {
   readonly code: Exclude<JellyfinFailureCode, 'none'>
 
-  constructor(code: Exclude<JellyfinFailureCode, 'none'>, message: string) {
+  constructor(code: Exclude<JellyfinFailureCode, 'none'>, message: string, readonly httpStatus?: number) {
     super(message)
     this.name = 'JellyfinRequestError'
     this.code = code
@@ -208,9 +208,10 @@ class JellyfinRequestError extends Error {
 export function describeJellyfinFailure(reason: unknown): {
   code: Exclude<JellyfinFailureCode, 'none'>
   message: string
+  httpStatus?: number
 } {
   if (reason instanceof JellyfinRequestError) {
-    return { code: reason.code, message: reason.message }
+    return { code: reason.code, message: reason.message, httpStatus: reason.httpStatus }
   }
   const message = reason instanceof Error ? reason.message.trim() : ''
   return {
@@ -698,6 +699,7 @@ export class JellyfinClient {
         throw new JellyfinRequestError(
           'http',
           t("Jellyfin 请求失败（HTTP {0}）。", { 0: response.status }),
+          response.status,
         )
       }
       if (response.status === 204 || response.headers.get('Content-Length') === '0') {

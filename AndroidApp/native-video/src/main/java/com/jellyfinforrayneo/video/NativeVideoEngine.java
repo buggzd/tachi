@@ -46,6 +46,7 @@ public final class NativeVideoEngine implements AutoCloseable
     private int audioOrdinal = -1;
     private String videoDecoder = "";
     private int errorCode;
+    private String errorStage = "none";
     private int httpStatus;
     private long metricsAt;
     private org.json.JSONObject depthMetrics;
@@ -170,7 +171,7 @@ public final class NativeVideoEngine implements AutoCloseable
             @Override
             public void failure()
             {
-                fail();
+                fail("surface");
             }
         }, slot);
         view.suspendSampling(!depthReady);
@@ -206,7 +207,7 @@ public final class NativeVideoEngine implements AutoCloseable
                         break;
                     }
                 }
-                fail(); // Never forward URL, headers, tokens or raw exception details to UI.
+                fail("player"); // Never forward URL, headers, tokens or raw exception details to UI.
             }
         });
         if (depthProcessor != null) prepareDepth();
@@ -308,6 +309,7 @@ public final class NativeVideoEngine implements AutoCloseable
         sampleCount = 0;
         firstFrame = false;
         errorCode = 0;
+        errorStage = "none";
         httpStatus = 0;
         videoDecoder = "";
         audioOrdinal = audioTrackOrdinal;
@@ -330,7 +332,7 @@ public final class NativeVideoEngine implements AutoCloseable
             for (int index = 0; index < group.length; index++, ordinal++)
             {
                 if (ordinal != audioOrdinal) continue;
-                if (!group.isTrackSupported(index)) { fail(); return; }
+                if (!group.isTrackSupported(index)) { fail("audio_track"); return; }
                 if (!group.isTrackSelected(index))
                     player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
                             .setOverrideForType(new androidx.media3.common.TrackSelectionOverride(
@@ -352,6 +354,7 @@ public final class NativeVideoEngine implements AutoCloseable
             state.put("seekable", player.isCurrentMediaItemSeekable());
             state.put("firstFrame", firstFrame);
             state.put("errorCode", errorCode);
+            state.put("errorStage", errorStage);
             state.put("httpStatus", httpStatus);
             state.put("decoder", videoDecoder);
             state.put("rate", player.getPlaybackParameters().speed);
@@ -423,9 +426,10 @@ public final class NativeVideoEngine implements AutoCloseable
         player.seekTo(end > 0 ? Math.min(target, end) : target);
     }
 
-    private void fail()
+    private void fail(String stage)
     {
         if (closed) return;
+        errorStage = stage;
         failed = true;
         view.suspendSampling(true);
         player.pause();

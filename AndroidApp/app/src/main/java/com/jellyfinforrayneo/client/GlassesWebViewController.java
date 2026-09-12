@@ -488,6 +488,25 @@ final class GlassesWebViewController
                 if (destroyed || source != webView || nativePlayback == null) return;
                 NativePlaybackRequest request = NativePlaybackRequest.parse(payload, bootstrapProvider.buildBootstrap());
                 if (request != null) nativePlayback.command(request);
+                else
+                {
+                    JSONObject event = new JSONObject();
+                    try { event.put("event", "command_rejected"); }
+                    catch (org.json.JSONException ignored) { return; }
+                    callback.onNativePlaybackState(event);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void playbackDiagnostic(String payload)
+        {
+            if (payload == null || payload.length() > 1024) return;
+            root.post(() ->
+            {
+                if (destroyed || source != webView) return;
+                JSONObject event = NativePlaybackDiagnostics.parseEvent(payload, bootstrapProvider.buildBootstrap());
+                if (event != null) callback.onNativePlaybackState(event);
             });
         }
 

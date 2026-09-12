@@ -17,6 +17,10 @@ The glasses WebView retains catalog, controls, libass/text subtitles and the sin
 reporting lifecycle. It creates no HTML video on Android; the browser development preview
 retains HTML/HLS. See [native playback, measured scope and remaining verification](NATIVE_VIDEO.md).
 
+The bounded `playbackDiagnostic` bridge accepts only current-session preparation/fallback event enums
+and safe numeric diagnostics. Playback samples, event history and failure history have independent
+limits (120/64/32) and share the application diagnostic clock. No media identity or URL is exported.
+
 ## Runtime topology
 
 ```text

@@ -47,6 +47,7 @@ final class NativePlaybackController implements AutoCloseable
             generation = request.generation;
             source = request;
             resumePosition = request.positionMs;
+            publish("buffering", "open");
             if (foreground) startEngine(request.positionMs, request.playing);
             return;
         }
@@ -59,7 +60,7 @@ final class NativePlaybackController implements AutoCloseable
             case "subtitle": subtitleError = request.subtitleError; break;
             case "play": engine.setPlaying(true); break;
             case "pause": engine.setPlaying(false); publish("paused"); break;
-            case "seek": seekId = request.seekId; engine.seekTo(request.positionMs); break;
+            case "seek": seekId = request.seekId; engine.seekTo(request.positionMs); publish("buffering", "seek"); break;
             case "depth":
                 if (request.depth && !depth && "error".equals(engine.depthState()) && RealtimeDepthBackend.available())
                     engine.enableDepth(QnnDepthProcessor.create(context, BuildConfig.REALTIME_MODEL_SHA256));
@@ -83,7 +84,7 @@ final class NativePlaybackController implements AutoCloseable
         }
         catch (RuntimeException | LinkageError failure)
         {
-            publish("error");
+            publish("error", "initialization");
             close();
         }
     }
@@ -104,6 +105,11 @@ final class NativePlaybackController implements AutoCloseable
 
     private void publish(String status)
     {
+        publish(status, "");
+    }
+
+    private void publish(String status, String event)
+    {
         try
         {
             JSONObject state = engine == null ? new JSONObject() : engine.snapshot();
@@ -115,6 +121,8 @@ final class NativePlaybackController implements AutoCloseable
             state.put("token", token);
             state.put("generation", generation);
             state.put("status", status);
+            if ("initialization".equals(event)) state.put("errorStage", event);
+            else if (!event.isEmpty()) state.put("event", event);
             state.put("seekId", seekId);
             state.put("hls", source != null && source.hls);
             state.put("subtitleKind", source == null ? "off" : source.subtitleKind);
