@@ -48,6 +48,8 @@ public final class NativeVideoEngine implements AutoCloseable
     private int errorCode;
     private String errorStage = "none";
     private int httpStatus;
+    private String errorKind = "none";
+    private String errorComponent = "none";
     private long metricsAt;
     private org.json.JSONObject depthMetrics;
     private final ReadbackTimings depthTimings = new ReadbackTimings("preprocess", "inference", "stabilize");
@@ -98,7 +100,12 @@ public final class NativeVideoEngine implements AutoCloseable
                     }
                     return result;
                 });
-        player = new ExoPlayer.Builder(context, renderers).build();
+        // libass/WebVTT in GlassesUI owns text. Disabling text tracks alone still lets Media3
+        // eagerly parse embedded ASS while extracting the video, including unselected tracks.
+        player = new ExoPlayer.Builder(context, renderers)
+                .setMediaSourceFactory(new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context)
+                        .setSubtitleParserFactory(androidx.media3.extractor.text.SubtitleParser.Factory.UNSUPPORTED))
+                .build();
         player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
                 .setUsage(androidx.media3.common.C.USAGE_MEDIA)
                 .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(), true);
@@ -199,7 +206,10 @@ public final class NativeVideoEngine implements AutoCloseable
             public void onPlayerError(PlaybackException error)
             {
                 errorCode = error.errorCode;
-                for (Throwable cause = error; cause != null; cause = cause.getCause())
+                errorKind = PlaybackFailure.kind(error);
+                errorComponent = PlaybackFailure.component(error);
+                Throwable cause = error;
+                for (int i = 0; i < 16 && cause != null; i++, cause = cause.getCause())
                 {
                     if (cause instanceof androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)
                     {
@@ -311,6 +321,8 @@ public final class NativeVideoEngine implements AutoCloseable
         errorCode = 0;
         errorStage = "none";
         httpStatus = 0;
+        errorKind = "none";
+        errorComponent = "none";
         videoDecoder = "";
         audioOrdinal = audioTrackOrdinal;
         player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
@@ -356,6 +368,8 @@ public final class NativeVideoEngine implements AutoCloseable
             state.put("errorCode", errorCode);
             state.put("errorStage", errorStage);
             state.put("httpStatus", httpStatus);
+            state.put("errorKind", errorKind);
+            state.put("errorComponent", errorComponent);
             state.put("decoder", videoDecoder);
             state.put("rate", player.getPlaybackParameters().speed);
             androidx.media3.common.Format video = player.getVideoFormat();

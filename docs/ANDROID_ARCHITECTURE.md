@@ -20,6 +20,9 @@ retains HTML/HLS. See [native playback, measured scope and remaining verificatio
 The bounded `playbackDiagnostic` bridge accepts only current-session preparation/fallback event enums
 and safe numeric diagnostics. Playback samples, event history and failure history have independent
 limits (120/64/32) and share the application diagnostic clock. No media identity or URL is exported.
+Native video route validation accepts Jellyfin Videos API casing while preserving the proxy base path
+and origin boundary. Rejected current-source opens return a bounded error; embedded subtitle parsing
+is disabled in Media3 because libass/WebVTT owns text rendering.
 
 ## Runtime topology
 

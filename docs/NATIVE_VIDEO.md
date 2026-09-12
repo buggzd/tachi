@@ -25,7 +25,8 @@ GPU RGBA8 → PBO/fence → CPU CHW → QNN HTP → CPU 时序稳定
 HyperOS 禁用外接显示的问题仍需系统「屏幕镜像」，原生播放器无法取得系统显示管理权限。
 
 `NativePlaybackRequest` 将消息限制为 16 KiB，URL 限制为 12 KiB，只接受当前账号的
-HTTP(S) 同源 Jellyfin `/Videos/` 路径，不接受任意请求头、文件 URI、外部来源或目录遍历。
+HTTP(S) 同源 Jellyfin `/Videos/` 路径（兼容服务器返回的小写 `/videos/`，反向代理子路径仍区分大小写），
+不接受任意请求头、文件 URI、外部来源或目录遍历。
 每个命令校验 catalog generation 与播放 token；seek 带序号确认，晚到的旧时钟不能撤销新 seek。
 账号切换、登出、播放器退出或 WebView 销毁释放播放器与深度后端。401/403 走既有账号代次校验。
 Activity 退后台释放解码器和 QNN；返回时恢复同一播放位置并暂停，用户继续播放即可。
@@ -78,6 +79,8 @@ seek、换源、Surface 重建和显式关闭清除旧图。关闭后重新开�
 Surface、音轨与初始化，准备请求记录安全错误分类及可取得的 HTTP 状态码。所有事件采用同一应用
 相对时钟，`stereoOutput` 保留完整 JSON，`realtimeSbsBundled` 标识是否带 QNN。
 旧 schema 1 只有滚动样本，无法用后一个成功视频的记录推断前一个视频的失败原因。
+`errorKind` / `errorComponent` 补充 EOF、网络、解析器和 ASS 等固定错误分类；被拒绝的有效当前 open
+会收到固定错误，避免回退后无限缓冲。Media3 提前字幕解析显式禁用，ASS/WebVTT 仅由前端处理。
 不包含 URL、Token、账号、片名、字幕原文或图像；这些白名单与样本上限有 JVM 测试。
 耗时为最近最多 512 次的滚动统计，GPU query 不含系统最终合成，深度帧龄不是端到端延迟。
 

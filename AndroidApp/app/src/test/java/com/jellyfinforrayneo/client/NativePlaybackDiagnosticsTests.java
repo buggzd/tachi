@@ -86,4 +86,14 @@ public class NativePlaybackDiagnosticsTests
         assertTrue(report.contains("503"));
         assertFalse(report.contains("private"));
     }
+
+    @Test
+    public void reportsKnownFailureKindsWithoutExportingArbitraryClassNamesOrMessages() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        log.record(new JSONObject("{\"status\":\"error\",\"errorStage\":\"player\",\"errorKind\":\"illegal_state\",\"errorComponent\":\"ssa\",\"message\":\"private-secret\"}"), 0);
+        assertTrue(log.export().contains("\"errorComponent\":\"ssa\""));
+        log.record(new JSONObject("{\"status\":\"error\",\"errorKind\":\"private-secret\",\"errorComponent\":\"private-secret\"}"), 1000);
+        assertFalse(log.export().contains("private"));
+    }
 }

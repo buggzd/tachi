@@ -62,7 +62,11 @@ final class NativePlaybackDiagnostics
             row.put("attempt", attempt);
             row.put("source", sourceNumber);
             String stage = source.optString("errorStage");
-            if (stage.matches("none|player|surface|audio_track|initialization")) row.put("errorStage", stage);
+            if (stage.matches("none|player|surface|audio_track|initialization|request")) row.put("errorStage", stage);
+            String kind = source.optString("errorKind");
+            if (kind.matches("none|unknown|eof|timeout|dns|connect|socket|tls|io|parser|illegal_state|illegal_argument|bounds|invalid_request")) row.put("errorKind", kind);
+            String component = source.optString("errorComponent");
+            if (component.matches("none|unknown|ssa|subtitle|matroska|datasource|codec")) row.put("errorComponent", component);
             copyNumbers(source, row, "position", "duration", "buffered", "width", "height", "frameRate",
                     "droppedFrames", "decodedFrames", "errorCode", "httpStatus", "audioChannels", "audioSampleRate");
             copyBooleans(source, row, "firstFrame", "seekable", "hls", "subtitleError");

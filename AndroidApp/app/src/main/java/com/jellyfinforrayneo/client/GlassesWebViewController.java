@@ -486,7 +486,8 @@ final class GlassesWebViewController
             root.post(() ->
             {
                 if (destroyed || source != webView || nativePlayback == null) return;
-                NativePlaybackRequest request = NativePlaybackRequest.parse(payload, bootstrapProvider.buildBootstrap());
+                JSONObject bootstrap = bootstrapProvider.buildBootstrap();
+                NativePlaybackRequest request = NativePlaybackRequest.parse(payload, bootstrap);
                 if (request != null) nativePlayback.command(request);
                 else
                 {
@@ -494,6 +495,13 @@ final class GlassesWebViewController
                     try { event.put("event", "command_rejected"); }
                     catch (org.json.JSONException ignored) { return; }
                     callback.onNativePlaybackState(event);
+                    JSONObject rejected = NativePlaybackRequest.rejectedOpen(payload, bootstrap);
+                    if (rejected != null)
+                    {
+                        callback.onNativePlaybackState(rejected);
+                        evaluateJavascript("window.dispatchEvent(new CustomEvent('tachi-native-playback',{detail:"
+                                + rejected.toString() + "}));");
+                    }
                 }
             });
         }

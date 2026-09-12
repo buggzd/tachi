@@ -55,3 +55,13 @@ test('preparation failures can be reported before native open without the media 
   window.RayNeoGlasses.playbackDiagnostic = () => { throw new Error('bridge unavailable') }
   assert.doesNotThrow(() => player.diagnose('prepare'))
 })
+
+test('rejected native open leaves buffering and emits a playback error', t => {
+  const { player, send } = setup(t)
+  let errors = 0
+  player.addEventListener('error', () => errors++)
+  send({ status: 'error', errorStage: 'request', errorKind: 'invalid_request', position: 0, duration: 0, firstFrame: false })
+  assert.equal(errors, 1)
+  assert.equal(player.snapshot.status, 'error')
+  assert.equal(player.readyState, 0)
+})

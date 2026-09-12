@@ -65,4 +65,34 @@ public class NativePlaybackRequestTests
         assertNull(NativePlaybackRequest.parse(request().put("token", "bad'").toString(), bootstrap()));
         assertNull(NativePlaybackRequest.parse(request().put("operation", "loadFile").toString(), bootstrap()));
     }
+
+    @Test
+    public void acceptsLowercaseJellyfinHlsRouteWithoutRelaxingOriginOrProxyPrefix() throws Exception
+    {
+        String base = "https://media.example.invalid/Jellyfin";
+        assertTrue(NativePlaybackRequest.validSource(base + "/videos/item/master.m3u8?VideoCodec=h264", base));
+        assertTrue(NativePlaybackRequest.validSource(base + "/VIDEOS/item/main.m3u8", base));
+        assertFalse(NativePlaybackRequest.validSource("https://media.example.invalid/jellyfin/videos/item/master.m3u8", base));
+        assertFalse(NativePlaybackRequest.validSource(base + "/videos/../System/Info", base));
+        assertFalse(NativePlaybackRequest.validSource(base + "/videos/%2e%2e/System/Info", base));
+        assertFalse(NativePlaybackRequest.validSource(base + "/videos-other/item/master.m3u8", base));
+        assertNotNull(NativePlaybackRequest.parse(request().put("hls", true)
+                .put("url", "https://media.example.invalid/jellyfin/videos/item/master.m3u8?VideoCodec=h264").toString(), bootstrap()));
+    }
+
+    @Test
+    public void rejectedOpenProducesBoundedErrorOnlyForCurrentValidIdentity() throws Exception
+    {
+        JSONObject bad = request().put("url", "https://other.example.invalid/private-secret");
+        assertNull(NativePlaybackRequest.parse(bad.toString(), bootstrap()));
+        JSONObject error = NativePlaybackRequest.rejectedOpen(bad.toString(), bootstrap());
+        assertEquals("error", error.getString("status"));
+        assertEquals("request", error.getString("errorStage"));
+        assertEquals(0, error.getDouble("position"), 0);
+        assertEquals(bad.getString("token"), error.getString("token"));
+        assertFalse(error.toString().contains("private"));
+        assertNull(NativePlaybackRequest.rejectedOpen(bad.put("generation", 2).toString(), bootstrap()));
+        assertNull(NativePlaybackRequest.rejectedOpen(bad.put("generation", 3).put("operation", "seek").toString(), bootstrap()));
+        assertNull(NativePlaybackRequest.rejectedOpen(request().toString(), bootstrap().put("session", JSONObject.NULL)));
+    }
 }
