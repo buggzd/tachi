@@ -14,8 +14,18 @@ MAX_FILE = 256 * 1024 * 1024
 MAX_TOTAL = 512 * 1024 * 1024
 
 
-def expected_files(manifest):
-    return {MODEL: manifest["modelSha256"], ORT: manifest["ortSha256"], **{
+def model_entry(manifest, resolution=266):
+    if resolution == 266:
+        return MODEL, manifest["modelSha256"]
+    if resolution != 392:
+        raise ValueError("Unsupported experimental resolution")
+    entry = manifest["experimentalModels"][str(resolution)]
+    return entry["file"], entry["sha256"]
+
+
+def expected_files(manifest, resolution=266):
+    model, digest = model_entry(manifest, resolution)
+    return {model: digest, ORT: manifest["ortSha256"], **{
         f"qairt-runtime/arm64-v8a/{name}": digest for name, digest in manifest["libraries"].items()
     }}
 
@@ -55,7 +65,7 @@ def install(archive, root, expected):
             target.write_bytes((staged / name).read_bytes())
 
 
-def verify_apk(apk, variant, manifest):
+def verify_apk(apk, variant, manifest, resolution=266):
     with zipfile.ZipFile(apk) as bundle:
         # Signing/alignment needs little space; large gaps indicate an incremental ZIP with stale bytes.
         if apk.stat().st_size - sum(entry.compress_size for entry in bundle.infolist()) > 8 * 1024 * 1024:
@@ -67,7 +77,7 @@ def verify_apk(apk, variant, manifest):
             if qnn:
                 raise ValueError("Lite APK unexpectedly contains the model or QNN/ORT runtime")
         else:
-            checked(bundle.read("assets/realtime-sbs/depth.onnx"), manifest["modelSha256"])
+            checked(bundle.read("assets/realtime-sbs/depth.onnx"), model_entry(manifest, resolution)[1])
             for name, digest in manifest["libraries"].items():
                 checked(bundle.read(f"lib/arm64-v8a/{name}"), digest)
             for name in ("libonnxruntime.so", "libonnxruntime4j_jni.so"):
@@ -81,15 +91,16 @@ def main():
     parser.add_argument("archive", type=Path)
     parser.add_argument("--root", type=Path, default=ROOT / "StereoLab/.local/npu")
     parser.add_argument("--variant", choices=("lite", "full"), default="full")
+    parser.add_argument("--resolution", choices=(266, 392), type=int, default=266)
     args = parser.parse_args()
     manifest = json.loads((ROOT / "AndroidApp/realtime-sbs-runtime.json").read_text())
     try:
         if args.operation == "verify-apk":
-            verify_apk(args.archive, args.variant, manifest)
+            verify_apk(args.archive, args.variant, manifest, args.resolution)
         elif args.operation == "pack":
-            pack(args.root, args.archive, expected_files(manifest))
+            pack(args.root, args.archive, expected_files(manifest, args.resolution))
         else:
-            install(args.archive, args.root, expected_files(manifest))
+            install(args.archive, args.root, expected_files(manifest, args.resolution))
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         # Do not echo paths or input URLs from an untrusted archive / CI secret.
         raise SystemExit(f"QNN {args.operation} failed ({type(error).__name__}); check pinned inputs and bundle format") from None

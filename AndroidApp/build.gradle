@@ -2,3 +2,12 @@ plugins {
     id "com.android.application" version "8.7.3" apply false
     id "com.android.library" version "8.7.3" apply false
 }
+
+// One fixed shape per APK: capture, inference, stabilization and texture uploads
+// must use the same contract. Experimental models do not alter default releases.
+def resolution = providers.gradleProperty("depthResolution").getOrElse("266")
+if (!(resolution in ["266", "392"])) throw new GradleException("Unsupported depthResolution")
+def depthManifest = new groovy.json.JsonSlurper().parse(file("realtime-sbs-runtime.json"))
+ext.depthProfile = resolution == "266" ? [width: 266, height: 154,
+        file: "depth-anything-v2-small-qnn-266-u16a-i8w.onnx", sha256: depthManifest.modelSha256] :
+        depthManifest.experimentalModels[resolution]

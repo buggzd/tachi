@@ -1020,6 +1020,7 @@ public final class MainActivity extends Activity
         // Fixed numeric/boolean geometry schema; do not truncate JSON as free-form text.
         result.append("stereoOutput=").append(output.toJson()).append('\n');
         appendDiagnostic(result, "realtimeSbsBundled", booleanText(RealtimeDepthBackend.available()));
+        appendDiagnostic(result, "realtimeDepthResolution", BuildConfig.REALTIME_DEPTH_RESOLUTION);
         if (sessions != null)
         {
             appendDiagnostic(result, "stereoScreen", sessions.getStereoScreenSettings().toJson().toString());

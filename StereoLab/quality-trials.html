@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>tachi · 画质盲测</title>
+<link rel="stylesheet" href="/quality-trials.css"></head>
+<body><main>
+<header><div><span class="eyebrow">tachi / SBS LAB</span><h1>先看画面，再看方案。</h1><p>同一片段，四组匿名处理。分别感受边缘残影、深度抖动和细节。</p></div><button id="export">导出评分</button></header>
+<div class="notice">预计算深度对照，可比较画面；不代表手机 NPU 的实时速度。单眼便于观察边缘，SBS 供眼镜查看。所有评分仅保存在本机。</div>
+<section class="toolbar"><label>片段 <select id="clip"><option value="0">片段 1</option><option value="1">片段 2</option><option value="2">片段 3</option></select></label><nav id="variants" aria-label="匿名方案"></nav><label>查看 <select id="view"><option value="eye">单眼画面</option><option value="sbs">SBS 双眼</option><option value="depth">实际深度</option><option value="source">原片参照</option></select></label></section>
+<section class="viewer" id="viewer"><canvas id="screen" width="1920" height="1080" aria-label="画质对照视频"></canvas><div id="loading" role="status">正在读取本地测试数据…</div></section>
+<div class="transport"><button id="play" disabled>播放 / 暂停</button><button id="replay" disabled>从头重播</button><button id="fullscreen">全屏画面</button><label>观察 <select id="zoom"><option value="1">完整画面</option><option value="2">局部 2 倍</option></select></label><span id="time">0.00 s</span><span id="health"></span></div>
+<section class="rating"><div><span class="eyebrow" id="trial">片段 1 · A</span><h2>这组看起来怎么样？</h2><p>每项 1–5 分，越高越好。可反复切换，再评分。局部 2 倍下可点击画面选择观察位置。</p></div><form id="rating-form">
+<label>鬼影控制 <select name="ghost" required><option value="">请选择</option><option value="1">1 · 很明显</option><option value="2">2 · 明显</option><option value="3">3 · 可接受</option><option value="4">4 · 轻微</option><option value="5">5 · 几乎没有</option></select></label>
+<label>画面稳定 <select name="stability" required><option value="">请选择</option><option value="1">1 · 严重抖动</option><option value="2">2 · 明显抖动</option><option value="3">3 · 可接受</option><option value="4">4 · 较稳定</option><option value="5">5 · 很稳定</option></select></label>
+<label>边缘细节 <select name="detail" required><option value="">请选择</option><option value="1">1 · 很差</option><option value="2">2 · 较差</option><option value="3">3 · 一般</option><option value="4">4 · 清楚</option><option value="5">5 · 很清楚</option></select></label>
+<label class="note">备注 <input name="note" maxlength="300" placeholder="例如：横移时人物头发拖影；深度模式下脸部跳动"></label><button class="primary" type="submit">保存这组评分</button></form></section>
+<p id="message" role="status" aria-live="polite"></p><footer><span id="progress">已评 0 / 12 组</span><button id="reveal">评分后查看方案</button><button id="reset">新一轮盲测</button></footer><pre id="details" hidden></pre>
+</main><video id="source" muted playsinline preload="auto" hidden></video><script type="module" src="/quality-trials.js"></script></body></html>

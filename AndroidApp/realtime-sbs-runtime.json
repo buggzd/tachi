@@ -16,5 +16,14 @@
     "libQnnHtpV81Skel.so": "0df1a63f7fcf60b2f6ca419228c36bb97dc225ba69b24ea3a150a533e9bf3f5f",
     "libQnnHtpV81Stub.so": "8cfb232be5f3f09d732805a8cfe222515460625a00267ed6648667e140be8a31",
     "libQnnSystem.so": "b30bd9880dc48f6c5349185a7d45b326f8a064b10072e60094354fa23d9a2027"
+  },
+  "experimentalModels": {
+    "392": {
+      "width": 392,
+      "height": 224,
+      "file": "resolution-392/depth-anything-v2-small-qnn-392-u16a-i8w.onnx",
+      "sha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+      "deviceValidated": false
+    }
   }
 }

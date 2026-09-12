@@ -13,12 +13,14 @@ public class NativePlaybackDiagnosticsTests
         JSONObject state = new JSONObject("{\"status\":\"playing\",\"position\":12,\"decoder\":\"c2.qti.hevc.decoder\","
                 + "\"url\":\"https://private.example.invalid/a\",\"token\":\"private-secret\",\"title\":\"private-title\","
                 + "\"depth\":{\"state\":\"ready\",\"worker\":{\"inferenceMs\":{\"mean\":18.4,\"p95\":20.1,\"secret\":\"private-secret\"}},"
-                + "\"render\":{\"valid\":true,\"ageMs\":80,\"gpuRender\":{\"meanMs\":9.5,\"p95Ms\":11}}}}");
+                + "\"render\":{\"valid\":true,\"ageMs\":80,\"depthWidth\":392,\"depthHeight\":224,\"gpuRender\":{\"meanMs\":9.5,\"p95Ms\":11}}}}");
         log.record(state, 0);
         String report = log.export();
         assertTrue(report.contains("c2.qti.hevc.decoder"));
         assertTrue(report.contains("inferenceMsMean\":18.4"));
         assertTrue(report.contains("gpuMeanMs\":9.5"));
+        assertTrue(report.contains("depthWidth\":392"));
+        assertTrue(report.contains("depthHeight\":224"));
         assertFalse(report.contains("private"));
         assertFalse(report.contains("token"));
         assertFalse(report.contains("https"));

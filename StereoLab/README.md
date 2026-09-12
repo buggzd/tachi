@@ -47,6 +47,13 @@ npm --prefix StereoLab run samples -- --count 3 --seconds 20 --offset 120
 真实媒体不得直接提交；脱敏后的技术报告可进入 `docs/performance/`。
 本地切片用于隔离算法性能，不证明网络直放、HLS、DRM、字幕或 Android 已经兼容。
 
+## 匿名画质对照
+
+新增独立 `quality-trials.html` 使用**预计算**的实际 Java 深度结果，不改变上述实时主实验。
+它随机排列四种处理方案，支持单眼/SBS/深度图、局部放大、三维度评分和 JSON 导出。
+生成数据、启动方式、392 模型及手机对照包见[测试说明](../docs/performance/2026-09-12-quality-trials/README.md)。
+本机开发页 `http://127.0.0.1:4190/quality-trials.html` 不提供手机网络访问；手机实测用独立 APK。
+
 ## 核心算法
 
 采用与现有银幕一致的眼内视差符号：`D = uL - uR`，正值增加会聚。

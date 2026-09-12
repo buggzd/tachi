@@ -1,0 +1,34 @@
+{
+  "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+  "calibrationImageSha256": "086b8e5d2ce02607516770350e4534e2007f84f2956c7bbf1008aa8769418dd7",
+  "inputShape": [
+    1,
+    3,
+    224,
+    392
+  ],
+  "outputShape": [
+    1,
+    224,
+    392
+  ],
+  "finite": true,
+  "minimum": 1.143241047859192,
+  "maximum": 2.210918426513672,
+  "checker": true,
+  "provider": "CPUExecutionProvider",
+  "onnxruntime": "1.29.0",
+  "opsets": {
+    "": 21,
+    "com.microsoft.experimental": 1,
+    "ai.onnx.ml": 5,
+    "ai.onnx.training": 1,
+    "com.microsoft": 1,
+    "ai.onnx.preview": 1,
+    "org.pytorch.aten": 1,
+    "ai.onnx.preview.training": 1,
+    "com.microsoft.nchwc": 1
+  },
+  "deviceValidated": false,
+  "limits": "One calibration frame smoke check; CPU QDQ execution does not prove Android QNN graph placement, accuracy or latency."
+}

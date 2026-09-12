@@ -42,6 +42,22 @@ AndroidApp/gradlew -p AndroidApp -PrealtimeSbs=true :app:assembleDebug
 `tachi-<version>-lite-arm64-v8a.apk` 和 `tachi-<version>-full-arm64-v8a.apk` 与校验文件，
 CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 
+## 画质盲测与高分辨率试验
+
+[画质对照页与测试说明](performance/2026-09-12-quality-trials/README.md)提供三段实际片源的匿名评分，
+可看单眼、SBS 和实际深度，导出评分 JSON。该页面用离线深度隔离算法效果，不表示手机实时性能。
+
+另有可选 392×224 固定形状开发构建：
+
+```bash
+./scripts/build-android.sh debug full 392
+```
+
+需按 `realtime-sbs-runtime.json` 的 `experimentalModels.392` 准备额外模型，生成方法见测试说明。
+取帧、QNN 输入输出、稳定器与上传纹理使用同一尺寸；正常构建和 GitHub Lite/Full 仍默认 266×154。
+392 完成桌面模型检查与 APK 构建，手机 HTP 运行/时延仍待验证。两种 APK 同 ID，可覆盖安装保留设置。
+诊断新增 `realtimeDepthResolution` 与 `depthWidth/depthHeight`，避免混淆模型尺寸。
+
 ## 操作与边界
 
 先在手机选择 SBS 虚拟银幕并确认系统允许外接输出，再播放视频，在眼镜控制栏开启

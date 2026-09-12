@@ -13,7 +13,7 @@ android {
         versionCode 1
         versionName "0.1.0"
         buildConfigField "boolean", "NATIVE_QNN", nativeQnn.toString()
-        buildConfigField "String", "MODEL_SHA256", "\"${runtimeManifest.modelSha256}\""
+        buildConfigField "String", "MODEL_SHA256", "\"${rootProject.depthProfile.sha256}\""
         ndk { abiFilters "arm64-v8a" }
     }
     buildFeatures { buildConfig true }
@@ -33,7 +33,7 @@ android {
 dependencies { implementation project(":native-video") }
 android.sourceSets.main.java.srcDir(nativeQnn ? "src/qnn/java" : "src/standard/java")
 if (nativeQnn) {
-    def model = new File(npuRoot, "depth-anything-v2-small-qnn-266-u16a-i8w.onnx")
+    def model = new File(npuRoot, rootProject.depthProfile.file)
     def ort = new File(npuRoot, "onnxruntime-android-qnn-1.22.0.aar")
     def runtime = new File(npuRoot, "qairt-runtime/arm64-v8a")
     def verifyHash = { File dependency, String expected ->
@@ -41,7 +41,7 @@ if (nativeQnn) {
         def actual = dependency.withInputStream { java.security.MessageDigest.getInstance("SHA-256").digest(it.bytes).encodeHex().toString() }
         if (actual != expected) throw new GradleException("QNN dependency differs from the validated manifest")
     }
-    verifyHash(model, runtimeManifest.modelSha256)
+    verifyHash(model, rootProject.depthProfile.sha256)
     verifyHash(ort, runtimeManifest.ortSha256)
     runtimeManifest.libraries.each { name, digest -> verifyHash(new File(runtime, name), digest) }
     tasks.register("prepareNativeQnn", Sync) {

@@ -17,8 +17,8 @@ import javax.microedition.khronos.opengles.GL10;
 /** Owns the decoder texture. No WebView, bitmap, or CPU downscale is involved. */
 public final class NativeVideoView extends GLSurfaceView implements GLSurfaceView.Renderer
 {
-    public static final int SAMPLE_WIDTH = 266;
-    public static final int SAMPLE_HEIGHT = 154;
+    public static final int SAMPLE_WIDTH = BuildConfig.DEPTH_SAMPLE_WIDTH;
+    public static final int SAMPLE_HEIGHT = BuildConfig.DEPTH_SAMPLE_HEIGHT;
     private static final int SAMPLE_BYTES = SAMPLE_WIDTH * SAMPLE_HEIGHT * 4;
 
     interface Host
@@ -124,6 +124,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         return "{\"valid\":" + valid + ",\"uploads\":" + depthUploads
                 + ",\"ageMs\":" + (valid ? (System.nanoTime() - depthCapturedNs) / 1_000_000 : -1)
                 + ",\"stereo\":" + stereoPreview + ",\"debug\":" + debugDepth
+                + ",\"depthWidth\":" + SAMPLE_WIDTH + ",\"depthHeight\":" + SAMPLE_HEIGHT
                 + ",\"eyeTargetWidth\":" + (render1080 ? 1920 : width / (stereoPreview ? 2 : 1))
                 + ",\"gpuRender\":" + gpuTimer.json()
                 + ",\"timings\":" + presentationTimings.json() + "}";

@@ -5,6 +5,14 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly BUILD_VARIANT="${1:-debug}"
 readonly SBS_VARIANT="${2:-lite}"
+readonly DEPTH_RESOLUTION="${3:-266}"
+case "${DEPTH_RESOLUTION}" in
+    266|392) ;;
+    *) echo "Depth resolution must be 266 or experimental 392" >&2; exit 2 ;;
+esac
+if [[ "${SBS_VARIANT}" == lite && "${DEPTH_RESOLUTION}" != 266 ]]; then
+    echo "Experimental depth resolution requires full" >&2; exit 2
+fi
 case "${SBS_VARIANT}" in
     lite) realtime_sbs=false ;;
     full) realtime_sbs=true ;;
@@ -15,7 +23,7 @@ case "${BUILD_VARIANT}" in
     debug|release|all)
         ;;
     *)
-        echo "Usage: $0 [debug|release|all] [lite|full]" >&2
+        echo "Usage: $0 [debug|release|all] [lite|full] [266|392]" >&2
         exit 2
         ;;
 esac
@@ -47,13 +55,13 @@ done
 
 case "${BUILD_VARIANT}" in
     debug)
-        ./gradlew -PrealtimeSbs="${realtime_sbs}" :native-video:testDebugUnitTest :native-video:lintDebug :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+        ./gradlew -PrealtimeSbs="${realtime_sbs}" -PdepthResolution="${DEPTH_RESOLUTION}" :native-video:testDebugUnitTest :native-video:lintDebug :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
         ;;
     release)
-        ./gradlew -PrealtimeSbs="${realtime_sbs}" :native-video:testDebugUnitTest :native-video:lintDebug :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
+        ./gradlew -PrealtimeSbs="${realtime_sbs}" -PdepthResolution="${DEPTH_RESOLUTION}" :native-video:testDebugUnitTest :native-video:lintDebug :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
         ;;
     all)
-        ./gradlew -PrealtimeSbs="${realtime_sbs}" :native-video:testDebugUnitTest :native-video:lintDebug \
+        ./gradlew -PrealtimeSbs="${realtime_sbs}" -PdepthResolution="${DEPTH_RESOLUTION}" :native-video:testDebugUnitTest :native-video:lintDebug \
             :app:testDebugUnitTest \
             :app:lintDebug \
             :app:lintRelease \
@@ -65,7 +73,7 @@ esac
 if [[ "${BUILD_VARIANT}" == debug || "${BUILD_VARIANT}" == all ]]; then
     "${SCRIPT_DIR}/verify-android.sh" \
         "AndroidApp/app/build/outputs/apk/debug/app-debug.apk"
-    python3 "${SCRIPT_DIR}/realtime-sbs-bundle.py" verify-apk app/build/outputs/apk/debug/app-debug.apk --variant "${SBS_VARIANT}"
+    python3 "${SCRIPT_DIR}/realtime-sbs-bundle.py" verify-apk app/build/outputs/apk/debug/app-debug.apk --variant "${SBS_VARIANT}" --resolution "${DEPTH_RESOLUTION}"
 fi
 
 if [[ "${BUILD_VARIANT}" == release || "${BUILD_VARIANT}" == all ]]; then
@@ -78,5 +86,5 @@ if [[ "${BUILD_VARIANT}" == release || "${BUILD_VARIANT}" == all ]]; then
         release_apk="AndroidApp/app/build/outputs/apk/release/app-release.apk"
     fi
     "${SCRIPT_DIR}/verify-android.sh" "${release_apk}"
-    python3 "${SCRIPT_DIR}/realtime-sbs-bundle.py" verify-apk "${PROJECT_DIR}/${release_apk}" --variant "${SBS_VARIANT}"
+    python3 "${SCRIPT_DIR}/realtime-sbs-bundle.py" verify-apk "${PROJECT_DIR}/${release_apk}" --variant "${SBS_VARIANT}" --resolution "${DEPTH_RESOLUTION}"
 fi

@@ -36,6 +36,7 @@
 | [2026-09-12 原生播放实机调试](performance/2026-09-12-native-video/README.md) | Media3 硬解、GLES/PBO 取帧、固定采样节拍与错误恢复；尚未接入 NPU/深度合成 |
 | [2026-09-12 原生 QNN SBS 全链路](performance/2026-09-12-native-qnn-sbs/README.md) | 纯 QNN 深度、每眼 1080p GLES 合成、GPU 计时、慢帧保持及旧结果丢弃 |
 | [MyGO 新版诊断与画质回传](performance/2026-09-12-user-diagnostics/mygo-followup.md) | 原生 HLS 大小写校验缺陷、重复字幕解析与鬼影证据 |
+| [SBS 匿名评分与 392 深度试验](performance/2026-09-12-quality-trials/README.md) | 新诊断、可评分对照页、实际高分辨率模型与测试 APK；392 尚未实机验证 |
 | [SBS 伪影量化与首轮优化](performance/2026-09-12-artifact-evaluation/README.md) | 论文指标、真实 Java 消融、真值合成/真实片段代理量与已知退化；未实机验收 |
 | [DLSS / FSR 时序重建研究](archive/2026-09-12-dlss-fsr-sbs.md) | 最新公开集成资料、历史裁剪及 SBS 迁移边界 |
 | [2026-09-12 用户诊断与双包测量](performance/2026-09-12-user-diagnostics/README.md) | 成功播放样本的证据边界、失败记录缺失及 Lite/Full 包体实测 |

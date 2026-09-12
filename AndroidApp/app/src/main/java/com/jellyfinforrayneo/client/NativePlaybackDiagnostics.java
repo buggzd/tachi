@@ -96,7 +96,7 @@ final class NativePlaybackDiagnostics
                 if (render != null)
                 {
                     copyBooleans(render, row, "valid", "stereo", "debug");
-                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth");
+                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight");
                     JSONObject timing = render.optJSONObject("timings");
                     if (timing != null) timings(timing, row, "captureToUploadMs", "uploadMs", "drawSubmitMs");
                     JSONObject gpu = render.optJSONObject("gpuRender");

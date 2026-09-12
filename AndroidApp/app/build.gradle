@@ -43,7 +43,7 @@ def hasReleaseSigning = signingPropertiesFile.exists() || hasEnvironmentSigning
 def realtimeSbs = providers.gradleProperty("realtimeSbs").getOrElse("false") == "true"
 def realtimeManifest = new groovy.json.JsonSlurper().parse(rootProject.file("realtime-sbs-runtime.json"))
 def npuRoot = new File(repositoryRoot, "StereoLab/.local/npu")
-def realtimeModel = new File(npuRoot, "depth-anything-v2-small-qnn-266-u16a-i8w.onnx")
+def realtimeModel = new File(npuRoot, rootProject.depthProfile.file)
 def realtimeRuntime = new File(npuRoot, "qairt-runtime")
 def realtimeAssets = layout.buildDirectory.dir("generated/realtimeAssets")
 def realtimeLibraries = layout.buildDirectory.dir("generated/realtimeLibraries")
@@ -53,7 +53,7 @@ if (realtimeSbs) {
         def actual = dependency.withInputStream { java.security.MessageDigest.getInstance("SHA-256").digest(it.bytes).encodeHex().toString() }
         if (actual != expected) throw new GradleException("Realtime SBS dependency differs from the validated manifest")
     }
-    verifyHash(realtimeModel, realtimeManifest.modelSha256)
+    verifyHash(realtimeModel, rootProject.depthProfile.sha256)
     verifyHash(new File(npuRoot, "onnxruntime-android-qnn-1.22.0.aar"), realtimeManifest.ortSha256)
     realtimeManifest.libraries.each { name, digest -> verifyHash(new File(realtimeRuntime, "arm64-v8a/${name}"), digest) }
 }
@@ -67,7 +67,8 @@ android {
         applicationId "com.jellyfinforrayneo.client"
         minSdk 26
         targetSdk 29
-        buildConfigField "String", "REALTIME_MODEL_SHA256", "\"${realtimeManifest.modelSha256}\""
+        buildConfigField "String", "REALTIME_MODEL_SHA256", "\"${rootProject.depthProfile.sha256}\""
+        buildConfigField "String", "REALTIME_DEPTH_RESOLUTION", "\"${rootProject.depthProfile.width}x${rootProject.depthProfile.height}\""
         versionCode appVersionCode
         versionName appVersionName
 

@@ -1,0 +1,196 @@
+{
+  "schema": 1,
+  "productionSha256": "2ea7fb929d3d5d8e1f2d8ad317189f55a4f86e1e31e5caed83b8dc49502f7c1d",
+  "frames": 96,
+  "simulatedDelayFrames": 2,
+  "clips": [
+    {
+      "id": 0,
+      "fps": 23.976023976023978,
+      "duration": 4.004,
+      "source": "/samples/clip-0.mp4",
+      "sourceSha256": "677c20a9acbe5a4a4e71b8c06be07c837dae945f82e51a390e80dddfa16cd374",
+      "data": {
+        "p0": {
+          "url": "/samples/quality-v1/clip-0-p0.bin",
+          "bytes": 1966272,
+          "sha256": "4a544e3ba226ed0ca6d2247f081828ad356b9614aeb00c2cf2eb48fc310c66d7",
+          "count": 48
+        },
+        "p1": {
+          "url": "/samples/quality-v1/clip-0-p1.bin",
+          "bytes": 1966272,
+          "sha256": "be3c99e958f7c682ce31c214fe17da53a7328515198d88cacfb31871f6649165",
+          "count": 48
+        },
+        "p3": {
+          "url": "/samples/quality-v1/clip-0-p3.bin",
+          "bytes": 3932544,
+          "sha256": "4a57a442d0dcbf4c46da7348756cb4934c857833ab754334ba3747309efeed4a",
+          "count": 96
+        },
+        "p2": {
+          "url": "/samples/quality-v1/clip-0-p2.bin",
+          "bytes": 4214784,
+          "sha256": "01164928b0359895683725849029a71453354e32fd38f297e49f192b54c2bc62",
+          "count": 48
+        }
+      },
+      "models": {
+        "266": {
+          "sha256": "3a4faf23bffbdfed714116c0a2c375bdac9d69401af4f21953468e8ac5793b7b",
+          "desktopCpuMedianMs": 26.2427288107574,
+          "shape": [
+            154,
+            266
+          ]
+        },
+        "392": {
+          "sha256": "14f55779d52e6c6ecec30dbf096180709791995cf959b2a3d05ee98562fb1c54",
+          "desktopCpuMedianMs": 52.8093334287405,
+          "shape": [
+            224,
+            392
+          ]
+        }
+      }
+    },
+    {
+      "id": 1,
+      "fps": 23.976023976023978,
+      "duration": 4.004,
+      "source": "/samples/clip-1.mp4",
+      "sourceSha256": "14d799b87677bb9e9bc838a66e0b0f7e9a4581502e0eef655cbc388456eefb9c",
+      "data": {
+        "p0": {
+          "url": "/samples/quality-v1/clip-1-p0.bin",
+          "bytes": 1966272,
+          "sha256": "c8d9e937530d500a29193e74083526dee6b28b82075f3615bb59f69a5974831e",
+          "count": 48
+        },
+        "p1": {
+          "url": "/samples/quality-v1/clip-1-p1.bin",
+          "bytes": 1966272,
+          "sha256": "9e62a88fad841baff858c4cdaccde116204887f4c3015fec5c29ae48c8496be9",
+          "count": 48
+        },
+        "p3": {
+          "url": "/samples/quality-v1/clip-1-p3.bin",
+          "bytes": 3932544,
+          "sha256": "a0258ad69b6df51743a824f72ddc3b126b373f2bda7e0dedcf71c7ef5fa11470",
+          "count": 96
+        },
+        "p2": {
+          "url": "/samples/quality-v1/clip-1-p2.bin",
+          "bytes": 4214784,
+          "sha256": "e3ec0869809be4c9a3fdf285c3796afd93a5208ed868d48bf52ebb77e059d0c7",
+          "count": 48
+        }
+      },
+      "models": {
+        "266": {
+          "sha256": "3a4faf23bffbdfed714116c0a2c375bdac9d69401af4f21953468e8ac5793b7b",
+          "desktopCpuMedianMs": 22.484958171844482,
+          "shape": [
+            154,
+            266
+          ]
+        },
+        "392": {
+          "sha256": "14f55779d52e6c6ecec30dbf096180709791995cf959b2a3d05ee98562fb1c54",
+          "desktopCpuMedianMs": 57.011999655514956,
+          "shape": [
+            224,
+            392
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "fps": 25.0,
+      "duration": 3.84,
+      "source": "/samples/clip-2.mp4",
+      "sourceSha256": "be2c7ace9b425116b59203ab074e8b378ee30ed43a29ab581ae1d2930cf31cb0",
+      "data": {
+        "p0": {
+          "url": "/samples/quality-v1/clip-2-p0.bin",
+          "bytes": 1966272,
+          "sha256": "6455f4d56f426b792a46b46670ff50049d2636ff218cf4426687ed213a8cac64",
+          "count": 48
+        },
+        "p1": {
+          "url": "/samples/quality-v1/clip-2-p1.bin",
+          "bytes": 1966272,
+          "sha256": "bb406632d90492c5357fb898c8c1f195b5beea44db84bcf77112d2e9fa2e9192",
+          "count": 48
+        },
+        "p3": {
+          "url": "/samples/quality-v1/clip-2-p3.bin",
+          "bytes": 3932544,
+          "sha256": "482cdaa3df32e2db1f8f79ef25d15310fe4480fcd771892df9e8b75561d3296f",
+          "count": 96
+        },
+        "p2": {
+          "url": "/samples/quality-v1/clip-2-p2.bin",
+          "bytes": 4214784,
+          "sha256": "c0b2d34f9168c90a6968b4699dbe417f6229c014202046b5a18468daf03eb3d9",
+          "count": 48
+        }
+      },
+      "models": {
+        "266": {
+          "sha256": "3a4faf23bffbdfed714116c0a2c375bdac9d69401af4f21953468e8ac5793b7b",
+          "desktopCpuMedianMs": 22.99097878858447,
+          "shape": [
+            154,
+            266
+          ]
+        },
+        "392": {
+          "sha256": "14f55779d52e6c6ecec30dbf096180709791995cf959b2a3d05ee98562fb1c54",
+          "desktopCpuMedianMs": 57.1239166893065,
+          "shape": [
+            224,
+            392
+          ]
+        }
+      }
+    }
+  ],
+  "profiles": [
+    {
+      "id": "p0",
+      "label": "266\u00d7154 \u00b7 \u5f53\u524d\u7a33\u5b9a\u5668 \u00b7 \u534a\u5e27\u7387 \u00b7 \u5ef6\u540e 2 \u5e27",
+      "width": 266,
+      "height": 154,
+      "stride": 2,
+      "delay": 2
+    },
+    {
+      "id": "p1",
+      "label": "266\u00d7154 \u00b7 \u65e0\u50cf\u7d20\u5386\u53f2\u878d\u5408 \u00b7 \u534a\u5e27\u7387 \u00b7 \u5ef6\u540e 2 \u5e27",
+      "width": 266,
+      "height": 154,
+      "stride": 2,
+      "delay": 2
+    },
+    {
+      "id": "p2",
+      "label": "392\u00d7224 \u00b7 \u5f53\u524d\u7a33\u5b9a\u5668 \u00b7 \u534a\u5e27\u7387 \u00b7 \u5ef6\u540e 2 \u5e27",
+      "width": 392,
+      "height": 224,
+      "stride": 2,
+      "delay": 2
+    },
+    {
+      "id": "p3",
+      "label": "266\u00d7154 \u00b7 \u9010\u5e27\u6df1\u5ea6\u4e0e\u989c\u8272\u914d\u5bf9 \u00b7 \u79bb\u7ebf\u4e0a\u754c",
+      "width": 266,
+      "height": 154,
+      "stride": 1,
+      "delay": 0
+    }
+  ],
+  "limits": "CPU float inference cached offline, actual Java filter, desktop WebGL translation of native gather33. Not QNN timing, not native playback, not source-matched eye-view ground truth. p3 changes update rate AND alignment; it also uses the same per-update filter at higher cadence, changing its wall-time response. This is an upper-bound diagnostic, not a single-variable quality gain. Startup assumes the first depth is available; steady-state comparisons are the target."
+}

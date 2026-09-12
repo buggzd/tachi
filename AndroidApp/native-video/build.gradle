@@ -2,7 +2,12 @@ plugins { id "com.android.library" }
 android {
     namespace "com.jellyfinforrayneo.video"
     compileSdk 35
-    defaultConfig { minSdk 26 }
+    defaultConfig {
+        minSdk 26
+        buildConfigField "int", "DEPTH_SAMPLE_WIDTH", "${rootProject.depthProfile.width}"
+        buildConfigField "int", "DEPTH_SAMPLE_HEIGHT", "${rootProject.depthProfile.height}"
+    }
+    buildFeatures { buildConfig true }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11

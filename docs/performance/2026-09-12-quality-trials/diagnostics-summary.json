@@ -1,0 +1,27 @@
+{
+  "reportSha256": "faf83330ac5d08b661f46fa87abcf517caf0c5d77316ca12a6adbd85a6d386f7",
+  "sampleCount": 120,
+  "eventCount": 64,
+  "failureCount": 0,
+  "playingReadyCount": 100,
+  "steadyIntervals": 89,
+  "steadySeconds": 90.372,
+  "steadyDepthHz": 11.817819678661532,
+  "steadyDecodeFps": 23.93440446155889,
+  "steadyDroppedFrameDelta": 0,
+  "steadyAgeMs": {
+    "min": 57,
+    "median": 104,
+    "p95": 145,
+    "max": 155
+  },
+  "allPlayingReadyAgeMax": 5758,
+  "rollingMeanMedians": {
+    "preprocessMsMean": 0.8685,
+    "inferenceMsMean": 18.2545,
+    "stabilizeMsMean": 21.0505,
+    "captureToUploadMsMean": 61.111999999999995,
+    "gpuMeanMs": 7.64
+  },
+  "limits": "Retained report window only. Stage figures are medians of overlapping rolling means, not aggregate raw timings. Steady pairs require adjacent playing/ready rows, same source, 0.5-1.5 s wall delta and playback delta within 0.25 s, with inference progress. Age is capture wall-clock age, not measured media PTS skew. No image evidence or report-level media identities."
+}

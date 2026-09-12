@@ -1,0 +1,24 @@
+[
+  {
+    "resolution": 266,
+    "compiledSampleShape": [
+      266,
+      154
+    ],
+    "apkBytes": 105873772,
+    "apkSha256": "e91a0fdadafe2864434c2919a01fdee2b4ecc4be8d2df9eafd258aa2ccd970ca",
+    "modelSha256": "7cbe36d72ec5931c362e759274cdbbd0757dd1ddfb6b6c5fb37e918b006db19d",
+    "signatureVerified": true
+  },
+  {
+    "resolution": 392,
+    "compiledSampleShape": [
+      392,
+      224
+    ],
+    "apkBytes": 105873720,
+    "apkSha256": "8ad9b88b22cb4494cdfa5cc320056dd67b014b1fb747166317b8188c17cc4334",
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "signatureVerified": true
+  }
+]
