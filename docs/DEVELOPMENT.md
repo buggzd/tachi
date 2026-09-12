@@ -318,3 +318,9 @@ Debug 包开启 WebView 调试。日志只应筛选通用 Activity、WebView、�
 新分支只合并源码、配置和锁文件，然后运行完整构建；生成目录不会参与 Git 合并。旧分支仍可能携带 `app/src/main/assets/{GlassesUI,CompanionUI}` 的历史产物，首次合入时移除这两个旧目录的生成文件，再从合并后的源码构建。不要选择某一分支的压缩包代替重建。
 
 功能完成并合入 `main` 后，检查对应 worktree 的未提交/未跟踪文件，以及被忽略的本地配置；确认无需保留后，先用 `git worktree remove <path>` 移除工作目录，再用 `git branch -d <branch>` 删除本地分支。远端旧分支也应确认已合入并无人继续使用后删除。保留有未提交工作、凭据或独立本地资料的目录，不使用强制删除。
+
+### 连接页原生桥回归
+
+`npm --prefix CompanionUI run test:browser` 使用 Playwright 和本机 Chrome 启动独立 Vite
+测试服务，模拟空账号与已有账号的原生状态。覆盖两种主题、手动地址弹窗、状态更新、
+紧凑视口、提交和关闭，捕获 React 渲染错误，不访问真实服务器或设备。

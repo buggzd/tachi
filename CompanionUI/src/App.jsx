@@ -715,7 +715,7 @@ function App() {
               servers={servers}
               scanning={Boolean(nativeState?.discoveryScanning)}
               onLanguageChange={changeLanguage}
-              discoveryMessage={nativeState?.nativeMessage(discoveryMessage) || ''}
+              discoveryMessage={nativeState?.discoveryMessage || ''}
               onRestore={() => go('home')}
               onBack={accounts.length ? () => go('accounts') : null}
               onAccounts={accounts.length ? () => go('accounts') : null}
