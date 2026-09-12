@@ -158,6 +158,7 @@ public final class NativeVideoEngine implements AutoCloseable
             throw new IllegalArgumentException("unsupported source");
         }
         view.invalidateFrames();
+        view.suspendSampling(false);
         failed = false;
         sampleCount = 0;
         player.setMediaItem(MediaItem.fromUri(uri));
@@ -186,7 +187,7 @@ public final class NativeVideoEngine implements AutoCloseable
     {
         if (closed) return;
         failed = true;
-        view.setSampling(false);
+        view.suspendSampling(true);
         player.pause();
     }
 

@@ -22,6 +22,8 @@ public final class NativePlayerLabActivity extends Activity
     private TextView status;
     private boolean stereo;
     private volatile long checksum;
+    private volatile String quadrants = "[]";
+    private long lastReportMs;
 
     @Override
     protected void onCreate(Bundle state)
@@ -30,8 +32,15 @@ public final class NativePlayerLabActivity extends Activity
         layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(16, 64, 16, 16);
+        layout.setOnApplyWindowInsetsListener((view, insets) ->
+        {
+            view.setPadding(16 + insets.getSystemWindowInsetLeft(), 16 + insets.getSystemWindowInsetTop(),
+                    16 + insets.getSystemWindowInsetRight(), 16 + insets.getSystemWindowInsetBottom());
+            return insets;
+        });
         layout.setBackgroundColor(0xff101010);
         status = new TextView(this);
+        status.setLines(4);
         status.setTextColor(0xffffffff);
         status.setText("Native video lab: GPU decode texture / bounded RGBA readback. No NPU or depth conversion yet.");
         layout.addView(status);
@@ -80,14 +89,34 @@ public final class NativePlayerLabActivity extends Activity
     {
         super.onStart();
         engine = new NativeVideoEngine(this, (state, position, duration, samples) ->
+        {
                 status.setText(String.format(Locale.ROOT,
                         "Native %s · %.1f / %.1f s · samples %d · checksum %d\nSBS preview duplicates the video; no depth or USB mode switch.",
-                        state, position / 1000.0, duration / 1000.0, samples, checksum)),
+                        state, position / 1000.0, duration / 1000.0, samples, checksum));
+                long now = android.os.SystemClock.elapsedRealtime();
+                if (engine != null && now - lastReportMs >= 1000)
+                {
+                    lastReportMs = now;
+                    android.util.Log.i("NativeVideoLab", String.format(Locale.ROOT,
+                            "{\"state\":\"%s\",\"elapsedMs\":%d,\"positionMs\":%d,\"samples\":%d,\"quadrantsRgb\":%s,\"readback\":%s}",
+                            state, now, position, samples, quadrants, engine.view().readbackTimingsJson()));
+                }
+        },
                 (rgba, width, height, timestamp) ->
                 {
                     long sum = 0;
                     for (int i = 0; i < rgba.remaining(); i += 64) sum += rgba.get(i) & 255;
-                    checksum = sum; // Diagnostic only; pixels and URLs are never logged or saved.
+                    checksum = sum; // No frames or source addresses are retained.
+                    // Four coarse color probes verify row order using a synthetic quadrant fixture.
+                    int[] colors = new int[4];
+                    for (int q = 0; q < 4; q++)
+                    {
+                        int offset = (((q / 2 == 0 ? height / 4 : height * 3 / 4) * width)
+                                + (q % 2 == 0 ? width / 4 : width * 3 / 4)) * 4;
+                        colors[q] = ((rgba.get(offset) & 255) << 16)
+                                | ((rgba.get(offset + 1) & 255) << 8) | (rgba.get(offset + 2) & 255);
+                    }
+                    quadrants = java.util.Arrays.toString(colors);
                 });
         engine.view().setSampling(true);
         engine.view().setStereoPreview(stereo);

@@ -55,7 +55,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile float videoAspect = 16f / 9f;
     private volatile boolean stereoPreview;
     private volatile boolean sampling;
-    private long lastSampleNs;
+    private volatile boolean samplingSuspended;
+    private final SampleCadence cadence = new SampleCadence();
+    private final ReadbackTimings timings = new ReadbackTimings();
+    private long pendingSubmitNs;
+    private long pendingSubmitCostNs;
+
+    /** Numerical diagnostics only; no source addresses or image content. */
+    public String readbackTimingsJson()
+    {
+        return timings.json();
+    }
 
     NativeVideoView(Context context, Host host, FrameSlot slot)
     {
@@ -79,6 +89,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     {
         sampling = enabled;
         if (!enabled) slot.invalidate();
+    }
+
+    void suspendSampling(boolean suspended)
+    {
+        samplingSuspended = suspended;
+        if (suspended) slot.invalidate();
     }
 
     void setVideoAspect(float aspect)
@@ -205,7 +221,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 draw(false);
             }
             long now = System.nanoTime();
-            if (fresh && sampling && fence == 0 && now - lastSampleNs >= 83_333_333L)
+            if (fresh && sampling && !samplingSuspended && fence == 0 && cadence.due(now))
             {
                 long lease = slot.acquire();
                 if (lease != 0)
@@ -213,7 +229,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     pendingLease = lease;
                     pendingGeneration = slot.generationOf(lease);
                     pendingTimestamp = texture.getTimestamp();
-                    lastSampleNs = now;
+                    cadence.submitted(now);
+                    long submitStart = System.nanoTime();
                     GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
                     GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
                     draw(true);
@@ -225,6 +242,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     fence = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
                     if (fence == 0) throw new IllegalStateException();
                     GLES30.glFlush();
+                    pendingSubmitNs = System.nanoTime();
+                    pendingSubmitCostNs = pendingSubmitNs - submitStart;
                 }
             }
             if (GLES30.glGetError() != GLES30.GL_NO_ERROR) throw new IllegalStateException();
@@ -242,6 +261,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         int state = GLES30.glClientWaitSync(fence, 0, 0);
         if (state == GLES30.GL_TIMEOUT_EXPIRED) return;
         if (state == GLES30.GL_WAIT_FAILED) throw new IllegalStateException();
+        long observedNs = System.nanoTime() - pendingSubmitNs;
         GLES30.glDeleteSync(fence);
         fence = 0;
         long lease = pendingLease;
@@ -251,6 +271,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             slot.release(lease);
             return;
         }
+        long copyStart = System.nanoTime();
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
         ByteBuffer mapped = (ByteBuffer) GLES30.glMapBufferRange(GLES30.GL_PIXEL_PACK_BUFFER,
                 0, SAMPLE_BYTES, GLES30.GL_MAP_READ_BIT);
@@ -270,6 +291,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             throw new IllegalStateException();
         }
         sampleBytes.flip();
+        timings.record(pendingSubmitCostNs, observedNs, System.nanoTime() - copyStart);
         host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, lease, pendingGeneration);
     }
 

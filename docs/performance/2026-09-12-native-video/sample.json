@@ -1,0 +1,1126 @@
+{
+  "baselineCommit": "70b6503",
+  "device": {
+    "soc": "SM8850",
+    "android": "16",
+    "model": "2509FPN0BC",
+    "charging": true
+  },
+  "scope": "Phone native lab; H264/AAC; 266x154 RGBA8; no NPU; no depth warp; no external output",
+  "timingSemantics": {
+    "submitMs": "CPU wall time: FBO draw + readPixels + fence + flush",
+    "fenceObservedMs": "Submission end to later signalled-fence observation; includes polling/scheduling delay",
+    "mapCopyMs": "CPU wall time: PBO map, direct-buffer copy, unmap",
+    "window": "Latest up to 512 successful readbacks per renderer, not per media source"
+  },
+  "baselineObservation": {
+    "source": "UI observed at end of 20.019s 1080p 23.976fps animation MP4",
+    "samples": 175,
+    "limitation": "Not a matched repeated throughput experiment"
+  },
+  "hls": {
+    "source": "Locally remuxed HLS from the same existing Jellyfin animation excerpt; 1080p 23.976fps H264/AAC",
+    "includes": "404 recovery then playback, pause/resume, end",
+    "timeline": [
+      {
+        "state": "error",
+        "elapsedMs": 0,
+        "positionMs": 0,
+        "samples": 0,
+        "readback": {
+          "count": 0,
+          "window": 0,
+          "submitMs": {
+            "mean": 0.0,
+            "p95": 0.0
+          },
+          "fenceObservedMs": {
+            "mean": 0.0,
+            "p95": 0.0
+          },
+          "mapCopyMs": {
+            "mean": 0.0,
+            "p95": 0.0
+          }
+        }
+      },
+      {
+        "state": "error",
+        "elapsedMs": 1018,
+        "positionMs": 0,
+        "samples": 0,
+        "readback": {
+          "count": 0,
+          "window": 0,
+          "submitMs": {
+            "mean": 0.0,
+            "p95": 0.0
+          },
+          "fenceObservedMs": {
+            "mean": 0.0,
+            "p95": 0.0
+          },
+          "mapCopyMs": {
+            "mean": 0.0,
+            "p95": 0.0
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 2035,
+        "positionMs": 184,
+        "samples": 3,
+        "readback": {
+          "count": 3,
+          "window": 3,
+          "submitMs": {
+            "mean": 1.2464,
+            "p95": 1.3671
+          },
+          "fenceObservedMs": {
+            "mean": 4.6357,
+            "p95": 6.9233
+          },
+          "mapCopyMs": {
+            "mean": 0.0726,
+            "p95": 0.0781
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 3047,
+        "positionMs": 1198,
+        "samples": 15,
+        "readback": {
+          "count": 15,
+          "window": 15,
+          "submitMs": {
+            "mean": 1.7968,
+            "p95": 4.2124
+          },
+          "fenceObservedMs": {
+            "mean": 8.155,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.0852,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 4055,
+        "positionMs": 2211,
+        "samples": 27,
+        "readback": {
+          "count": 27,
+          "window": 27,
+          "submitMs": {
+            "mean": 1.7262,
+            "p95": 2.2999
+          },
+          "fenceObservedMs": {
+            "mean": 7.5728,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0923,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 5067,
+        "positionMs": 3225,
+        "samples": 39,
+        "readback": {
+          "count": 39,
+          "window": 39,
+          "submitMs": {
+            "mean": 1.7231,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.0932,
+            "p95": 18.0589
+          },
+          "mapCopyMs": {
+            "mean": 0.0972,
+            "p95": 0.2296
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 6076,
+        "positionMs": 4232,
+        "samples": 51,
+        "readback": {
+          "count": 51,
+          "window": 51,
+          "submitMs": {
+            "mean": 1.7287,
+            "p95": 2.2999
+          },
+          "fenceObservedMs": {
+            "mean": 8.8159,
+            "p95": 18.0589
+          },
+          "mapCopyMs": {
+            "mean": 0.0942,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 7084,
+        "positionMs": 5242,
+        "samples": 64,
+        "readback": {
+          "count": 64,
+          "window": 64,
+          "submitMs": {
+            "mean": 1.7305,
+            "p95": 2.2182
+          },
+          "fenceObservedMs": {
+            "mean": 8.9125,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.0934,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 8095,
+        "positionMs": 6245,
+        "samples": 76,
+        "readback": {
+          "count": 76,
+          "window": 76,
+          "submitMs": {
+            "mean": 1.7307,
+            "p95": 2.2999
+          },
+          "fenceObservedMs": {
+            "mean": 8.9589,
+            "p95": 18.1051
+          },
+          "mapCopyMs": {
+            "mean": 0.0912,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 9103,
+        "positionMs": 7261,
+        "samples": 88,
+        "readback": {
+          "count": 88,
+          "window": 88,
+          "submitMs": {
+            "mean": 1.7423,
+            "p95": 2.2999
+          },
+          "fenceObservedMs": {
+            "mean": 8.7441,
+            "p95": 18.0931
+          },
+          "mapCopyMs": {
+            "mean": 0.0921,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 10113,
+        "positionMs": 8268,
+        "samples": 100,
+        "readback": {
+          "count": 100,
+          "window": 100,
+          "submitMs": {
+            "mean": 1.7857,
+            "p95": 2.3442
+          },
+          "fenceObservedMs": {
+            "mean": 8.6269,
+            "p95": 18.0931
+          },
+          "mapCopyMs": {
+            "mean": 0.093,
+            "p95": 0.1326
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 11124,
+        "positionMs": 9276,
+        "samples": 112,
+        "readback": {
+          "count": 112,
+          "window": 112,
+          "submitMs": {
+            "mean": 1.803,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3991,
+            "p95": 18.0931
+          },
+          "mapCopyMs": {
+            "mean": 0.0958,
+            "p95": 0.1605
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 12140,
+        "positionMs": 10291,
+        "samples": 124,
+        "readback": {
+          "count": 124,
+          "window": 124,
+          "submitMs": {
+            "mean": 1.8184,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3653,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.096,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 13149,
+        "positionMs": 11302,
+        "samples": 136,
+        "readback": {
+          "count": 136,
+          "window": 136,
+          "submitMs": {
+            "mean": 1.825,
+            "p95": 2.3896
+          },
+          "fenceObservedMs": {
+            "mean": 8.4441,
+            "p95": 18.0931
+          },
+          "mapCopyMs": {
+            "mean": 0.0963,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 14160,
+        "positionMs": 12313,
+        "samples": 149,
+        "readback": {
+          "count": 149,
+          "window": 149,
+          "submitMs": {
+            "mean": 1.8145,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3588,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.0969,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 15171,
+        "positionMs": 13328,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 16176,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 17183,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 18200,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 19209,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 20219,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 21230,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 22238,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 23249,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 24258,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 25268,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 26277,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 27289,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 28299,
+        "positionMs": 13367,
+        "samples": 161,
+        "readback": {
+          "count": 161,
+          "window": 161,
+          "submitMs": {
+            "mean": 1.8286,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.3,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.097,
+            "p95": 0.1557
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 29331,
+        "positionMs": 14116,
+        "samples": 170,
+        "readback": {
+          "count": 170,
+          "window": 170,
+          "submitMs": {
+            "mean": 1.7966,
+            "p95": 2.3637
+          },
+          "fenceObservedMs": {
+            "mean": 8.1751,
+            "p95": 18.0753
+          },
+          "mapCopyMs": {
+            "mean": 0.0964,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 30338,
+        "positionMs": 15135,
+        "samples": 183,
+        "readback": {
+          "count": 183,
+          "window": 183,
+          "submitMs": {
+            "mean": 1.7656,
+            "p95": 2.3442
+          },
+          "fenceObservedMs": {
+            "mean": 8.0613,
+            "p95": 18.0738
+          },
+          "mapCopyMs": {
+            "mean": 0.095,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 31347,
+        "positionMs": 16144,
+        "samples": 195,
+        "readback": {
+          "count": 195,
+          "window": 195,
+          "submitMs": {
+            "mean": 1.751,
+            "p95": 2.3442
+          },
+          "fenceObservedMs": {
+            "mean": 8.0106,
+            "p95": 18.0738
+          },
+          "mapCopyMs": {
+            "mean": 0.0942,
+            "p95": 0.1605
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 32354,
+        "positionMs": 17155,
+        "samples": 207,
+        "readback": {
+          "count": 207,
+          "window": 207,
+          "submitMs": {
+            "mean": 1.7292,
+            "p95": 2.3339
+          },
+          "fenceObservedMs": {
+            "mean": 7.9287,
+            "p95": 18.0589
+          },
+          "mapCopyMs": {
+            "mean": 0.0922,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 33358,
+        "positionMs": 18161,
+        "samples": 219,
+        "readback": {
+          "count": 219,
+          "window": 219,
+          "submitMs": {
+            "mean": 1.6993,
+            "p95": 2.3339
+          },
+          "fenceObservedMs": {
+            "mean": 7.9764,
+            "p95": 18.0589
+          },
+          "mapCopyMs": {
+            "mean": 0.0902,
+            "p95": 0.1605
+          }
+        }
+      },
+      {
+        "state": "playing",
+        "elapsedMs": 34367,
+        "positionMs": 19170,
+        "samples": 231,
+        "readback": {
+          "count": 231,
+          "window": 231,
+          "submitMs": {
+            "mean": 1.6881,
+            "p95": 2.3133
+          },
+          "fenceObservedMs": {
+            "mean": 8.0032,
+            "p95": 18.0346
+          },
+          "mapCopyMs": {
+            "mean": 0.0925,
+            "p95": 0.1605
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 35377,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 36386,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 37394,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 38402,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 39411,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 40418,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 41428,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 42438,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 43448,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      },
+      {
+        "state": "ended",
+        "elapsedMs": 44461,
+        "positionMs": 20062,
+        "samples": 241,
+        "readback": {
+          "count": 241,
+          "window": 241,
+          "submitMs": {
+            "mean": 1.6714,
+            "p95": 2.3094
+          },
+          "fenceObservedMs": {
+            "mean": 7.9419,
+            "p95": 18.0167
+          },
+          "mapCopyMs": {
+            "mean": 0.0914,
+            "p95": 0.1561
+          }
+        }
+      }
+    ]
+  },
+  "taggedBt709Quadrants": {
+    "order": [
+      "topLeft",
+      "topRight",
+      "bottomLeft",
+      "bottomRight"
+    ],
+    "deviceRgb": [
+      [
+        255,
+        0,
+        0
+      ],
+      [
+        0,
+        254,
+        13
+      ],
+      [
+        1,
+        0,
+        253
+      ],
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "ffmpegRgb": [
+      [
+        255,
+        0,
+        0
+      ],
+      [
+        0,
+        252,
+        11
+      ],
+      [
+        0,
+        0,
+        251
+      ],
+      [
+        253,
+        253,
+        253
+      ]
+    ],
+    "seekCheck": [
+      {
+        "state": "paused",
+        "elapsedMs": 100108,
+        "positionMs": 21367,
+        "samples": 258,
+        "readback": {
+          "count": 258,
+          "window": 258,
+          "submitMs": {
+            "mean": 1.6373,
+            "p95": 1.9805
+          },
+          "fenceObservedMs": {
+            "mean": 8.3791,
+            "p95": 18.0194
+          },
+          "mapCopyMs": {
+            "mean": 0.0686,
+            "p95": 0.0805
+          }
+        }
+      },
+      {
+        "state": "paused",
+        "elapsedMs": 101124,
+        "positionMs": 31367,
+        "samples": 259,
+        "readback": {
+          "count": 259,
+          "window": 259,
+          "submitMs": {
+            "mean": 1.6334,
+            "p95": 1.9805
+          },
+          "fenceObservedMs": {
+            "mean": 8.3925,
+            "p95": 18.0194
+          },
+          "mapCopyMs": {
+            "mean": 0.0685,
+            "p95": 0.0805
+          }
+        }
+      }
+    ]
+  },
+  "untested": [
+    "NPU consumer and GPU disparity composition",
+    "Media PTS to texture timestamp mapping",
+    "HDR/DRM",
+    "Codec families other than H264",
+    "External Presentation/USB display transitions",
+    "Local document picker",
+    "Activity rotation/context-loss recovery",
+    "Long thermal and unplugged power tests",
+    "Subjective audio sync and stereoscopic viewing"
+  ]
+}

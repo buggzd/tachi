@@ -6,6 +6,39 @@ import static org.junit.Assert.*;
 public class NativeVideoTests
 {
     @Test
+    public void decoderJitterDoesNotReduceTwelveHzSamplingToEightHz()
+    {
+        SampleCadence cadence = new SampleCadence();
+        int accepted = 0;
+        for (int frame = 0; frame < 240; frame++)
+        {
+            long now = 1_000_000_000L + frame * 41_666_667L + (frame % 3) * 100_000L;
+            if (cadence.due(now))
+            {
+                cadence.submitted(now);
+                accepted++;
+            }
+        }
+        assertEquals(120, accepted);
+        long afterPause = 60_000_000_000L;
+        assertTrue(cadence.due(afterPause));
+        cadence.submitted(afterPause);
+        assertFalse(cadence.due(afterPause));
+    }
+
+    @Test
+    public void timingWindowRemainsBoundedAndReportsRecentPercentiles()
+    {
+        ReadbackTimings timings = new ReadbackTimings();
+        timings.record(999_000_000L, 999_000_000L, 999_000_000L);
+        for (int i = 0; i < 512; i++) timings.record(1_000_000L, 2_000_000L, 3_000_000L);
+        String json = timings.json();
+        assertTrue(json.contains("\"count\":513,\"window\":512"));
+        assertTrue(json.contains("\"submitMs\":{\"mean\":1.0000,\"p95\":1.0000}"));
+        assertFalse(json.contains("999"));
+    }
+
+    @Test
     public void slowConsumerCannotAccumulateFrames()
     {
         FrameSlot slot = new FrameSlot();
