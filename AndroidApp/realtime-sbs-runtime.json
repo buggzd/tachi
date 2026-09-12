@@ -23,7 +23,45 @@
       "height": 224,
       "file": "resolution-392/depth-anything-v2-small-qnn-392-u16a-i8w.onnx",
       "sha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
-      "deviceValidated": false
+      "deviceValidated": true,
+      "deviceValidationScope": "native-player-lab QNN + SBS short playback; not product/external-display acceptance",
+      "deviceEvidence": "docs/performance/2026-09-13-resolution-sweep/README.md"
+    },
+    "518": {
+      "width": 518,
+      "height": 294,
+      "file": "resolution-518/depth-anything-v2-small-qnn-518-u16a-i8w.onnx",
+      "sha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+      "deviceValidated": true,
+      "deviceValidationScope": "native-player-lab QNN + SBS short playback; not product/external-display acceptance",
+      "deviceEvidence": "docs/performance/2026-09-13-resolution-sweep/README.md"
+    },
+    "644": {
+      "width": 644,
+      "height": 364,
+      "file": "resolution-644/depth-anything-v2-small-qnn-644-u16a-i8w.onnx",
+      "sha256": "d741b19681aff5a5118741758e0db5c9b0852523111d63427cde5014e6b12059",
+      "deviceValidated": true,
+      "deviceValidationScope": "native-player-lab QNN + SBS short playback; not product/external-display acceptance",
+      "deviceEvidence": "docs/performance/2026-09-13-resolution-sweep/README.md"
+    },
+    "770": {
+      "width": 770,
+      "height": 434,
+      "file": "resolution-770/depth-anything-v2-small-qnn-770-u16a-i8w.onnx",
+      "sha256": "c66b44c56a578407d5c27254cffd930e2b73a5c557a97a74ceb219bc0a47ce7c",
+      "deviceValidated": false,
+      "deviceValidationScope": "FAILED during QNN session creation: native allocator out of memory; no inference",
+      "deviceEvidence": "docs/performance/2026-09-13-resolution-sweep/README.md"
+    },
+    "322": {
+      "width": 322,
+      "height": 182,
+      "file": "resolution-322/depth-anything-v2-small-qnn-322-u16a-i8w.onnx",
+      "sha256": "fcb8ebd7b195766fa6898703f6721f4b0abf7cf6ea3a2ea330d65f9d23c6003d",
+      "deviceValidated": true,
+      "deviceValidationScope": "native-player-lab QNN + SBS short playback; not product/external-display acceptance",
+      "deviceEvidence": "docs/performance/2026-09-13-resolution-sweep/README.md"
     }
   }
 }

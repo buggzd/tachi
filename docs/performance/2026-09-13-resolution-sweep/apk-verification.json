@@ -1,0 +1,39 @@
+{
+  "lab266-performance.apk": {
+    "sha256": "9c5b665f1fe09a618da3e0369e67ef452ab77439da283ef86001b59143a32e01",
+    "bytes": 77521582,
+    "modelSha256": "7cbe36d72ec5931c362e759274cdbbd0757dd1ddfb6b6c5fb37e918b006db19d",
+    "vendorLibrariesMatch": true
+  },
+  "lab392-performance.apk": {
+    "sha256": "bd003bad15527ec81686a0981c72ba3130914dc17ea6b5f6d152842b3da727ed",
+    "bytes": 77521538,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "lab518-performance.apk": {
+    "sha256": "bea25b54e59b05e8b020c9256b19b8c0f4c7254b19b65dd15f0e259dfe25f360",
+    "bytes": 77521506,
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "vendorLibrariesMatch": true
+  },
+  "lab770.apk": {
+    "sha256": "7ce59fa3ea6edc106ffa2d2e019bc00e1ba9bef52687e1c70f6346d57a9abc98",
+    "bytes": 102455339,
+    "modelSha256": "c66b44c56a578407d5c27254cffd930e2b73a5c557a97a74ceb219bc0a47ce7c",
+    "vendorLibrariesMatch": true
+  },
+  "lab322.apk": {
+    "sha256": "f5faaf8a4d39dfe99fe0643a3207dd0e87af3477fc9aad0fcf7f3578585fb812",
+    "bytes": 102455381,
+    "modelSha256": "fcb8ebd7b195766fa6898703f6721f4b0abf7cf6ea3a2ea330d65f9d23c6003d",
+    "vendorLibrariesMatch": true
+  },
+  "lab392.apk": {
+    "sha256": "d960637bccb00634469d8d287af7706bf251ee891d7cfefa21889a033b91ad3f",
+    "bytes": 102455372,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "sourceSha256": "8d8d4572182aac490ef1cd4c7cdc660a33b5d32d02e112327ee1e8ad3223b954"
+}

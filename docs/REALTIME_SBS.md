@@ -55,7 +55,15 @@ CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 
 需按 `realtime-sbs-runtime.json` 的 `experimentalModels.392` 准备额外模型，生成方法见测试说明。
 取帧、QNN 输入输出、稳定器与上传纹理使用同一尺寸；正常构建和 GitHub Lite/Full 仍默认 266×154。
-392 完成桌面模型检查与 APK 构建，手机 HTP 运行/时延仍待验证。两种 APK 同 ID，可覆盖安装保留设置。
+392 已在 SM8850 的共享原生 lab 跑通 QNN 与 SBS；更高尺寸及构建模式的耗时见
+[9 月 13 日实机分辨率扫描](performance/2026-09-13-resolution-sweep/README.md)。
+这不等于正式播放器/外接眼镜完整验收，默认发布仍为 266。两种 APK 同 ID，可覆盖安装保留设置。
+
+322、518、644 和失败的 770 模型记录在实验清单中，仅供直接 Gradle lab 扫描复现；
+常规打包脚本仍只接受 266 / 392。lab 可用 `-PlabPerformanceBuild=true` 关闭 Debug
+调试标志，再通过 Android `cmd package compile -m speed -f` 实验 ART 预编译。
+该开关只作用于独立 lab，不改变主应用；必须核实系统实际报告 `speed`，
+不能把命令返回 Success 或 Debug 包的 `verify` 当作预编译生效。
 诊断新增 `realtimeDepthResolution` 与 `depthWidth/depthHeight`，避免混淆模型尺寸。
 
 ## 操作与边界

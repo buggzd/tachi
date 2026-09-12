@@ -1,0 +1,81 @@
+{
+  "shape": [
+    266,
+    154
+  ],
+  "rows": 92,
+  "durationSeconds": 92.661,
+  "depthHz": 11.979149804124713,
+  "positionAdvanceMs": 92662,
+  "ageMedianMs": 87.5,
+  "ageP95Ms": 133,
+  "lastWindowWorker": {
+    "count": 1298,
+    "window": 512,
+    "preprocessMs": {
+      "mean": 0.832,
+      "p95": 1.2137
+    },
+    "inferenceMs": {
+      "mean": 18.2915,
+      "p95": 19.4212
+    },
+    "stabilizeMs": {
+      "mean": 6.9918,
+      "p95": 9.6978
+    }
+  },
+  "lastWindowRender": {
+    "valid": true,
+    "uploads": 1298,
+    "ageMs": 85,
+    "stereo": true,
+    "debug": true,
+    "depthWidth": 266,
+    "depthHeight": 154,
+    "eyeTargetWidth": 1920,
+    "gpuRender": {
+      "count": 3884,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 9.7026,
+      "p95Ms": 11.7616
+    },
+    "timings": {
+      "count": 1298,
+      "window": 512,
+      "captureToUploadMs": {
+        "mean": 49.9247,
+        "p95": 56.4077
+      },
+      "uploadMs": {
+        "mean": 0.1303,
+        "p95": 0.2113
+      },
+      "drawSubmitMs": {
+        "mean": 0.1885,
+        "p95": 0.3109
+      }
+    }
+  },
+  "lastWindowReadback": {
+    "count": 1298,
+    "window": 512,
+    "submitMs": {
+      "mean": 12.4619,
+      "p95": 18.0117
+    },
+    "fenceObservedMs": {
+      "mean": 10.6148,
+      "p95": 16.3525
+    },
+    "mapCopyMs": {
+      "mean": 0.0477,
+      "p95": 0.0689
+    }
+  },
+  "limits": "Rate and age exclude the first 15s of playing+ready by default. Stage values are the final rolling windows, possibly including startup. Depth age is wall clock, not media PTS mismatch. GPU overlaps CPU stages; these are not display frame-rate measurements.",
+  "batteryTemperatureC": 32.9,
+  "build": "labPerformanceBuild=true",
+  "dexopt": "speed (cmdline)"
+}
