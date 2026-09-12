@@ -29,6 +29,8 @@ final class GlassesPresentationController
         void onStereoOutputChanged(DisplayOutputGeometry output);
 
         void onGlassesMessage(GlassesMessage message);
+
+        void onNativePlaybackState(org.json.JSONObject state);
     }
 
     private final Activity activity;
@@ -89,6 +91,11 @@ final class GlassesPresentationController
             displayManager.registerDisplayListener(displayListener, null);
         }
         refreshDisplay();
+    }
+
+    void setForeground(boolean active)
+    {
+        if (webController != null) webController.setForeground(active);
     }
 
     void refresh()
@@ -385,6 +392,12 @@ final class GlassesPresentationController
                                 setStereoTestPattern(false);
                             }
                             callback.onWebReadyChanged(ready);
+                        }
+
+                        @Override
+                        public void onNativePlaybackState(org.json.JSONObject state)
+                        {
+                            callback.onNativePlaybackState(state);
                         }
 
                         @Override

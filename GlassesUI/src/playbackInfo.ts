@@ -3,6 +3,7 @@ import type Hls from 'hls.js'
 import type { PlaybackPlan } from './jellyfin'
 
 export type PlaybackStats = {
+  decoder?: string
   width?: number
   height?: number
   videoCodec?: string
@@ -165,7 +166,7 @@ export function playbackInfoRows(plan: PlaybackPlan, stats: PlaybackStats, hardw
     row(t("音频 / 字幕"), joined(codecLabel(audioCodec) || t("编码待确认"), subtitle)),
     row(t("向前缓冲"), stats.bufferSeconds === undefined ? t("等待媒体数据") : t("{0} 秒", { 0: decimal(stats.bufferSeconds, 1) })),
     row(t("丢帧 / 总帧"), frames),
-    row(t("解码方式"), t("系统自动（WebView）")),
+    row(t("解码方式"), stats.decoder ? `Media3 · ${token(stats.decoder)}` : t("系统自动（WebView）")),
     row(t("硬解能力"), hardware),
   ]
   if (!originalStream) {

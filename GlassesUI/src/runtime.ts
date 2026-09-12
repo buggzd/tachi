@@ -29,6 +29,9 @@ export type RuntimeBootstrap = {
 }
 
 type NativeGlassesBridge = {
+  getNativeAudioCodecs?: () => string
+  nativePlaybackAvailable?: () => boolean
+  nativePlaybackCommand?: (payload: string) => void
   realtimeSbsAvailable?: () => boolean
   startRealtimeSbs?: (token: string) => void
   stopRealtimeSbs?: (token: string) => void

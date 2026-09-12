@@ -299,6 +299,8 @@
   "在眼镜中，结束教学后会回到媒体库界面。": "On the glasses, finishing returns you to your libraries.",
   "重新预览": "Preview again",
   "当前播放": "Now playing",
+  "原生播放器无法解码或读取当前媒体流。": "The native player could not decode or read this media stream.",
+  "等待解码器": "Waiting for decoder",
   "WebView 未公开本次实际硬解 / 软解状态": "WebView does not expose the active hardware/software decoder",
   "原始媒体": "Source media",
   "暂时无法读取媒体信息": "Media information unavailable",

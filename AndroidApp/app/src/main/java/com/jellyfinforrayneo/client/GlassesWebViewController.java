@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 
+@androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
 final class GlassesWebViewController
 {
     private static final String GLASSES_URL = WebNavigationPolicy.GLASSES_ROOT + "index.html";
@@ -49,6 +50,8 @@ final class GlassesWebViewController
         void onReadyChanged(boolean ready);
 
         void onMessage(GlassesMessage message);
+
+        void onNativePlaybackState(JSONObject state);
     }
 
     private FrameLayout root;
@@ -68,6 +71,7 @@ final class GlassesWebViewController
     };
 
     private StereoMirrorLayout webContainer;
+    private NativePlaybackController nativePlayback;
     private View blackTransition;
     private WebView webView;
     private DisplayModeStateMachine.State displayState;
@@ -109,6 +113,7 @@ final class GlassesWebViewController
             root.removeView(blackTransition);
         }
         root = nextRoot;
+        if (nativePlayback != null) nativePlayback.attachTo(nextRoot);
         if (webView == null)
         {
             createWebView();
@@ -119,6 +124,11 @@ final class GlassesWebViewController
         root.addView(blackTransition, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         applyDisplayState();
+    }
+
+    void setForeground(boolean active)
+    {
+        if (nativePlayback != null) nativePlayback.foreground(active);
     }
 
     void setDisplayState(DisplayModeStateMachine.State state)
@@ -176,6 +186,7 @@ final class GlassesWebViewController
         }
         JSONObject bootstrap = bootstrapProvider.buildBootstrap();
         int generation = bootstrap.optInt("catalogGeneration", -1);
+        if (nativePlayback != null) nativePlayback.sessionChanged(generation, !bootstrap.isNull("session"));
         if (realtime != null && (generation != depthCatalogGeneration || bootstrap.isNull("session")))
         {
             realtime.stop(null);
@@ -220,7 +231,14 @@ final class GlassesWebViewController
                 realtime.rendererFailed(token);
             }
         };
-        webContainer.setBackgroundColor(Color.BLACK);
+        nativePlayback = new NativePlaybackController(context, root, state ->
+        {
+            callback.onNativePlaybackState(state);
+            evaluateJavascript("window.dispatchEvent(new CustomEvent('tachi-native-playback',{detail:"
+                    + state.toString() + "}));");
+        });
+        webContainer.geometryChanged = this::updateNativeGeometry;
+        webContainer.setBackgroundColor(Color.TRANSPARENT);
         webContainer.setClipChildren(false);
 
         // Chromium retains the display used at construction. An EDID reconnect can
@@ -228,7 +246,7 @@ final class GlassesWebViewController
         // Keep the renderer on the Activity's stable display; measured View pixels and
         // the eye Canvas transforms still determine the external output dimensions.
         webView = new WebView(context);
-        webView.setBackgroundColor(Color.rgb(2, 7, 13));
+        webView.setBackgroundColor(Color.TRANSPARENT);
         webView.setLayerType(View.LAYER_TYPE_NONE, null);
         webView.setSaveEnabled(false);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -237,33 +255,6 @@ final class GlassesWebViewController
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
 
-        realtime = new RealtimeSbsController(context, new RealtimeSbsController.Host()
-        {
-            @Override
-            public void clearDepth()
-            {
-                if (webContainer != null)
-                {
-                    webContainer.clearDepth();
-                }
-            }
-
-            @Override
-            public void applyDepth(Bitmap map, DepthFrame frame)
-            {
-                if (webContainer != null)
-                {
-                    webContainer.setDepth(map, frame);
-                }
-            }
-
-            @Override
-            public void publish(JSONObject state)
-            {
-                evaluateJavascript("window.dispatchEvent(new CustomEvent('tachi-depth',{detail:"
-                        + state.toString() + "}));");
-            }
-        });
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -385,6 +376,7 @@ final class GlassesWebViewController
             webView.setLayerType(layerType, null);
         }
         webContainer.setStereo(drawStereo);
+        updateNativeGeometry();
         webContainer.setVisibility(transitioning ? View.INVISIBLE : View.VISIBLE);
         blackTransition.setVisibility(transitioning ? View.VISIBLE : View.GONE);
         if (transitioning)
@@ -395,6 +387,16 @@ final class GlassesWebViewController
         {
             webContainer.bringToFront();
         }
+    }
+
+    private void updateNativeGeometry()
+    {
+        if (nativePlayback == null || webContainer == null) return;
+        boolean transitioning = displayState != null && displayState.displayModeTransitioning;
+        StereoScreenGeometry geometry = webContainer.geometry;
+        nativePlayback.geometry(webContainer.stereo && geometry != null, transitioning,
+                geometry == null ? 1f : geometry.scale,
+                geometry == null ? 0f : geometry.disparity / geometry.eyeWidth);
     }
 
     private void evaluateJavascript(String script)
@@ -424,6 +426,11 @@ final class GlassesWebViewController
 
     private void destroyWebView()
     {
+        if (nativePlayback != null)
+        {
+            nativePlayback.close();
+            nativePlayback = null;
+        }
         if (realtime != null)
         {
             realtime.close();
@@ -464,6 +471,24 @@ final class GlassesWebViewController
         public String getBootstrapState()
         {
             return bootstrapProvider.buildBootstrap().toString();
+        }
+
+        @JavascriptInterface
+        public boolean nativePlaybackAvailable()
+        {
+            return true;
+        }
+
+        @JavascriptInterface
+        public void nativePlaybackCommand(String payload)
+        {
+            if (payload == null || payload.length() > 16_384) return;
+            root.post(() ->
+            {
+                if (destroyed || source != webView || nativePlayback == null) return;
+                NativePlaybackRequest request = NativePlaybackRequest.parse(payload, bootstrapProvider.buildBootstrap());
+                if (request != null) nativePlayback.command(request);
+            });
         }
 
         @JavascriptInterface
@@ -519,6 +544,35 @@ final class GlassesWebViewController
         {
             RealtimeSbsController controller = realtime;
             return source == webView && controller != null && controller.offer(payload);
+        }
+
+        @JavascriptInterface
+        public String getNativeAudioCodecs()
+        {
+            Set<String> codecs = new LinkedHashSet<>();
+            try
+            {
+                for (MediaCodecInfo info : new MediaCodecList(MediaCodecList.ALL_CODECS).getCodecInfos())
+                {
+                    if (info.isEncoder()) continue;
+                    for (String type : info.getSupportedTypes())
+                    {
+                        switch (type)
+                        {
+                            case "audio/mp4a-latm": codecs.add("aac"); break;
+                            case "audio/mpeg": codecs.add("mp3"); break;
+                            case "audio/ac3": codecs.add("ac3"); break;
+                            case "audio/eac3": codecs.add("eac3"); break;
+                            case "audio/opus": codecs.add("opus"); break;
+                            case "audio/vorbis": codecs.add("vorbis"); break;
+                            case "audio/flac": codecs.add("flac"); break;
+                            default: break;
+                        }
+                    }
+                }
+            }
+            catch (RuntimeException ignored) { codecs.clear(); }
+            return new JSONArray(codecs).toString();
         }
 
         @JavascriptInterface
@@ -666,6 +720,7 @@ final class GlassesWebViewController
         private float normalizedDisparity = settings.normalizedDisparity();
         private float sizeFraction = settings.sizeFraction();
         private StereoScreenGeometry geometry;
+        private Runnable geometryChanged;
         private ValueAnimator settingsAnimator;
         private final Paint patternPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -746,6 +801,7 @@ final class GlassesWebViewController
         private void updateGeometry()
         {
             geometry = StereoScreenGeometry.create(getWidth(), getHeight(), normalizedDisparity, sizeFraction);
+            if (geometryChanged != null) geometryChanged.run();
             // Only the Canvas transform changes; the WebView viewport and video remain intact.
             invalidate();
         }

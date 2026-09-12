@@ -12,4 +12,5 @@
     <string name="share_redacted_diagnostics">"分享已脱敏诊断日志"</string>
     <string name="share_app_unavailable">"没有可接收诊断日志的分享应用。"</string>
     <string name="browser_unavailable">"未找到可打开链接的浏览器"</string>
+    <string name="diagnostics_export_failed">无法导出诊断日志，请重试。</string>
 </resources>

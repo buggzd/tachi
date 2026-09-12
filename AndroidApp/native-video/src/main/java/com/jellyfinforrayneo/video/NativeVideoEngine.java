@@ -38,10 +38,17 @@ public final class NativeVideoEngine implements AutoCloseable
     private final FrameSlot slot = new FrameSlot();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ThreadPoolExecutor samples = new ThreadPoolExecutor(1, 1, 0,
-            TimeUnit.SECONDS, new ArrayBlockingQueue<>(2)); // One frame lease plus ordered shutdown.
+            TimeUnit.SECONDS, new ArrayBlockingQueue<>(4)); // One frame, explicit retry close/prepare, and ordered shutdown.
     private final Listener listener;
     private final SampleConsumer consumer;
-    private final NativeDepthProcessor depthProcessor;
+    private NativeDepthProcessor depthProcessor;
+    private boolean firstFrame;
+    private int audioOrdinal = -1;
+    private String videoDecoder = "";
+    private int errorCode;
+    private int httpStatus;
+    private long metricsAt;
+    private org.json.JSONObject depthMetrics;
     private final ReadbackTimings depthTimings = new ReadbackTimings("preprocess", "inference", "stabilize");
     private volatile boolean depthReady;
     private volatile String depthState;
@@ -60,7 +67,7 @@ public final class NativeVideoEngine implements AutoCloseable
                     ? "buffering" : player.getPlaybackState() == Player.STATE_ENDED
                     ? "ended" : player.isPlaying() ? "playing" : "paused";
             listener.state(status, player.getCurrentPosition(), Math.max(0, player.getDuration()), sampleCount);
-            main.postDelayed(this, 250);
+            main.postDelayed(this, 100);
         }
     };
 
@@ -70,16 +77,16 @@ public final class NativeVideoEngine implements AutoCloseable
     }
 
     public NativeVideoEngine(Context context, Listener listener, SampleConsumer consumer,
-            NativeDepthProcessor depthProcessor)
+            NativeDepthProcessor initialDepthProcessor)
     {
         requireMain();
         this.listener = listener;
         this.consumer = consumer;
-        this.depthProcessor = depthProcessor;
+        this.depthProcessor = initialDepthProcessor;
         depthReady = depthProcessor == null;
         depthState = depthProcessor == null ? "disabled" : "initializing";
         DefaultRenderersFactory renderers = new DefaultRenderersFactory(context)
-                .setEnableDecoderFallback(false)
+                .setEnableDecoderFallback(true)
                 .setMediaCodecSelector((mime, secure, tunnel) ->
                 {
                     ArrayList<androidx.media3.exoplayer.mediacodec.MediaCodecInfo> result = new ArrayList<>();
@@ -95,6 +102,16 @@ public final class NativeVideoEngine implements AutoCloseable
                 .setUsage(androidx.media3.common.C.USAGE_MEDIA)
                 .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE).build(), true);
         player.setHandleAudioBecomingNoisy(true);
+        player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+                .setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_TEXT, true).build());
+        player.addAnalyticsListener(new androidx.media3.exoplayer.analytics.AnalyticsListener()
+        {
+            @Override
+            public void onVideoDecoderInitialized(EventTime event, String name, long at, long duration)
+            {
+                videoDecoder = name;
+            }
+        });
         view = new NativeVideoView(context, new NativeVideoView.Host()
         {
             @Override
@@ -166,33 +183,78 @@ public final class NativeVideoEngine implements AutoCloseable
             }
 
             @Override
+            public void onRenderedFirstFrame()
+            {
+                firstFrame = true;
+            }
+
+            @Override
+            public void onTracksChanged(androidx.media3.common.Tracks tracks)
+            {
+                selectAudio(tracks);
+            }
+
+            @Override
             public void onPlayerError(PlaybackException error)
             {
+                errorCode = error.errorCode;
+                for (Throwable cause = error; cause != null; cause = cause.getCause())
+                {
+                    if (cause instanceof androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)
+                    {
+                        httpStatus = ((androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException) cause).responseCode;
+                        break;
+                    }
+                }
                 fail(); // Never forward URL, headers, tokens or raw exception details to UI.
             }
         });
-        if (depthProcessor != null)
+        if (depthProcessor != null) prepareDepth();
+        main.post(tick);
+    }
+
+    private void prepareDepth()
+    {
+        depthState = "initializing";
+        depthReady = false;
+        view.suspendSampling(true);
+        samples.execute(() ->
+        {
+            if (closed) return;
+            try
+            {
+                depthProcessor.prepare();
+                main.post(() ->
+                {
+                    if (closed) return;
+                    depthReady = true;
+                    depthState = "ready";
+                    view.suspendSampling(failed);
+                });
+            }
+            catch (Exception | LinkageError error)
+            {
+                main.post(this::depthFailed);
+            }
+        });
+    }
+
+    public void enableDepth(NativeDepthProcessor processor)
+    {
+        requireMain();
+        if (closed || processor == null || (depthProcessor != null && !"error".equals(depthState))) return;
+        NativeDepthProcessor previous = depthProcessor;
+        if (previous != null)
         {
             samples.execute(() ->
             {
-                try
-                {
-                    depthProcessor.prepare();
-                    main.post(() ->
-                    {
-                        if (closed) return;
-                        depthReady = true;
-                        depthState = "ready";
-                        view.suspendSampling(failed);
-                    });
-                }
-                catch (Exception | LinkageError error)
-                {
-                    main.post(this::depthFailed);
-                }
+                try { previous.close(); }
+                catch (Exception ignored) { /* Explicit retry; no raw diagnostics. */ }
             });
         }
-        main.post(tick);
+        depthMetrics = null;
+        depthProcessor = processor;
+        prepareDepth();
     }
 
     public String depthState()
@@ -228,6 +290,11 @@ public final class NativeVideoEngine implements AutoCloseable
 
     public void open(Uri uri)
     {
+        open(uri, 0, true, -1, false);
+    }
+
+    public void open(Uri uri, long positionMs, boolean play, int audioTrackOrdinal, boolean hls)
+    {
         requireMain();
         if (closed) return;
         String scheme = uri.getScheme();
@@ -239,9 +306,104 @@ public final class NativeVideoEngine implements AutoCloseable
         view.suspendSampling(!depthReady);
         failed = false;
         sampleCount = 0;
-        player.setMediaItem(MediaItem.fromUri(uri));
+        firstFrame = false;
+        errorCode = 0;
+        httpStatus = 0;
+        videoDecoder = "";
+        audioOrdinal = audioTrackOrdinal;
+        player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+                .clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_AUDIO).build());
+        MediaItem.Builder item = new MediaItem.Builder().setUri(uri);
+        if (hls) item.setMimeType(androidx.media3.common.MimeTypes.APPLICATION_M3U8);
+        player.setMediaItem(item.build(), Math.max(0, positionMs));
         player.prepare();
-        player.play();
+        player.setPlayWhenReady(play);
+    }
+
+    private void selectAudio(androidx.media3.common.Tracks tracks)
+    {
+        if (audioOrdinal < 0) return;
+        int ordinal = 0;
+        for (androidx.media3.common.Tracks.Group group : tracks.getGroups())
+        {
+            if (group.getType() != androidx.media3.common.C.TRACK_TYPE_AUDIO) continue;
+            for (int index = 0; index < group.length; index++, ordinal++)
+            {
+                if (ordinal != audioOrdinal) continue;
+                if (!group.isTrackSupported(index)) { fail(); return; }
+                if (!group.isTrackSelected(index))
+                    player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+                            .setOverrideForType(new androidx.media3.common.TrackSelectionOverride(
+                                    group.getMediaTrackGroup(), index)).build());
+                return;
+            }
+        }
+    }
+
+    public org.json.JSONObject snapshot()
+    {
+        requireMain();
+        org.json.JSONObject state = new org.json.JSONObject();
+        try
+        {
+            state.put("position", player.getCurrentPosition() / 1000.0);
+            state.put("duration", Math.max(0, player.getDuration()) / 1000.0);
+            state.put("buffered", Math.max(0, player.getBufferedPosition()) / 1000.0);
+            state.put("seekable", player.isCurrentMediaItemSeekable());
+            state.put("firstFrame", firstFrame);
+            state.put("errorCode", errorCode);
+            state.put("httpStatus", httpStatus);
+            state.put("decoder", videoDecoder);
+            state.put("rate", player.getPlaybackParameters().speed);
+            androidx.media3.common.Format video = player.getVideoFormat();
+            androidx.media3.common.Format audio = player.getAudioFormat();
+            if (video != null)
+            {
+                state.put("width", Math.max(0, video.width));
+                state.put("height", Math.max(0, video.height));
+                state.put("pixelRatio", video.pixelWidthHeightRatio);
+                state.put("videoCodec", video.sampleMimeType);
+                state.put("frameRate", video.frameRate);
+            }
+            if (audio != null)
+            {
+                state.put("audioCodec", audio.sampleMimeType);
+                state.put("audioChannels", audio.channelCount);
+                state.put("audioSampleRate", audio.sampleRate);
+            }
+            androidx.media3.exoplayer.DecoderCounters counters = player.getVideoDecoderCounters();
+            if (counters != null)
+            {
+                counters.ensureUpdated();
+                state.put("droppedFrames", counters.droppedBufferCount);
+                state.put("decodedFrames", counters.renderedOutputBufferCount);
+            }
+            long now = android.os.SystemClock.elapsedRealtime();
+            if (depthMetrics == null || now - metricsAt >= 1000)
+            {
+                depthMetrics = new org.json.JSONObject(depthTimingsJson());
+                depthMetrics.put("readback", new org.json.JSONObject(view.readbackTimingsJson()));
+                metricsAt = now;
+            }
+            state.put("depth", depthMetrics);
+        }
+        catch (org.json.JSONException ignored) { /* Fixed schema, finite numeric values only. */ }
+        return state;
+    }
+
+    public void setPlaying(boolean playing)
+    {
+        requireMain();
+        if (!closed && !failed) player.setPlayWhenReady(playing);
+    }
+
+    public void seekTo(long targetMs)
+    {
+        requireMain();
+        if (closed || failed || !player.isCurrentMediaItemSeekable()) return;
+        view.invalidateFrames();
+        long end = player.getDuration();
+        player.seekTo(Math.max(0, end > 0 ? Math.min(targetMs, end) : targetMs));
     }
 
     public void togglePlayback()

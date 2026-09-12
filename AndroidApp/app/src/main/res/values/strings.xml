@@ -12,4 +12,5 @@
     <string name="share_redacted_diagnostics">"Share redacted diagnostics"</string>
     <string name="share_app_unavailable">"No app is available to share diagnostics."</string>
     <string name="browser_unavailable">"No browser found to open this link"</string>
+    <string name="diagnostics_export_failed">Could not export the diagnostic report. Please try again.</string>
 </resources>

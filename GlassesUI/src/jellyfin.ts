@@ -252,6 +252,10 @@ const maximumDirectPlayWidth = 3_840
 const maximumDirectPlayHeight = 2_160
 const knownWebViewVideoCodecs = ['h264', 'hevc', 'vp8', 'vp9', 'av1'] as const
 
+function hasNativePlayback() {
+  try { return window.RayNeoGlasses?.nativePlaybackAvailable?.() === true } catch { return false }
+}
+
 function browserSupportsVideoCodec(codec: string) {
   if (typeof document === 'undefined') return codec === 'h264'
   const video = document.createElement('video')
@@ -274,11 +278,12 @@ function browserSupportsVideoCodec(codec: string) {
 function detectHardwareVideoCodecs() {
   const nativeCodecs = getNativeHardwareVideoCodecs()
   const candidates = nativeCodecs ?? knownWebViewVideoCodecs
-  return new Set(candidates.filter(browserSupportsVideoCodec))
+  return new Set(hasNativePlayback() ? (nativeCodecs ?? []) : candidates.filter(browserSupportsVideoCodec))
 }
 
 function videoConditions(maximumBitDepth: number) {
   return [
+    ...(hasNativePlayback() ? [{ Condition: 'Equals', Property: 'VideoRangeType', Value: 'SDR', IsRequired: false }] : []),
     {
       Condition: 'LessThanEqual',
       Property: 'Width',
@@ -300,28 +305,40 @@ function videoConditions(maximumBitDepth: number) {
   ]
 }
 
+function nativeAudioCodecs(): string[] {
+  try {
+    const codecs: unknown = JSON.parse(window.RayNeoGlasses?.getNativeAudioCodecs?.() ?? '[]')
+    return Array.isArray(codecs) ? codecs.filter((value): value is string => typeof value === 'string'
+      && ['aac', 'mp3', 'ac3', 'eac3', 'opus', 'vorbis', 'flac'].includes(value)) : []
+  } catch { return [] }
+}
+
 function createWebViewDeviceProfile(hardwareVideoCodecs: ReadonlySet<string>) {
+  const native = hasNativePlayback()
+  const audio = native ? nativeAudioCodecs().join(',') : 'aac,mp3,ac3,eac3,opus'
   const mp4VideoCodecs = ['h264', 'hevc'].filter((codec) => hardwareVideoCodecs.has(codec))
   const webmVideoCodecs = ['vp8', 'vp9', 'av1'].filter((codec) => hardwareVideoCodecs.has(codec))
   const eightBitVideoCodecs = ['h264', 'vp8'].filter((codec) => hardwareVideoCodecs.has(codec))
   const tenBitVideoCodecs = ['hevc', 'vp9', 'av1'].filter((codec) => hardwareVideoCodecs.has(codec))
 
   return {
-    Name: 'tachi Android WebView Hardware',
+    Name: native ? 'tachi Android Media3 Hardware SDR' : 'tachi Android WebView Hardware',
     MaxStreamingBitrate: directPlayMaxBitrate,
     MaxStaticBitrate: directPlayMaxBitrate,
     DirectPlayProfiles: [
+      ...(native && hardwareVideoCodecs.size > 0 ? [{ Container: 'mkv', Type: 'Video',
+        VideoCodec: [...hardwareVideoCodecs].join(','), AudioCodec: audio }] : []),
       ...(mp4VideoCodecs.length > 0 ? [{
         Container: 'mp4,m4v,mov',
         Type: 'Video',
         VideoCodec: mp4VideoCodecs.join(','),
-        AudioCodec: 'aac,mp3,ac3,eac3,opus',
+        AudioCodec: audio,
       }] : []),
       ...(webmVideoCodecs.length > 0 ? [{
         Container: 'webm',
         Type: 'Video',
         VideoCodec: webmVideoCodecs.join(','),
-        AudioCodec: 'vorbis,opus',
+        AudioCodec: native ? nativeAudioCodecs().filter(codec => ['vorbis', 'opus'].includes(codec)).join(',') : 'vorbis,opus',
       }] : []),
     ],
     TranscodingProfiles: [
@@ -775,7 +792,7 @@ export class JellyfinClient {
     }
 
     const container = normalizeContainer(source.Container)
-    const extension = container === 'webm' ? 'webm' : 'mp4'
+    const extension = container === 'webm' ? 'webm' : hasNativePlayback() && container === 'mkv' ? 'mkv' : 'mp4'
     return this.authenticatedUrl(`/Videos/${encodeURIComponent(itemId)}/stream.${extension}`, {
       static: true,
       deviceId: this.session.deviceId,
@@ -1166,11 +1183,13 @@ export class JellyfinClient {
     const container = normalizeContainer(source.Container)
     const videoCodec = normalizeCodec(video?.Codec)
     const audioCodec = normalizeCodec(selectedAudio?.Codec)
-    const browserContainer = ['mp4', 'm4v', 'mov', 'webm'].includes(container)
+    const native = hasNativePlayback()
+    const browserContainer = (native ? ['mp4', 'webm', 'mkv'] : ['mp4', 'm4v', 'mov', 'webm']).includes(container)
     const browserVideo = this.hardwareVideoCodecs.has(videoCodec)
       && isWithinHardwarePlaybackLimits(video, source.Bitrate)
+      && (!native || !video?.VideoRangeType || video.VideoRangeType.toUpperCase() === 'SDR')
     const browserAudio = !selectedAudio
-      || ['aac', 'mp3', 'ac3', 'eac3', 'opus', 'vorbis'].includes(audioCodec)
+      || (native ? nativeAudioCodecs() : ['aac', 'mp3', 'ac3', 'eac3', 'opus', 'vorbis']).includes(audioCodec)
     const firstAudioIndex = streamsOfType(source, 'Audio')[0]?.Index
     const nonDefaultAudioSelection = selection.audioStreamIndex !== undefined
       && selection.audioStreamIndex !== firstAudioIndex
@@ -1178,7 +1197,7 @@ export class JellyfinClient {
     const assSubtitle = Boolean(selectedSubtitle && ['ass', 'ssa'].includes(normalizeCodec(selectedSubtitle.Codec)))
     const videoSubtitleIndex = subtitleRequiresBurnIn ? subtitleStreamIndex : -1
     const canDirectPlay = !selection.forceTranscode
-      && !nonDefaultAudioSelection
+      && (native || !nonDefaultAudioSelection)
       && !subtitleRequiresBurnIn
       && Boolean(source.SupportsDirectPlay)
       && browserContainer

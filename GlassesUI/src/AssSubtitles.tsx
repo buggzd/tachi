@@ -1,9 +1,10 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { bindAssVideo } from './assVideo'
+import type { PlaybackSurface } from './nativePlayback'
 import type { AssRenderer } from './assRenderer'
 
 export default function AssSubtitles({ videoRef, url, fontUrls, onError }: {
-  videoRef: RefObject<HTMLVideoElement | null>
+  videoRef: RefObject<PlaybackSurface | null>
   url: string
   fontUrls?: string[]
   onError: (failed: boolean) => void

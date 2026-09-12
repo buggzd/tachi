@@ -44,6 +44,9 @@ final class UiStrings
             case "分享已脱敏诊断日志":
                 resource = R.string.share_redacted_diagnostics;
                 break;
+            case "无法导出诊断日志，请重试。":
+                resource = R.string.diagnostics_export_failed;
+                break;
             case "没有可接收诊断日志的分享应用。":
                 resource = R.string.share_app_unavailable;
                 break;

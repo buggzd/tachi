@@ -56,7 +56,7 @@ The first build installs both frontend dependency sets and runs the checks. The 
 - **Phone connection, glasses viewing**: discover servers on the local network, connect manually, use Quick Connect or password sign-in, manage settings, and control the glasses from the phone; the glasses stay focused on browsing and playback.
 - **Common Jellyfin browsing flows**: home content shelves, libraries, search, filters, folders, and details for movies, series, seasons, and episodes.
 - **Synchronized watch state**: continue watching, next-up recommendations, favorites, watched state, and playback progress reporting.
-- **Direct play with compatibility fallback**: prefer HTML video direct play, fall back to Jellyfin H.264/AAC HLS when needed, and support audio tracks, text subtitles, and server-burned subtitles.
+- **Direct play with compatibility fallback**: prefer native Media3 hardware-decoded playback, fall back to Jellyfin H.264/AAC HLS when needed, and support audio tracks, text subtitles, and server-burned subtitles.
 - **Two glasses display modes**: switch between Mirror 2D and an SBS virtual screen; the virtual screen has four depth levels and independent size control while keeping one video, audio stream, and playback report.
 - **Diagnostics without ADB**: the phone shows connection stages and safe diagnostics, and can share a redacted troubleshooting report.
 - **Chinese and English UI**: follow the system language by default, or choose Simplified Chinese / English on the phone connection page or in either settings screen; the choice is saved and synchronized.
@@ -82,7 +82,7 @@ tachi is a working MVP intended for sideloading on RayNeo Air companion devices.
 - `targetSdk 29` preserves the existing sideload compatibility baseline and does not meet current Google Play publishing requirements.
 - Air 3s uses independent USB control. On HyperOS, you may need to enable system “Screen mirroring” manually after connecting the glasses and again after changing modes; see the [User Guide](docs/USER_GUIDE.md#眼镜显示模式).
 - Offline downloads and playlist editing are not implemented yet.
-- Incompatible media depends on server-side Jellyfin transcoding; the app does not include a native alternate player.
+- Incompatible media depends on server-side Jellyfin transcoding; the native player does not bundle a general-purpose software video decoder.
 - UDP discovery is based on IPv4. IPv6-only servers must be entered manually using a hostname or a properly formatted IPv6 address.
 
 See the [User Guide](docs/USER_GUIDE.md) for full limitations, IPv6 syntax, and troubleshooting. Future work is tracked in the [feature roadmap](docs/JELLYFIN_FEATURE_ROADMAP.md).

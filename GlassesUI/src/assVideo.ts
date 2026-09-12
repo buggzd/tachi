@@ -1,3 +1,4 @@
+import type { PlaybackSurface } from './nativePlayback'
 import type { AssRenderer } from './assRenderer'
 
 // Match object-fit: contain, so ASS PlayRes/positioning follows the image, not
@@ -10,24 +11,25 @@ export function assVideoRect(width: number, height: number, videoWidth: number, 
   return { width: w, height: h, left: (width - w) / 2, top: (height - h) / 2 }
 }
 
-export function bindAssVideo(video: HTMLVideoElement, canvas: HTMLCanvasElement, renderer: AssRenderer) {
+export function bindAssVideo(video: PlaybackSurface, canvas: HTMLCanvasElement, renderer: AssRenderer) {
   let disposed = false
   let callback = 0
   let lastTime = -1
-  const frameCallbacks = typeof video.requestVideoFrameCallback === 'function'
+  const browser = 'requestVideoFrameCallback' in video ? video as HTMLVideoElement : null
+  const frameCallbacks = typeof browser?.requestVideoFrameCallback === 'function'
   const render = (time: number, force = false) => {
     if (disposed || document.hidden || video.seeking || video.readyState < 2) return
     if (force || time !== lastTime) { lastTime = time; renderer.render(time) }
   }
   const cancel = () => {
     if (!callback) return
-    if (frameCallbacks) video.cancelVideoFrameCallback(callback)
+    if (frameCallbacks) browser!.cancelVideoFrameCallback(callback)
     else cancelAnimationFrame(callback)
     callback = 0
   }
   const schedule = () => {
     if (disposed || callback || document.hidden || video.paused || video.seeking || video.readyState < 2) return
-    if (frameCallbacks) callback = video.requestVideoFrameCallback((_now, metadata) => {
+    if (frameCallbacks) callback = browser!.requestVideoFrameCallback((_now, metadata) => {
       callback = 0
       render(metadata.mediaTime)
       schedule()
@@ -57,7 +59,7 @@ export function bindAssVideo(video: HTMLVideoElement, canvas: HTMLCanvasElement,
   document.addEventListener('visibilitychange', update)
   window.addEventListener('resize', update)
   const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(update)
-  observer?.observe(video)
+  if (typeof Element !== 'undefined' && video instanceof Element) observer?.observe(video)
   update()
   return () => {
     disposed = true

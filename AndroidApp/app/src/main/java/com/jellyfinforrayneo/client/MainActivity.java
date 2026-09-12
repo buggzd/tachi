@@ -43,6 +43,7 @@ public final class MainActivity extends Activity
     private final ArrayList<JellyfinDiscoveryService.Server> discoveredServers =
             new ArrayList<>();
     private final DiagnosticLog diagnosticLog = new DiagnosticLog();
+    private final NativePlaybackDiagnostics nativePlaybackDiagnostics = new NativePlaybackDiagnostics();
     private final PlaybackSnapshot playback = new PlaybackSnapshot();
 
     private SessionRepository sessions;
@@ -54,6 +55,7 @@ public final class MainActivity extends Activity
     private GlassesPresentationController glassesPresentation;
     private CompanionWebViewController companionWebView;
     private CompanionBackground companionBackground;
+    private DiagnosticReportExporter diagnosticExporter;
     private String lastCompanionBackgroundUrl = "";
 
     private String state = "login_required";
@@ -79,6 +81,7 @@ public final class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        diagnosticExporter = new DiagnosticReportExporter(this);
         diagnosticLog.record(DiagnosticLog.Event.APP_CREATED);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
@@ -175,6 +178,12 @@ public final class MainActivity extends Activity
                         }
                         remoteCommands.setReady(ready);
                         pushCompanionState();
+                    }
+
+                    @Override
+                    public void onNativePlaybackState(JSONObject state)
+                    {
+                        nativePlaybackDiagnostics.record(state, android.os.SystemClock.elapsedRealtime());
                     }
 
                     @Override
@@ -287,11 +296,19 @@ public final class MainActivity extends Activity
         if (glassesPresentation != null)
         {
             glassesPresentation.refresh();
+            glassesPresentation.setForeground(true);
         }
         if (rayNeoDisplay != null)
         {
             rayNeoDisplay.onResume();
         }
+    }
+
+    @Override
+    protected void onStop()
+    {
+        if (glassesPresentation != null) glassesPresentation.setForeground(false);
+        super.onStop();
     }
 
     @Override
@@ -320,6 +337,7 @@ public final class MainActivity extends Activity
     {
         diagnosticLog.record(DiagnosticLog.Event.APP_DESTROYED);
         destroyed = true;
+        if (diagnosticExporter != null) diagnosticExporter.close();
         if (companionBackground != null)
         {
             companionBackground.close();
@@ -926,25 +944,43 @@ public final class MainActivity extends Activity
     private void shareDiagnosticLog()
     {
         diagnosticLog.record(DiagnosticLog.Event.DIAGNOSTICS_SHARED);
-        Intent share = new Intent(Intent.ACTION_SEND);
-        share.setType("text/plain");
-        share.putExtra(Intent.EXTRA_SUBJECT, "tachi" + localizeMessage(" 诊断日志"));
-        share.putExtra(Intent.EXTRA_TEXT, buildDiagnosticReport());
-        try
+        if (diagnosticExporter == null) return;
+        diagnosticExporter.export(buildDiagnosticReport(), new DiagnosticReportExporter.Callback()
         {
-            startActivity(Intent.createChooser(share, localizeMessage("分享已脱敏诊断日志")));
-        }
-        catch (RuntimeException exception)
-        {
-            Toast.makeText(this, localizeMessage("没有可接收诊断日志的分享应用。"), Toast.LENGTH_LONG).show();
-        }
+            @Override
+            public void ready(Uri uri)
+            {
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("text/plain");
+                share.putExtra(Intent.EXTRA_SUBJECT, "tachi" + localizeMessage(" 诊断日志"));
+                share.putExtra(Intent.EXTRA_STREAM, uri);
+                share.setClipData(ClipData.newRawUri("tachi diagnostics", uri));
+                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                try
+                {
+                    startActivity(Intent.createChooser(share, localizeMessage("分享已脱敏诊断日志")));
+                }
+                catch (RuntimeException exception)
+                {
+                    Toast.makeText(MainActivity.this,
+                            localizeMessage("没有可接收诊断日志的分享应用。"), Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void failed()
+            {
+                Toast.makeText(MainActivity.this,
+                        localizeMessage("无法导出诊断日志，请重试。"), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private String buildDiagnosticReport()
     {
         StringBuilder result = new StringBuilder();
         result.append(getString(R.string.app_name)).append(" diagnostics\n");
-        appendDiagnostic(result, "format", "2");
+        appendDiagnostic(result, "format", "3");
         appendDiagnostic(result, "appVersion", BuildConfig.VERSION_NAME);
         appendDiagnostic(result, "appVersionCode", String.valueOf(BuildConfig.VERSION_CODE));
         appendDiagnostic(result, "androidSdk", String.valueOf(Build.VERSION.SDK_INT));
@@ -989,6 +1025,7 @@ public final class MainActivity extends Activity
         appendDiagnostic(result, "stereoTestPattern", booleanText(glassesPresentation != null
                 && glassesPresentation.isStereoTestPatternEnabled()));
         result.append("privacy=server address, account, media titles and credentials omitted\n");
+        result.append(nativePlaybackDiagnostics.export());
         result.append("events:\n");
         result.append(diagnosticLog.exportEvents());
         return result.toString();

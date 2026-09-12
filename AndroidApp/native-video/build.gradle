@@ -15,3 +15,9 @@ dependencies {
     implementation "androidx.media3:media3-exoplayer-hls:1.5.1"
     testImplementation "junit:junit:4.13.2"
 }
+
+def qnn = providers.gradleProperty("nativeQnn").getOrElse("false") == "true" || providers.gradleProperty("realtimeSbs").getOrElse("false") == "true"
+android.sourceSets.main.java.srcDir(qnn ? "src/qnn/java" : "src/standard/java")
+if (qnn) {
+    dependencies { compileOnly files(new File(rootProject.projectDir.parentFile, "StereoLab/.local/npu/onnxruntime-android-qnn-1.22.0.aar")) }
+}

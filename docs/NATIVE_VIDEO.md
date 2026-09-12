@@ -1,119 +1,82 @@
-# 原生播放迁移
+# 原生播放
 
-2026-09-11 用户决定以原生播放路线作为实时 SBS 的主线，替代 HTML video 拥有解码、
-时钟和帧采集的架构约束。当前发布播放器仍使用旧链路；本文区分已经新增的基础模块
-和后续产品接入，不能将独立调试包称为完整迁移完成。
+Android 正式播放器使用 `native-video` 的 Media3/MediaCodec/GLES 核心，普通 2D、
+SBS 虚拟银幕和实时深度 SBS 共用一个原生播放器。WebView 保留目录、控制、
+字幕与 Jellyfin 播放上报；Android 播放页不创建 HTML video。独立浏览器开发预览仍用 HTML/HLS。
+本分支已完成产品接入；本轮实机覆盖与尚待用户回传的项目见 [验收记录](performance/2026-09-12-native-product/README.md)。
 
-## 目标架构
-
-目录、详情和遥控界面继续由 WebView 提供。原生播放核心统一拥有 Media3 播放器、
-唯一的 MediaCodec 视频解码器、音频时钟和 OpenGL 输出。CPU 负责控制和任务提交，
-图像降采样、预处理、视差合成逐步移动到 GPU；QNN 负责深度估计。
+## 播放与显示
 
 ```text
-Jellyfin 播放计划 / 控制界面
-             ↓ 有界控制协议
-Media3（网络、HLS、轨道、同步）
-             ↓
-MediaCodec → SurfaceTexture / OES 视频纹理 → GPU 两眼合成 → 外接输出
-                         ↓                         ↑
-                 GPU 缩小 / 预处理 → QNN → 深度纹理
+GlassesUI 播放计划 / 遥控 / 唯一进度上报
+                 ↓ 有界、账号代次与播放 token 校验
+NativePlaybackController → Media3（网络、解复用、音轨、音画时钟）
+                 ↓
+MediaCodec → SurfaceTexture/OES → GLES 单眼或双眼输出
+                 ↓ 可选 12 Hz 小图采样
+GPU RGBA8 → PBO/fence → CPU CHW → QNN HTP → CPU 时序稳定
+                                               ↓
+                              R8 深度纹理 → GPU 双眼 gather
 ```
 
-选择 Media3 是复用成熟的传输、解复用、音频时钟和 seek 机制；视频纹理由应用自己
-掌控，而不是从 WebView 截图。不会并行创建 HTML video 来维持另一个播放实例。
-现有应用 ID、账号仓库、显示 USB 控制和升级数据保留兼容。
+视频 Surface 与透明 WebView 是外接 Presentation 下的兄弟视图。原生视频直接绘制每眼，
+`StereoMirrorLayout` 只复制控制层与字幕。两者使用同一组银幕缩放、水平视差及 180 ms
+设置动画；控制与字幕不参与深度形变。模式切换不额外创建播放器、音频或上报流。
+HyperOS 禁用外接显示的问题仍需系统「屏幕镜像」，原生播放器无法取得系统显示管理权限。
 
-## 当前实现
+`NativePlaybackRequest` 将消息限制为 16 KiB，URL 限制为 12 KiB，只接受当前账号的
+HTTP(S) 同源 Jellyfin `/Videos/` 路径，不接受任意请求头、文件 URI、外部来源或目录遍历。
+每个命令校验 catalog generation 与播放 token；seek 带序号确认，晚到的旧时钟不能撤销新 seek。
+账号切换、登出、播放器退出或 WebView 销毁释放播放器与深度后端。401/403 走既有账号代次校验。
+Activity 退后台释放解码器和 QNN；返回时恢复同一播放位置并暂停，用户继续播放即可。
 
-`AndroidApp/native-video/` 提供 Media3 1.5.1 播放器、硬件视频解码器筛选、SurfaceTexture、
-GLES3 渲染、单帧背压与可插拔 `NativeDepthProcessor`。`native-player-lab` 是独立应用，
-尚未成为 `:app` 的播放器，也不切换眼镜物理模式。
+## 编码、音轨与字幕
 
-开启 QNN 的实际数据路径：
+- 直放使用 Media3 容器能力与 MediaCodec 视频硬解能力：MP4、WebM、MKV，最高
+  3840×2160 / 120 Mbps；H.264/VP8 限 8-bit，HEVC/VP9/AV1 限 10-bit 与兼容色度/规格。
+  能力声明不代表每种片源均已实测；实际解码器会显示在「视频信息」。
+- 音频按系统解码能力声明 AAC、MP3、AC-3、E-AC-3、Opus、Vorbis、FLAC。直放音轨按
+  Jellyfin Audio 流序号映射到 Media3 轨道；服务器 HLS 使用服务端已选择的音轨。
+- 不兼容容器/编码/规格/音频或位图字幕使用 Jellyfin 24 Mbps H.264/AAC 双声道 HLS；
+  直放运行失败可使用已准备的 HLS 端点，禁止并行双播放。当前 GLES 输出是 SDR RGBA8，
+  已知 HDR 内容请求服务端 SDR 转码，不宣称 HDR 透传或客户端 tone mapping。
+- ASS/SSA 保留原文与 libass 的样式、定位、动画、卡拉 OK、字体和矢量裁剪。现有字体
+  限额、内置思源黑体和错误提示保持。渲染使用原生时钟的 100 ms 状态与短时插值，
+  rAF 驱动字幕，不需要隐藏 HTML video；暂停、seek、换源重新同步。尚非精确显示 PTS 锁定。
+- 其他文字字幕仍以 WebVTT 显示，沿用四档字号；位图字幕由服务器烧录。
+  本地字幕与实时深度可以同时启用；不再要求关字幕才能转换。原片已经烧入的文字也会参与视频形变。
 
-```text
-MediaCodec → OES 原始视频纹理 ───────────────────────────────┐
-                  ↓                                      ↓
-GPU 266×154 RGBA8 → PBO/fence → CPU CHW → QNN HTP → CPU 时序稳定
-                                                         ↓
-                           GPU R8 深度纹理 → 33 候选 gather 双眼合成
-                                                         ↓
-                                  3840×1080 FBO → 手机缩小预览
-```
+## 深度与构建
 
-- 模型及 SDK 沿用 `realtime-sbs-runtime.json` 的哈希：Depth Anything V2 Small，
-  U16 activations / I8 weights，ORT QNN 1.22.0 + QAIRT 2.50.40，已验证 SM8850/V81。
-  显式设置 `session.disable_cpu_ep_fallback=1` 和 `offload_graph_io_quantization=0`。
-  初始化或推理失败显示 QNN error，不自动切换到 CPU 推理。
-- QNN 初始化、预处理、推理、稳定与关闭均串行运行在采样工作线程；关闭时先分离解码
-  Surface，再释放播放器，QNN 关闭排在在途任务之后。应用级 ORT environment 由运行时管理。
-- GPU 从原始 OES 图像生成 266×154 小图；输入采样永不经过视差变形或深度调试叠层。
-  固定时间点以目标 12 Hz 调度，单个 lease 覆盖 PBO 和消费者；忙碌时跳过采样，
-  不排队累积旧图。输出只有一个待上传槽，GL 线程再次校验播放代次。
-- CPU 通过批量复制将 RGBA 转成复用 CHW 张量；时序处理保留已有 5%/95% 范围估计、
-  范围 EMA、外观门控与小幅深度 EMA。白色表示较近的相对深度。没有光流或遮挡补全模型。
-- R8 深度上传后供左右眼共享；左右方向相反，按参考每眼 1920 像素的 ±16 候选 gather
-  选择近处遮挡。深度采样行序是 top-row-first，颜色纹理仍通过 SurfaceTexture 矩阵变换。
-- 正常慢帧、暂停和低信息量深度结果沿用最后有效图，没有过期自动回退。seek、换源、
-  关闭或 Surface 重建使旧代深度失效，工作线程及 GL 上传点均拒绝旧结果。
-- 纹理时间戳尚未与媒体 PTS 精确对齐；`captureToUpload` 从小图提交前的单调时钟起算，
-  不包含此前解码/纹理等待，也不等于光子级端到端延迟。
-
-这条实现已经贯通 QNN 深度与 GLES SBS，但仍有 GPU→CPU 读回、CPU 张量准备/稳定和
-深度纹理上传，不能称为零拷贝。PBO 不保证 `glReadPixels` 无驱动等待；每眼 1080p
-实测显示取帧提交的墙钟耗时会受到前序 GPU 工作影响。
-
-## 构建与调试
-
-普通原生播放调试包不需要 QNN 本地依赖。要构建完整深度 SBS 包，在既有 SDK/JDK
-环境和 [实时 SBS 本地依赖](REALTIME_SBS.md) 准备完成后运行：
+普通构建默认使用原生 2D/SBS 播放，不依赖 QNN。实时深度包使用已验证的本地依赖：
 
 ```bash
-AndroidApp/gradlew -p AndroidApp -PnativeQnn=true \
-  :native-video:testDebugUnitTest :native-video:lintDebug \
-  :native-player-lab:lintDebug :native-player-lab:assembleDebug
+AndroidApp/gradlew -p AndroidApp -PrealtimeSbs=true \
+  :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
+  :native-video:testDebugUnitTest :native-video:lintDebug
+scripts/verify-android.sh
 ```
 
-去掉 `-PnativeQnn=true` 可构建不含模型/SDK 的版本。依赖构建时逐项校验哈希，SDK、
-模型和产物均不入 Git；厂商/DSP 库禁用 AGP strip，保留经过验证的原始字节。APK 位于
-`AndroidApp/native-player-lab/build/outputs/apk/debug/native-player-lab-debug.apk`，
-应用 ID 为 `com.jellyfinforrayneo.nativelab`；两种 lab 配置会相互覆盖，不覆盖 tachi。
+详见 [QNN 依赖与操作](REALTIME_SBS.md)。`QnnDepthProcessor` 为产品和 lab 共享实现，
+首次开启实时 3D 才初始化。模型/SDK 校验 `realtime-sbs-runtime.json`，厂商库不 strip；
+禁止 CPU EP fallback。正常慢帧、暂停、低信息量结果和推理错误沿用已有有效深度；
+seek、换源、Surface 重建和显式关闭清除旧图。关闭后重新开启可显式重试失败后端。
 
-调试入口支持 HTTP(S) 视频/HLS 与系统文件选择器。QNN 包默认 SBS、显示深度小窗，
-并以每眼 1920×1080 实际渲染后缩小到手机；`SBS / 2D` 切换预览，`Depth map` 显隐
-深度，`Slow depth` 注入/取消 250 ms 消费者延迟。慢帧注入不计入 NPU 推理时间。
-退后台释放播放器，返回后需重新选源；尚未导入 tachi 账号、字幕或播放上报。
+当前仍有 CPU 张量准备、时序稳定与 GPU 读回，不能称为零拷贝。12 Hz 是采样目标，
+不是原视频帧率或模型最大吞吐。深度调试小窗由 GPU 从实际 R8 深度纹理绘制到两眼。
 
-`NativeVideoLab` 每秒输出固定数值诊断：状态、进度、采样数、四点 RGB 探针、QNN
-分段耗时、深度帧龄、上传数和 GPU timer query。没有地址、凭据或完整画面。
-各统计窗口最多 512 次，按渲染器/引擎实例维护，换源不清零。GPU 查询仅在扩展可用时
-采样，丢弃 disjoint 数据；`drawSubmit` 是 CPU 耗时，`gpuRender` 才是 GPU 区间耗时。
+## 用户测试与报告
 
-八项 JVM 测试、两模块 Lint、普通及 QNN APK 构建通过。
-[原生基础链路实测](performance/2026-09-12-native-video/README.md) 与
-[原生 QNN SBS 全链路实测](performance/2026-09-12-native-qnn-sbs/README.md)
-分别记录两阶段的配置和边界，不能混用小窗口与每眼 1080p 的性能数字。
+复现问题后，在**手机设置 → 分享诊断日志**导出完整 `.txt` 附件，再将系统分享结果发回。
+报告保留当前进程最近 120 个原生技术样本（每秒一次及状态变化），退出播放器仍保留；生成的报告文件限制 512 KiB，私有缓存最多保留三份；
+不要在导出前强制结束应用。内容包括解码器、播放/缓冲位置、丢帧、HTTP 数字错误码、
+字幕格式与加载失败标志、NPU/CPU/读回/上传耗时、深度帧龄和 GPU 计时。
+不包含 URL、Token、账号、片名、字幕原文或图像；这些白名单与样本上限有 JVM 测试。
+耗时为最近最多 512 次的滚动统计，GPU query 不含系统最终合成，深度帧龄不是端到端延迟。
 
-## 后续接入门槛
+用户重点验证：2D/SBS 各播放一段、实时 3D 开关、暂停/快进/续播、切音轨、ASS/普通文字/位图字幕、
+退后台后返回，以及直放不兼容时的服务端 HLS。异常发生后立即导出报告，并说明执行的操作。
+4K/60、所有硬件编码、长时温控、精确音画/字幕同步与复杂遮挡画质仍需对应片源和实机验收。
 
-1. **补齐原生解码验收**：实际 Jellyfin 服务端 HLS/鉴权、其他硬件编码格式、旋转与
-   非方像素、Surface 重建、文件选择器及主观音画同步。普通色块方向和基本播放生命周期
-   已通过；仍需编号片验证媒体 PTS 与纹理时间戳关联，不能只以样本计数增长判定正确。
-2. **优化与质量验收**：QNN 与 GPU SBS 已贯通。下一步减少 CPU 稳定处理、PBO 提交
-   等待和冗余重绘，验证时间对齐、深度抖动、运动边缘与遮挡质量；保持单请求背压和
-   正常慢帧时沿用有效深度。补齐 4K/60fps、长期热态和非充电功耗。
-3. **共享缓冲探针**：核实当前 QAIRT/ORT 对输入输出缓冲导入的支持、内存分配方式、
-   fence/cache 同步和张量布局。只有 GPU 写入→NPU 使用→GPU 读取整个链路验证后
-   才讨论减少/移除 CPU 复制。必要时使用 JNI/直接 QNN，但不预先宣称支持。
-4. **产品控制与会话接入**：SessionRepository 仍为唯一账号源，限定媒体来源和控制
-   消息，不让 WebView 注入任意地址/头部。迁移播放进度、暂停、seek、音轨与字幕，
-   音画时钟以原生为准；播放上报与清理只保留一个所有者。
-5. **外接输出与 UI 合成**：原生视频与透明 WebView 控件共享每眼几何；明确 Surface
-   重建和硬件切换时的资源寿命，避免把 SurfaceView 当成可被旧 Canvas 复制的普通
-   View。沿用现有 USB 控制，但不假定可以绕过系统禁用外接屏的问题。
-6. **迁移开关与退役**：在开发构建中选择互斥的原生或旧播放器，禁止双播放。完整
-   回归通过后，再把原生设为产品默认并移除 HTML video 媒体路径。
-
-目前已在 24fps H.264 片源、约 12Hz 深度和每眼 1080p 的配置下跑通原生管线；
-完整产品迁移、眼镜实际输出与其他帧率/编码的结论仍需相应验收。
+独立 lab 的操作与历史基线见 [lab 记录](archive/2026-09-12-native-video-lab.md)，
+旧 WebView 实现见 [历史实现](archive/2026-09-10-webview-realtime-sbs.md)。

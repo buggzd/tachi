@@ -1,6 +1,6 @@
 # SBS 虚拟银幕：现行几何与硬件边界
 
-tachi 已实现普通 2D 视频的可调远近虚拟银幕：复用同一个 WebView 帧，在左右眼分别缩放和平移。无需第二个播放器、逐像素深度生成或 XR 空间服务。显示状态机和生命周期约束见 [Android 架构](ANDROID_ARCHITECTURE.md#rayneo-display-state)，操作方式见 [使用指南](USER_GUIDE.md#眼镜显示模式)。
+tachi 已实现普通 2D 视频的可调远近虚拟银幕：原生视频与单个透明 WebView 控件层使用同一组左右眼缩放和平移。平面虚拟银幕无需逐像素深度；可选实时 3D 由原生 QNN/GLES 管线生成，见 [原生播放](NATIVE_VIDEO.md)。无需第二个播放器或 XR 空间服务。显示状态机和生命周期约束见 [Android 架构](ANDROID_ARCHITECTURE.md#rayneo-display-state)，操作方式见 [使用指南](USER_GUIDE.md#眼镜显示模式)。
 
 逐像素深度生成与双眼重投影另有 [独立桌面实验](../StereoLab/README.md)，尚未接入 APK；下文仍描述已发布的平面虚拟银幕。
 
@@ -32,7 +32,7 @@ s × N + |d| + 2m ≤ N
 | `depthLevel` | 整数 0–3；每眼宽度 1920 时，总视差分别为 0/8/16/24 px，随实际眼区宽度等比缩放 |
 | `sizePercent` | 整数 80–95；独立于深度，并受边缘余量约束 |
 | 初始偏好 | 深度 1、大小 90%；历史测试使用的 95% 不是默认值 |
-| 参数过渡 | 180 ms Canvas 几何动画，遵守系统动画设置；不重载 WebView 或视频 |
+| 参数过渡 | 180 ms Canvas/GLES 同步几何动画，遵守系统动画设置；不重载 WebView 或视频 |
 | 页面设计宽度 | 1440 CSS px，由 WebView overview fitting 适配源 View |
 
 设置由原生 `SessionRepository` 保存，输入白名单与边界见 [StereoScreenSettings.java](../AndroidApp/app/src/main/java/com/jellyfinforrayneo/client/StereoScreenSettings.java)。
@@ -81,6 +81,6 @@ Air 3s 的标称 FoV 46°、1080P/每眼与 BirdBath 光学背景只是建模参
 
 ## 验证
 
-参数、边界和模式状态有 JVM 覆盖；实际输出仍须执行 [设备回归矩阵](ANDROID_ARCHITECTURE.md#device-regression-matrix)。重点确认物理模式与窗口一致、页面四边可见、双向切换保留同一 document/video、深度与大小独立、运动视频/字幕双眼更新，以及一个声音和一组播放上报。
+参数、边界和模式状态有 JVM 覆盖；实际输出仍须执行 [设备回归矩阵](ANDROID_ARCHITECTURE.md#device-regression-matrix)。重点确认物理模式与窗口一致、页面四边可见、双向切换保留同一 document/native player、深度与大小独立、运动视频/字幕双眼更新，以及一个声音和一组播放上报。
 
 左右眼检查图只用于临时验收；退出设置、切换模式、断连或恢复失败后必须清除。截图和原生帧数不能代替逐眼佩戴、光学舒适度或音画同步检查。历史设备证据见 [切换与裁切修复](archive/2026-09-05-sbs-design.md#17-切换后画面缩小与视口裁切修复2026-09-06) 和 [性能复测](performance/2026-09-07/README.md)。

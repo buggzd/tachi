@@ -1,3 +1,5 @@
+import { hasNativePlayback, NativePlayback, type PlaybackSurface } from './nativePlayback'
+import { useNativeSbs } from './useNativeSbs'
 import { useRealtimeSbs, DepthPreview } from './useRealtimeSbs'
 import './realtimeSbs.css'
 import { useLanguage } from './useLanguage'
@@ -1732,7 +1734,19 @@ function PlayerPage({
 }) {
   const playerPageRef = useRef<HTMLDivElement>(null)
   const bottomChromeRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const native = hasNativePlayback()
+  const browserVideoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<PlaybackSurface | null>(null)
+  useLayoutEffect(() => {
+    if (!native) { videoRef.current = browserVideoRef.current; return }
+    const player = new NativePlayback(() => playerPageRef.current)
+    videoRef.current = player
+    document.documentElement.classList.add('native-playback')
+    return () => {
+      player.dispose()
+      document.documentElement.classList.remove('native-playback')
+    }
+  }, [native])
   const hlsRef = useRef<Hls | null>(null)
   const infoSourceRef = useRef<PlaybackInfoSource>({ plan: null, codecs: {} })
   const planRef = useRef<PlaybackPlan | null>(null)
@@ -1812,6 +1826,10 @@ function PlayerPage({
     return () => controller.abort()
   }, [plan?.playSessionId, plan?.subtitleStreamIndex, plan?.subtitleUrl, plan?.subtitleFormat])
 
+  useEffect(() => {
+    if (videoRef.current instanceof NativePlayback) videoRef.current.setSubtitleError(subtitleLoadError)
+  }, [subtitleLoadError, plan])
+
   const planKey = useCallback((value: PlaybackPlan) => (
     `${value.itemId}:${value.playSessionId}:${value.playMethod}`
   ), [])
@@ -1827,6 +1845,7 @@ function PlayerPage({
     && !document.hidden
     && !['preparing', 'error', 'stopped'].includes(statusRef.current)
     && Boolean(planRef.current?.canSeek)
+    && (!(videoRef.current instanceof NativePlayback) || videoRef.current.canSeek)
     && Number.isFinite(videoRef.current?.duration) && Number(videoRef.current?.duration) > 0
     && !playerPageRef.current?.querySelector('.track-panel')
     && Boolean(currentSpatialFocus()?.matches('.player-progress__bar'))
@@ -1951,8 +1970,16 @@ function PlayerPage({
   }, [positionTicks, stopPlan, updateChrome, updateStatus])
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video || !plan) return
+    if (!plan) return
+    if (videoRef.current instanceof NativePlayback) {
+      const player = videoRef.current
+      setHasVideoFrame(false)
+      infoSourceRef.current = { plan, codecs: {} }
+      player.open(plan, desiredPlaying.current)
+      return () => player.stop()
+    }
+    const video = browserVideoRef.current
+    if (!video) return
 
     setHasVideoFrame(false)
     video.pause()
@@ -2026,7 +2053,7 @@ function PlayerPage({
   const applyInitialSeek = useCallback(() => {
     const video = videoRef.current
     const active = planRef.current
-    if (!video || !active) return
+    if (!video || !active || video instanceof NativePlayback) return
     const key = planKey(active)
     if (seekAppliedKey.current === key) return
     seekAppliedKey.current = key
@@ -2066,7 +2093,11 @@ function PlayerPage({
       })
       return
     }
-    if (video.ended) video.currentTime = 0
+    if (video.ended) {
+      void prepare(0, { mediaSourceId: planRef.current?.mediaSourceId,
+        audioStreamIndex: planRef.current?.audioStreamIndex, subtitleStreamIndex: planRef.current?.subtitleStreamIndex })
+      return
+    }
     if (video.paused) {
       desiredPlaying.current = true
       void video.play().catch(() => updateStatus('paused'))
@@ -2394,7 +2425,7 @@ function PlayerPage({
 
   const handlePlaying = useCallback(() => {
     const active = planRef.current
-    setHasVideoFrame(true)
+    setHasVideoFrame(!(videoRef.current instanceof NativePlayback) || videoRef.current.readyState >= 2)
     updateStatus('playing')
     setError('')
     if (active) {
@@ -2425,6 +2456,27 @@ function PlayerPage({
     stopPlan(planRef.current)
   }, [stopPlan, updateChrome, updateStatus])
 
+  useEffect(() => {
+    const player = videoRef.current
+    if (!(player instanceof NativePlayback)) return
+    const time = () => { currentRef.current = player.currentTime; setCurrent(player.currentTime) }
+    const duration = () => setTotal(player.duration)
+    const loaded = () => setHasVideoFrame(true)
+    const waiting = () => statusRef.current !== 'preparing' && updateStatus('buffering')
+    const failed = () => {
+      const state = player.snapshot
+      if (state?.httpStatus === 401 || state?.httpStatus === 403) {
+        postNativeMessage({ type: 'unauthorized', catalogGeneration: state.generation })
+        return
+      }
+      failPlayback(t('原生播放器无法解码或读取当前媒体流。'))
+    }
+    const handlers = { playing: handlePlaying, pause: handlePause, ended: handleEnded,
+      timeupdate: time, durationchange: duration, loadeddata: loaded, waiting, error: failed }
+    for (const [name, handler] of Object.entries(handlers)) player.addEventListener(name, handler)
+    return () => { for (const [name, handler] of Object.entries(handlers)) player.removeEventListener(name, handler) }
+  }, [handlePlaying, handlePause, handleEnded, failPlayback, updateStatus])
+
   const progress = total > 0 ? Math.min(100, Math.max(0, current / total * 100)) : 0
   const subtitleText = useMemo(() => plan?.subtitleFormat === 'ass' ? '' : subtitleCues
     .filter((cue) => current >= cue.start && current < cue.end)
@@ -2444,8 +2496,10 @@ function PlayerPage({
     plan?.videoCodec,
   ].filter(Boolean).join(' · ')
   const audioTracks = plan?.audioTracks ?? []
-  const realtime = useRealtimeSbs(videoRef, plan?.playSessionId ?? '', status === 'playing',
+  const browserRealtime = useRealtimeSbs(browserVideoRef, plan?.playSessionId ?? '', !native && status === 'playing',
     (plan?.subtitleStreamIndex ?? -1) >= 0, infoVisible)
+  const nativeRealtime = useNativeSbs(videoRef, plan?.url ?? '', infoVisible)
+  const realtime = native ? nativeRealtime : browserRealtime
   const realtimeLabel = {
     off: t('实时 3D 已关闭'), 'needs-stereo': t('请先在手机上切换到 3D 显示'),
     subtitles: t('实时 3D 首版需要关闭字幕'), loading: t('正在准备实时 3D'),
@@ -2461,8 +2515,8 @@ function PlayerPage({
 
   return (
     <div ref={playerPageRef} tabIndex={-1} className="player-page page-enter" onMouseMove={reveal} onClick={reveal}>
-      <video
-        ref={videoRef}
+      {!native && <video
+        ref={browserVideoRef}
         className={cx('player-video', !hasVideoFrame && 'player-video--pending')}
         crossOrigin="anonymous"
         controls={false}
@@ -2481,7 +2535,7 @@ function PlayerPage({
         onDurationChange={(event) => Number.isFinite(event.currentTarget.duration) && setTotal(event.currentTarget.duration)}
         onEnded={handleEnded}
         onError={() => failPlayback(t("浏览器无法解码当前 Jellyfin 媒体流。"))}
-      />
+      />}
 
       {backdropMounted && <div className={cx('player-backdrop', hasVideoFrame && 'is-leaving')} aria-hidden="true">
         {!simpleUi && (item.imageUrl ?? item.backdropUrl ?? item.coverUrl) && <img src={item.imageUrl ?? item.backdropUrl ?? item.coverUrl} alt="" decoding="async" draggable={false} onError={(event) => { event.currentTarget.style.display = 'none' }} />}
@@ -2498,10 +2552,10 @@ function PlayerPage({
 
       {realtime.enabled && (controls || infoVisible) && <aside className="realtime-sbs-debug" role="status">
         <strong>{realtimeLabel}</strong>
-        {infoVisible && <><small>{t('深度计算')} {realtime.metrics.nativeMs.toFixed(1)} ms · {t('帧往返')} {realtime.metrics.roundTripMs.toFixed(1)} ms</small>
+        {infoVisible && !native && <><small>{t('深度计算')} {realtime.metrics.nativeMs.toFixed(1)} ms · {t('帧往返')} {realtime.metrics.roundTripMs.toFixed(1)} ms</small>
           <DepthPreview value={realtime.depth} /></>}
       </aside>}
-      <VideoInfoOverlay visible={infoVisible} plan={status === 'preparing' ? null : plan} failed={status === 'error'} videoRef={videoRef} hlsRef={hlsRef} sourceRef={infoSourceRef} />
+      <VideoInfoOverlay visible={infoVisible} plan={status === 'preparing' ? null : plan} failed={status === 'error'} videoRef={browserVideoRef} nativeRef={videoRef} hlsRef={hlsRef} sourceRef={infoSourceRef} />
 
       {(status === 'preparing' || status === 'buffering') && (
         <div className="player-state" role="status">

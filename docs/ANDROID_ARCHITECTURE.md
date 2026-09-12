@@ -10,14 +10,12 @@ storage keys, device IDs and WebView bridge identifiers (including
 `LucentNative` and `LumaNative`) retain their original spelling for compatibility;
 these are internal identifiers, not product branding.
 
-## Approved native playback migration
+## Native playback
 
-The user approved moving playback, decoding, clocks and rendering out of HTML video
-on 2026-09-11. The topology below still describes the current shipping app. The new
-`native-video` library and separate `native-player-lab` APK establish an isolated
-Media3/MediaCodec/SurfaceTexture/GLES route; they are not yet wired into `:app`.
-The target retains WebView for catalog and controls and exactly one native player.
-See [native migration, implemented scope and acceptance gates](NATIVE_VIDEO.md).
+Android uses the shared `native-video` Media3/MediaCodec/GLES engine for 2D and SBS.
+The glasses WebView retains catalog, controls, libass/text subtitles and the single Jellyfin
+reporting lifecycle. It creates no HTML video on Android; the browser development preview
+retains HTML/HLS. See [native playback, measured scope and remaining verification](NATIVE_VIDEO.md).
 
 ## Runtime topology
 
@@ -34,14 +32,14 @@ MainActivity
 └── GlassesPresentationController
     └── Presentation on the selected external display
         └── GlassesWebViewController
+            ├── NativePlaybackController → native-video Surface / GLES
             ├── black transition view
             └── StereoMirrorLayout
                 └── one GlassesUI WebView
 ```
 
 The phone owns discovery, credentials, Quick Connect, account/display settings, and the
-touchpad with a selectable textured or OLED-black background. The glasses own catalog browsing, details, HTML video/HLS
-playback, subtitles, appearance settings, and Jellyfin playback reports. A visible glasses frame
+touchpad with a selectable textured or OLED-black background. The glasses own catalog browsing, details, native playback controls, subtitles, appearance settings, and Jellyfin playback reports. A visible glasses frame
 already implies a phone connection, so `GlassesUI` has no waiting-for-phone
 screen.
 
@@ -159,8 +157,8 @@ keeps a glasses-side failure visible so field testing does not require ADB.
 | `getHardwareVideoCodecs` | Enumerate hardware video decoder families |
 | `postMessage` | Send validated runtime/playback/session events to Android |
 | `realtimeSbsAvailable` | Whether this build/API includes the experimental QNN depth route |
-| `startRealtimeSbs`, `stopRealtimeSbs` | Start/stop a bounded playback-visit token, gated by confirmed stereo/session |
-| `submitRealtimeFrame` | Dedicated fixed 266×154 RGBA frame protocol; one outstanding request, separate size limits |
+| `nativePlaybackAvailable`, `getNativeAudioCodecs` | Native player and system audio capabilities |
+| `nativePlaybackCommand` | Bounded open/play/pause/seek/stop/depth/subtitle-status requests, tied to session generation and playback token |
 
 Accepted glasses messages are `manage_login`, `logout`, `unauthorized`,
 `runtime_state`, `playback_state`, `search_state`, `set_ui_theme`, and
@@ -461,8 +459,10 @@ command are separate requirements.
 ## Field diagnostics without ADB
 
 The phone settings screen can open Android's `ACTION_SEND` chooser with a
-plain-text report suitable for QQ or another sharing app. The report is held
-only in memory and contains app/Android/WebView versions, device model, boolean
+UTF-8 `.txt` attachment suitable for QQ or another sharing app. A bounded worker
+saves at most three reports (512 KiB each) in a dedicated private cache directory.
+A non-exported FileProvider grants read access to the selected report only. Live samples
+are retained in memory and contains app/Android/WebView versions, device model, boolean
 session state, derived server shape, derived active-network capabilities,
 glasses/WebView/runtime/display state, numeric output dimensions/refresh rate,
 stereo settings and test-pattern state, and at most 160 fixed event enum values.
@@ -479,15 +479,17 @@ arbitrary exception text are never exported.
 measures the one glasses WebView at per-eye width, draws its frame into the left
 half, and draws the same frame again into the right half with a different
 horizontal transform. This preserves one
-HTML `<video>`, one decoder, one audio stream, and one set of Jellyfin playback
-reports.
+native Media3 player, one audio stream, and one set of Jellyfin playback reports.
+The native video Surface is a sibling underneath the transparent WebView. GLES draws
+each eye directly with the same geometry; Canvas never attempts to clone a SurfaceView.
 
 `StereoScreenGeometry` uses total eye-local disparity `d = uL - uR`: left
 translation is `inset + d/2`, right is `inset - d/2`. Positive disparity adds
 convergence. Translation occurs before a uniform Canvas scale so disparity does
 not change with screen size. Each eye clips to its own viewport; centering and
 `s*N + |d| + 2*m <= N` preserve the entire image with at least 1% edge margin.
-The black container clears the unused area. No CPU frame readback is introduced.
+GLES clears unused video space; the UI container is transparent during native playback.
+Ordinary playback has no CPU image readback; optional QNN sampling reads only a small image.
 
 `StereoScreenSettings` stores only `depthLevel` (integer 0–3) and `sizePercent`
 (integer 80–95), in the native repository. The JSON bridge accepts exactly these
@@ -499,7 +501,7 @@ mean the UI uses relative proximity rather than an uncalibrated distance in metr
 Normal 2D content remains a flat screen and follows head motion.
 
 Settings animate disparity and size over 180 ms (respecting disabled system
-animations) using only Canvas transforms. They do not request a new WebView
+animations) using matching Canvas and GLES transforms. They do not request a new WebView
 layout, bootstrap, hardware switch or player. WebView descendant invalidations
 redraw both eye copies together; the settings animator invalidates changed
 geometry. There is no unconditional stereo vsync loop, so static pages and
@@ -533,13 +535,13 @@ Leaving settings, mode exit/failure, pause, disconnect, logout or renderer loss
 clears it. See [SBS geometry analysis](SBS_GEOMETRY.md) for derivation,
 official parameter sources and optical/device limitations.
 
-The native bridge enumerates hardware-accelerated `MediaCodec` decoders.
-`GlassesUI` intersects those codec families with WebView container support and
-advertises only bounded direct-play profiles to Jellyfin. Those profiles stop
-at 3840×2160 and 120 Mbps; H.264/VP8 are limited to 8-bit and HEVC/VP9/AV1 to
-10-bit. Unknown, software-only, incompatible, or out-of-limit media uses the
-24 Mbps, two-channel H.264/AAC HLS fallback. `hls.js` handles transport and MSE
-demuxing; Chromium still selects the actual Android decoder.
+The native bridge enumerates hardware video decoders and supported audio families.
+Direct-play profiles use native Media3 demuxer support (MP4/WebM/MKV), bounded hardware
+video profiles and system audio decoders. Limits are 3840×2160 and 120 Mbps;
+H.264/VP8 are 8-bit, HEVC/VP9/AV1 at most 10-bit. Known HDR is sent to server SDR
+transcoding because the current GLES output is RGBA8. Unsupported media and runtime
+direct-play failures use Jellyfin's 24 Mbps H.264/AAC stereo HLS fallback.
+Media3 owns HLS transport, demux, audio synchronization and native audio-track selection.
 
 ASS/SSA are delivered as original ASS to the local `libass-wasm` worker,
 loaded only when such a track is selected. Other text codecs use WebVTT.
@@ -552,8 +554,8 @@ it never silently converts to plain text or requests server burn-in.
 The one transparent canvas follows the actual `object-fit: contain` image rect,
 including letterboxing, below playback controls. The worker uses libass's ASS
 styles, layers, positioning, transforms, karaoke, alpha and vector clipping;
-no override tags or animations are stripped. It receives video frame timestamps
-(`requestVideoFrameCallback`, falling back to the video clock on rAF), and stops
+no override tags or animations are stripped. It follows the native media clock with
+bounded interpolation between 100 ms updates, via rAF, and stops
 callbacks while paused or hidden. Seek, resize and resume resynchronize the same
 media timeline. The source request starts at zero, including during resumed HLS.
 Stereo copies the same WebView/canvas; there is still only one video and audio stream.
@@ -587,53 +589,35 @@ begins. The rail is positioned without scrolling the hero away or moving initial
 focus, and displays one recent-watch marker per season.
 
 The glasses player's optional video-information overlay reads the existing
-playback plan, HTML video dimensions/quality/buffered ranges, and the current
-HLS rendition and demuxed codecs. It distinguishes output parameters from the
+playback plan and native output formats, decoder name, buffering and decoder counters. It distinguishes output parameters from the
 original media and samples once per second only while enabled and the document
 is visible. It adds no server polling, native bridge method, player, or report
 stream. Changing sources invalidates previous samples; changing episodes keeps
 the toggle within that playback visit, while leaving playback or switching
-accounts clears it. Hardware codec enumeration describes capability only:
-WebView exposes no public API for the active hardware/software decoder, so the
-overlay explicitly reports automatic selection and unreported actual status.
+accounts clears it. Hardware enumeration describes capability; the native decoder field identifies the actual component.
+The isolated browser preview continues to report WebView limitations.
 
-## Experimental realtime depth conversion
+## Realtime native depth conversion
 
-The opt-in `-PrealtimeSbs=true` build packages a hash-pinned official QNN/V81
-runtime and depth model. Standard builds exclude them. The glasses playback
-control defaults off and currently requires no selected subtitle track. The
-existing single video supplies downsampled RGBA frames through a dedicated
-222000-character bounded bridge; a single worker runs strict QNN inference.
-No server URL, credentials, arbitrary shape or file path enters this protocol.
-The bootstrap now also exposes confirmed/transitioning display flags so the
-frontend cannot confuse a requested stereo mode with an applied one.
+See [realtime SBS build and operation](REALTIME_SBS.md). Depth uses the same shared QNN
+backend as the native lab, initialized only on request. GLES samples original OES video,
+PBO/fence delivers a small RGBA frame, QNN HTP predicts depth, CPU stabilizes it and GLES
+uploads one shared R8 map. No browser frame capture or base64 image bridge is used.
+The WebView controls/subtitles remain outside the warped layer. Normal delays and failed
+inference hold valid depth; explicit source/seek/close or Surface recreation invalidate it.
 
-`StereoMirrorLayout` keeps the completed WebView hardware layer as the only
-source. Two RenderNodes apply opposite AGSL depth shifts within the video rect,
-protect bounded DOM control regions, and retain the existing virtual-screen
-transforms. Both eyes snapshot the same depth eligibility before drawing. No
-second WebView, HTML video, audio path or reporting lifecycle is introduced;
-only an existing hardware transition may hide the WebView.
+Native commands are limited to 16 KiB and URLs to 12 KiB, matching the active session's
+scheme, host, port and Jellyfin `/Videos/` subpath. No arbitrary headers or local-file access.
+Both session generation and playback token protect late commands and clock events.
+Stop, logout and renderer loss release the engine; background releases codecs/backend,
+then returning reopens at the stored position in a paused state. SessionRepository stays
+the only account owner. Native 401/403 events use the existing unauthorized generation check.
 
-Depth is held between updates without capture-age expiry; a slow reply does not
-reset the session. The two-second frame watchdog reports delay while retaining
-one pending request and the last depth. Visit-local range smoothing and
-appearance-gated small depth smoothing reduce fluctuations, with a heuristic
-photometric cut reset; this is not motion compensation.
-Source/seek/pause/visibility changes, account generation
-changes and renderer loss clear depth. Playback tokens and monotonic sequence
-numbers reject stale results; one outstanding frame and a capacity-one worker
-queue provide backpressure. The QNN session is closed on its worker when the
-WebView is destroyed. Fixed error statuses restore the original flat content
-without automatic retry or a new USB transition. The optional debug preview
-contains only local grayscale pixels; production code saves no frame/profile files.
-
-The new native gather shader is not the previously measured laboratory WebGL
-renderer. Desktop verification does not establish its WebView texture behavior,
-GPU throughput, optical output or thermal stability. See [realtime SBS development
-and device checks](REALTIME_SBS.md). Initial integrated device testing confirms
-QNN inference and external stereo playback, but depth updates remain about 8 fps;
-full performance, optical and thermal acceptance is still pending.
+The existing phone diagnostic share includes whitelisted native playback samples: latest
+120 entries, at most 1 Hz plus status/subtitle-error changes. Samples survive player teardown
+within the same Activity/process, but not a force stop; already exported cache files are separate. Formats, decoder, numeric errors,
+buffer/counters, subtitle delivery/error, depth age and pipeline timing are included;
+URLs, tokens, media names, subtitle text and images are excluded. JVM tests cover this boundary.
 
 ## Verification
 
@@ -673,9 +657,9 @@ minimum device regression set for any device-facing change.
 | Remote tutorial | First ready catalog, skip/relaunch, six phone gestures, wrong/rapid input, pause/resume/exit, sidebar replay, logout, 2D/SBS switch and renderer recovery | Each real gesture advances once; exactly one focus stays inside practice/dialog; completion or skipping is remembered; no media playback or background navigation; SVG motion and text remain readable in both eyes |
 | Glasses UI sounds | Direction/confirm/back, held input at a focus boundary, panels, volume, tutorial and feedback; mute/unmute during a cue; cold launch, logout, detach/reattach, renderer recovery, both themes and display modes, direct/HLS playback | Each ordinary gesture triggers at most one immediate cue and a held direction sounds once at the same boundary; mute persists and stops active/pending cues; the player is silent except for volume; no startup/restoration cue or phone UI sounds; video soundtrack/volume/reporting are unchanged and stereo does not duplicate cues |
 | Playback | Circular seek while progress focused (both directions/speeds, repeated reversal without lifting and fine correction after a pause, bounds, straight swipe, cancel, blur, panels, reconnect); Direct play, H.264/AAC HLS fallback, pause, seek, previous/next item, audio track, WebVTT, ASS/SSA and bitmap subtitles; ASS animated positioning/karaoke, attached/missing fonts, rapid ASS→text→off, paused seek, worker failure and logout in 2D/SBS | Playback remains controllable, progress is reported once, and the selected track is reflected in UI |
-| Single-instance invariants | Mirror and stereo during representative playback | One glasses WebView, one HTML `<video>`, one audio stream, and one Jellyfin reporting stream remain active |
+| Single-instance invariants | Mirror and stereo during representative playback | One glasses WebView, zero HTML `<video>`, one native player, one audio stream, and one Jellyfin reporting stream remain active |
 | Renderer recovery | Kill or crash the glasses WebView renderer during browse and playback | The WebView is rebuilt, session bootstrap is republished, and the phone receives a safe state |
-| Codec selection | Representative H.264, HEVC/VP9/AV1 where hardware advertises support, plus an unsupported source | The actual Chromium `MediaCodec` component matches expectations; incompatible media requests the bounded HLS fallback |
+| Codec selection | Representative H.264, HEVC/VP9/AV1 where hardware advertises support, plus an unsupported source | The actual Media3 `MediaCodec` component matches expectations; incompatible media requests the bounded HLS fallback |
 | Field diagnostics | Network, HTTP, response, and unknown failures; Android share flow | The phone shows the correct fixed category and the exported report contains no URL, account, title, code, token, password, body, or arbitrary exception text |
 
 Language state, localization boundaries and message maintenance are documented in [I18N.md](I18N.md).

@@ -56,6 +56,9 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private int height;
     private volatile float videoAspect = 16f / 9f;
     private volatile boolean stereoPreview;
+    private volatile float screenScale = 1f;
+    private volatile float screenDisparity;
+    private volatile boolean depthEnabled = true;
     private volatile boolean sampling;
     private volatile boolean samplingSuspended;
     private final SampleCadence cadence = new SampleCadence();
@@ -156,16 +159,32 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         requestRender();
     }
 
+    /** Same transform as the transparent controls/subtitle layer, in final eye coordinates. */
+    public void setScreenGeometry(float scale, float normalizedDisparity)
+    {
+        screenScale = Math.max(.5f, Math.min(1f, scale));
+        screenDisparity = Math.max(0f, Math.min(.02f, normalizedDisparity));
+        requestRender();
+    }
+
+    public void setDepthEnabled(boolean enabled)
+    {
+        depthEnabled = enabled;
+        setSampling(enabled);
+        requestRender();
+    }
+
     public void setSampling(boolean enabled)
     {
+        if (sampling == enabled) return;
         sampling = enabled;
         if (!enabled) slot.invalidate();
     }
 
     void suspendSampling(boolean suspended)
     {
+        // Suspending work never expires an already valid map. Source/seek/close invalidate explicitly.
         samplingSuspended = suspended;
-        if (suspended) slot.invalidate();
     }
 
     void setVideoAspect(float aspect)
@@ -344,9 +363,16 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             for (int eye = 0; eye < eyes; eye++)
             {
                 int eyeWidth = render1080 ? 1920 : width / eyes;
-                int[] rect = VideoGeometry.contain(eyeWidth, render1080 ? 1080 : height, videoAspect);
+                int eyeHeight = render1080 ? 1080 : height;
+                int[] rect = VideoGeometry.contain(eyeWidth, eyeHeight, videoAspect);
+                float scale = eyes == 2 ? screenScale : 1f;
+                float offset = eyes == 2 ? (eye == 0 ? 1 : -1) * screenDisparity * eyeWidth * .5f : 0f;
+                rect[0] = Math.round((1f - scale) * eyeWidth * .5f + offset + rect[0] * scale);
+                rect[1] = Math.round((1f - scale) * eyeHeight * .5f + rect[1] * scale);
+                rect[2] = Math.max(1, Math.round(rect[2] * scale));
+                rect[3] = Math.max(1, Math.round(rect[3] * scale));
                 GLES30.glViewport(eye * eyeWidth + rect[0], rect[1], rect[2], rect[3]);
-                draw(false, eyes == 2 && hasCurrentDepth() ? (eye == 0 ? 1 : -1) : 0, false);
+                draw(false, eyes == 2 && depthEnabled && hasCurrentDepth() ? (eye == 0 ? 1 : -1) : 0, false);
                 if (debugDepth && hasCurrentDepth())
                 {
                     GLES30.glViewport(eye * eyeWidth + rect[0], rect[1], Math.max(1, rect[2] / 3),

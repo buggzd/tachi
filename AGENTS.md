@@ -12,7 +12,7 @@ frontends:
 
 - `AndroidApp/`: lifecycle, sessions, WebView bridges, RayNeo display control,
   and JVM tests.
-- `GlassesUI/`: catalog, details, HTML video/HLS playback, subtitles, and
+- `GlassesUI/`: catalog, details, native playback controls, subtitles, and
   spatial focus (React + strict TypeScript).
 - `CompanionUI/`: discovery, login, settings, diagnostics, and phone touchpad.
 - `AndroidApp/app/build/generated/webAssets/{GlassesUI,CompanionUI}/`: ignored
@@ -31,17 +31,16 @@ requirements or a to-do list.
 
 ## Architecture Guardrails
 
-Keep application UI and video playback in the embedded frontends. The phone
+Keep catalog and control UI in the embedded frontends; Android Media3 owns video playback. The phone
 owns discovery and authentication; the glasses own browsing and playback.
 `SessionRepository` is the sole native session source. Validate and bound every
 WebView message, never expose secrets or arbitrary server errors, and clear
 native and glasses state on logout or unauthorized restore.
 
-Preserve one glasses WebView and one HTML `<video>` in both `Mirror2D` and
-`StereoVirtualScreen`. Only an active hardware-mode transition may hide the
+Preserve one glasses WebView and one native player in both `Mirror2D` and
+`StereoVirtualScreen`; Android playback must not create an HTML `<video>`. Only an active hardware-mode transition may hide the
 WebView; failure must reveal safe 2D without automatic retries. Advertise
-direct play only from the intersection of hardware `MediaCodec` decoders and
-WebView support; otherwise use Jellyfin's H.264/AAC HLS fallback.
+direct play only for native demuxer/decoder support and the SDR GLES output; otherwise use Jellyfin's H.264/AAC HLS fallback.
 
 ## Build and Verification
 

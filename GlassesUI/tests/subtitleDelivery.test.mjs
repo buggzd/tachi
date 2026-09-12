@@ -24,7 +24,7 @@ const session = {
   userId: 'user', deviceId: 'subtitle-test',
 }
 
-function playbackFixture(t, { codec = 'ass', external = false, container = 'mkv', delivery = '/original/Stream.ass', failFallback = false, directUrl } = {}) {
+function playbackFixture(t, { codec = 'ass', external = false, container = 'mkv', delivery = '/original/Stream.ass', failFallback = false, directUrl, range = 'SDR', audioCodec = 'aac' } = {}) {
   t.mock.method(globalThis, 'fetch', async (_url, init) => {
     requests.push(JSON.parse(init.body))
     if (failFallback && !requests.at(-1).EnableDirectPlay) return new Response('{}', {status:500})
@@ -33,8 +33,8 @@ function playbackFixture(t, { codec = 'ass', external = false, container = 'mkv'
       TranscodingUrl: '/Videos/item/master.m3u8?SubtitleStreamIndex=4&SubtitleMethod=Encode', DefaultSubtitleStreamIndex: 4,
       MediaAttachments: [{ Index: 6, FileName: 'font.ttf' }, { Index: 7, FileName: 'poster.jpg' }, { Index: -1, FileName: 'bad.otf' }],
       MediaStreams: [
-        { Type: 'Video', Index: 0, Codec: 'h264', Width: 1920, Height: 1080, BitDepth: 8 },
-        { Type: 'Audio', Index: 1, Codec: 'aac' },
+        { Type: 'Video', Index: 0, Codec: 'h264', Width: 1920, Height: 1080, BitDepth: 8, VideoRangeType: range },
+        { Type: 'Audio', Index: 1, Codec: audioCodec },
         { Type: 'Subtitle', Index: 4, Codec: codec, IsExternal: external, DeliveryUrl: delivery },
         { Type: 'Subtitle', Index: 5, Codec: 'ssa', DeliveryUrl: '/original/Stream.ssa' },
       ],
@@ -124,4 +124,28 @@ test('server direct URLs also clear case-insensitive subtitle selection for loca
   const plan = await prepare()
   expectSubtitle(plan, 4)
   assert.equal(new URL(plan.url).searchParams.has('subtitleMethod'), false)
+})
+
+function nativeBridge(t) {
+  const previous = globalThis.RayNeoGlasses
+  globalThis.RayNeoGlasses = { nativePlaybackAvailable: () => true, getNativeAudioCodecs: () => '["aac","opus"]' }
+  t.after(() => { if (previous) globalThis.RayNeoGlasses = previous; else delete globalThis.RayNeoGlasses })
+}
+
+test('native MKV direct play preserves authored ASS and advertises native containers', async t => {
+  nativeBridge(t)
+  const fixture = playbackFixture(t, {container:'mkv'})
+  const plan = await fixture.prepare()
+  assert.equal(plan.playMethod, 'DirectPlay')
+  assert.match(new URL(plan.url).pathname, /stream\.mkv$/)
+  assert.equal(plan.subtitleFormat, 'ass')
+  assert.ok(fixture.requests[0].DeviceProfile.DirectPlayProfiles.some(profile => profile.Container === 'mkv'))
+})
+
+test('native RGBA output sends HDR and unavailable audio decoders to the server fallback', async t => {
+  nativeBridge(t)
+  const hdr = playbackFixture(t, {range:'HDR10'})
+  assert.equal((await hdr.prepare()).playMethod, 'Transcode')
+  const audio = playbackFixture(t, {audioCodec:'truehd'})
+  assert.equal((await audio.prepare()).playMethod, 'Transcode')
 })
