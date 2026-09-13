@@ -3,7 +3,11 @@ plugins {
 }
 
 def npuRoot = file("../../.local/npu")
-def modelFile = file("${npuRoot}/depth-anything-v2-small-qnn-266-u16a-i8w.onnx")
+def resolution = providers.gradleProperty("benchmarkResolution").getOrElse("266")
+if (!(resolution in ["266", "392", "518"])) throw new GradleException("benchmarkResolution must be 266, 392 or 518")
+def manifest = new groovy.json.JsonSlurper().parse(file("../../../AndroidApp/realtime-sbs-runtime.json"))
+def expectedModelHash = resolution == "266" ? manifest.modelSha256 : manifest.experimentalModels[resolution].sha256
+def modelFile = new File(npuRoot, resolution == "266" ? "depth-anything-v2-small-qnn-266-u16a-i8w.onnx" : manifest.experimentalModels[resolution].file)
 def smokeModelFile = file("${npuRoot}/qnn-smoke-qdq-conv-relu.onnx")
 def ioSmokeModelFile = file("${npuRoot}/qnn-smoke-qdq-conv-relu-io.onnx")
 def reluSmokeModelFile = file("${npuRoot}/qnn-smoke-relu.onnx")
@@ -27,6 +31,8 @@ android {
         targetSdk 35
         versionCode 1
         versionName "0.1"
+        buildConfigField "int", "MODEL_WIDTH", resolution
+        buildConfigField "int", "MODEL_HEIGHT", ["266": "154", "392": "224", "518": "294"][resolution]
 
         externalNativeBuild {
             cmake {
@@ -38,6 +44,8 @@ android {
             }
         }
     }
+
+    buildFeatures { buildConfig true }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
@@ -62,14 +70,18 @@ android {
 }
 
 tasks.register("prepareBenchmarkAssets", Sync) {
+    inputs.property("packagedDepthName", "depth-anything-v2-small-qnn-${resolution}-u16a-i8w.onnx")
     if (!modelFile.isFile()) {
         throw new GradleException("Missing local QNN model: ${modelFile}")
+    }
+    if (java.security.MessageDigest.getInstance("SHA-256").digest(modelFile.bytes).encodeHex().toString() != expectedModelHash) {
+        throw new GradleException("Benchmark model hash does not match runtime manifest")
     }
     if (!calibrationDir.isDirectory()) {
         throw new GradleException("Missing local calibration directory: ${calibrationDir}")
     }
     from(modelFile) {
-        rename { "depth-anything-v2-small-qnn-266-u16a-i8w.onnx" }
+        rename { "depth-anything-v2-small-qnn-${resolution}-u16a-i8w.onnx" }
         into("models")
     }
     if (!smokeModelFile.isFile()) {

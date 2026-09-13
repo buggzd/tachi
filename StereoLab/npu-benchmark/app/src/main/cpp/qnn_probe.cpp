@@ -154,6 +154,7 @@ std::string describeQnnError(const InterfaceTable& api, Qnn_ErrorHandle_t error)
 
 } // namespace
 #include "gpu_shared_probe.h"
+#include "full_depth_probe.h"
 namespace {
 
 template <typename InterfaceTable>
@@ -362,7 +363,7 @@ std::string runDirectReluGraph(
     return output.str();
 }
 
-std::string runProbe(const std::string& directory, uint32_t socModel, bool sharedMemory) {
+std::string runProbe(const std::string& directory, uint32_t socModel, bool sharedMemory, const std::string& depthDirectory = "") {
     const std::string adspPath = directory + ";" + kAdspLibraryPath;
     setenv("ADSP_LIBRARY_PATH", adspPath.c_str(), 1);
 
@@ -537,10 +538,12 @@ std::string runProbe(const std::string& directory, uint32_t socModel, bool share
     bool chainPass = deviceStatus == QNN_SUCCESS && device != nullptr;
     if (chainPass) {
         output << "deviceCreateSuccess=soc+signedpd\n";
-        const std::string graphResult = runDirectReluGraph(
-                interfaceTable, backend, device, "relu_u8", sharedMemory);
+        const std::string graphResult = depthDirectory.empty()
+                ? runDirectReluGraph(interfaceTable, backend, device, "relu_u8", sharedMemory)
+                : runFullDepth(interfaceTable, backend, device, directory, depthDirectory);
         output << graphResult;
-        chainPass = graphResult.find("directGraph=relu_u8 PASS") != std::string::npos;
+        chainPass = graphResult.find(depthDirectory.empty() ? "directGraph=relu_u8 PASS" : "fullDepthShared=PASS") != std::string::npos
+                && graphResult.find("fullDepthShared=FAIL") == std::string::npos;
         if (interfaceTable.deviceFree != nullptr) {
             Qnn_ErrorHandle_t freeStatus = interfaceTable.deviceFree(device);
             output << "deviceFree=" << hexError(freeStatus) << "\n";
@@ -578,6 +581,23 @@ Java_com_tachi_stereolab_npubenchmark_MainActivity_nativeProbeQnn(
         environment->ReleaseStringUTFChars(backendDirectory, chars);
     }
     std::string result = runProbe(directory, static_cast<uint32_t>(socModel), sharedMemory == JNI_TRUE);
+    logLine(result);
+    return environment->NewStringUTF(result.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_tachi_stereolab_npubenchmark_MainActivity_nativeProbeDepth(
+        JNIEnv* environment, jclass, jstring backendDirectory, jint socModel, jstring cacheDirectory) {
+    const char* backend = environment->GetStringUTFChars(backendDirectory, nullptr);
+    const char* cache = environment->GetStringUTFChars(cacheDirectory, nullptr);
+    if (!backend || !cache) {
+        if (backend) environment->ReleaseStringUTFChars(backendDirectory, backend);
+        if (cache) environment->ReleaseStringUTFChars(cacheDirectory, cache);
+        return nullptr;
+    }
+    std::string result = runProbe(backend, static_cast<uint32_t>(socModel), false, cache);
+    environment->ReleaseStringUTFChars(backendDirectory, backend);
+    environment->ReleaseStringUTFChars(cacheDirectory, cache);
     logLine(result);
     return environment->NewStringUTF(result.c_str());
 }

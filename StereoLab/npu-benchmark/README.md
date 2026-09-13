@@ -89,3 +89,38 @@ The APK is arm64-only because the target phone is arm64. A failure to create
 the session is useful evidence: it indicates a missing/incompatible QNN
 backend or an unsupported graph, rather than a CPU fallback being counted as
 an NPU result.
+
+## Full depth-model shared-buffer stage
+
+After the product playback baseline, use the matching local SDK/runtime and a
+manifest-verified model to run the explicit `fullshared` stage:
+
+```bash
+AndroidApp/gradlew -p StereoLab/npu-benchmark -PbenchmarkResolution=518 :app:assembleDebug :app:lintDebug
+adb install -r StereoLab/npu-benchmark/app/build/outputs/apk/debug/app-debug.apk
+adb shell am force-stop com.tachi.stereolab.npubenchmark
+adb shell am start -n com.tachi.stereolab.npubenchmark/.MainActivity --es benchmark_stage fullshared --es soc_model 660
+```
+
+Run commands from the repository root. `benchmarkResolution` accepts 266 (default),
+392 and 518. The default direct/Relu entry remains unchanged. Do not run this
+benchmark concurrently with product performance measurements.
+
+The stage exports an ORT QNN context with CPU fallback disabled, saves three
+calibration-image tensor/reference pairs in the app's private test directory,
+closes ORT, then reads QNN System metadata and restores the single full graph.
+It verifies ordinary native output against ORT, registers AHardwareBuffer BLOB
+input/output using the HTP custom shared-buffer descriptor, and alternates the
+three input tensors using GPU compute. GPU output verification reads only four
+status bytes per iteration; a four-byte status reset is written by the host.
+Image tensors are uploaded to GPU reference storage once before measurement.
+The first CPU buffer initialization identifies the exported data fd safely.
+
+This tests the **full model's shared I/O**, with 5 warmups and 100 measured
+iterations. It is not a live-video preprocessing or SBS rendering benchmark;
+`glFinish` and synchronous `graphExecute` deliberately establish visibility.
+It does not replace the product's ORT Java backend. The exact graph descriptor,
+validation tolerance and timings are logged as `fullDepth*`, followed by
+`FULL_SHARED_COMPLETE`. Completion alone is not success: require
+`fullDepthShared=PASS` and successful context/device/backend cleanup.
+See [product baseline and full-model results](../../docs/performance/2026-09-13-daily-sbs/README.md).

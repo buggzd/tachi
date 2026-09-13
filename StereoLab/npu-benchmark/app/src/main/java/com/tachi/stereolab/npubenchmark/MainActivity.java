@@ -37,12 +37,12 @@ import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity {
     private static final String TAG = "TachiNpuBenchmark";
-    private static final String MODEL_ASSET = "models/depth-anything-v2-small-qnn-266-u16a-i8w.onnx";
+    private static final String MODEL_ASSET = "models/depth-anything-v2-small-qnn-" + BuildConfig.MODEL_WIDTH + "-u16a-i8w.onnx";
     private static final String SMOKE_MODEL_ASSET = "models/qnn-smoke-qdq-conv-relu.onnx";
     private static final String IO_SMOKE_MODEL_ASSET = "models/qnn-smoke-qdq-conv-relu-io.onnx";
     private static final String RELU_SMOKE_MODEL_ASSET = "models/qnn-smoke-relu.onnx";
-    private static final int WIDTH = 266;
-    private static final int HEIGHT = 154;
+    private static final int WIDTH = BuildConfig.MODEL_WIDTH;
+    private static final int HEIGHT = BuildConfig.MODEL_HEIGHT;
     private static final int SMOKE_WIDTH = 8;
     private static final int SMOKE_HEIGHT = 8;
     private static final int WARMUP_RUNS = 5;
@@ -69,6 +69,8 @@ public final class MainActivity extends Activity {
 
     private static native String nativeProbeQnn(String backendDirectory, int socModel, boolean sharedMemory);
 
+    private static native String nativeProbeDepth(String backendDirectory, int socModel, String cacheDirectory);
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -79,7 +81,7 @@ public final class MainActivity extends Activity {
         }
         socModelOverride = launchIntent == null ? null : launchIntent.getStringExtra("soc_model");
         String stage = launchIntent == null ? null : launchIntent.getStringExtra("benchmark_stage");
-        if ("smoke".equals(stage) || "depth".equals(stage) || "shared".equals(stage))
+        if ("smoke".equals(stage) || "depth".equals(stage) || "shared".equals(stage) || "fullshared".equals(stage))
         {
             benchmarkStage = stage;
         }
@@ -126,6 +128,11 @@ public final class MainActivity extends Activity {
             try {
                 String socModel = socModelOverride == null || socModelOverride.isEmpty()
                         ? "660" : socModelOverride;
+                if ("fullshared".equals(benchmarkStage))
+                {
+                    runFullShared(qnnBackend, socModel);
+                    return;
+                }
                 String directResult = nativeProbeQnn(qnnBackend.getParent(), Integer.parseInt(socModel), "shared".equals(benchmarkStage));
                 append(directResult);
                 if (!directResult.contains("directProbeMarker=PASS") || "direct".equals(benchmarkStage) || "shared".equals(benchmarkStage))
@@ -164,6 +171,64 @@ public final class MainActivity extends Activity {
             append("BENCHMARK_FAILED=" + error + "\n");
             Log.e(TAG, "QNN benchmark failed", error);
         }
+    }
+
+    private void writeFloats(File file, FloatBuffer values) throws IOException
+    {
+        ByteBuffer bytes = ByteBuffer.allocate(values.remaining() * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        bytes.asFloatBuffer().put(values);
+        try (FileOutputStream stream = new FileOutputStream(file))
+        {
+            stream.write(bytes.array());
+        }
+    }
+
+    private void runFullShared(File backend, String socModel) throws Exception
+    {
+        File cache = new File(getFilesDir(), "fullshared");
+        if (!cache.isDirectory() && !cache.mkdirs()) throw new IOException("cache directory");
+        File[] oldFiles = cache.listFiles();
+        if (oldFiles != null) for (File old : oldFiles)
+            if (old.isFile() && !old.delete()) throw new IOException("cache cleanup");
+        List<float[]> samples = loadCalibrationInputs();
+        int count = Math.min(3, samples.size());
+        if (count < 3) throw new IOException("multiple image references required");
+        byte[] model = assetBytes(MODEL_ASSET);
+        StringBuilder hash = new StringBuilder();
+        for (byte value : java.security.MessageDigest.getInstance("SHA-256").digest(model))
+            hash.append(String.format(Locale.ROOT, "%02x", value & 255));
+        append("fullDepthModelSha256=" + hash + "\n");
+        OrtEnvironment environment = OrtEnvironment.getEnvironment();
+        try (OrtSession.SessionOptions options = new OrtSession.SessionOptions())
+        {
+            options.addConfigEntry("session.disable_cpu_ep_fallback", "1");
+            options.addConfigEntry("ep.context_enable", "1");
+            options.addConfigEntry("ep.context_embed_mode", "0");
+            options.addConfigEntry("ep.context_file_path", new File(cache, "depth_ctx.onnx").getAbsolutePath());
+            Map<String, String> qnn = new HashMap<>();
+            qnn.put("backend_path", backend.getAbsolutePath());
+            qnn.put("offload_graph_io_quantization", "0");
+            qnn.put("soc_model", socModel);
+            options.addQnn(qnn);
+            try (OrtSession session = environment.createSession(model, options))
+            {
+                String name = session.getInputNames().iterator().next();
+                for (int i = 0; i < count; i++)
+                {
+                    writeFloats(new File(cache, "input" + i + ".f32"), FloatBuffer.wrap(samples.get(i)));
+                    try (OnnxTensor input = OnnxTensor.createTensor(environment, FloatBuffer.wrap(samples.get(i)),
+                            new long[]{1, 3, HEIGHT, WIDTH});
+                         OrtSession.Result result = session.run(Collections.singletonMap(name, input)))
+                    {
+                        writeFloats(new File(cache, "output" + i + ".f32"),
+                                ((OnnxTensor) result.get(0)).getFloatBuffer());
+                    }
+                }
+            }
+        }
+        append("fullDepthReferences=" + count + " width=" + WIDTH + " height=" + HEIGHT + "\n");
+        append(nativeProbeDepth(backend.getParent(), Integer.parseInt(socModel), cache.getAbsolutePath()));
+        append("FULL_SHARED_COMPLETE=true\n");
     }
 
     private void runSession(

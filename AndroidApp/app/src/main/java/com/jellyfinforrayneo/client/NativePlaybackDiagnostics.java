@@ -15,6 +15,9 @@ final class NativePlaybackDiagnostics
     private int sourceNumber;
     private int lastErrorCode;
     private int lastHttpStatus;
+    static final int MAX_MINUTES = 60;
+    private final ArrayDeque<JSONObject> minutes = new ArrayDeque<>();
+    private long lastMinuteAt = -1;
     private final ArrayDeque<JSONObject> samples = new ArrayDeque<>();
     private long lastAt = -1;
     private String lastStatus = "";
@@ -68,7 +71,7 @@ final class NativePlaybackDiagnostics
             String component = source.optString("errorComponent");
             if (component.matches("none|unknown|ssa|subtitle|matroska|datasource|codec")) row.put("errorComponent", component);
             copyNumbers(source, row, "position", "duration", "buffered", "width", "height", "frameRate",
-                    "droppedFrames", "decodedFrames", "errorCode", "httpStatus", "audioChannels", "audioSampleRate");
+                    "droppedFrames", "decodedFrames", "skippedDecoderFrames", "maxConsecutiveDroppedFrames", "errorCode", "httpStatus", "audioChannels", "audioSampleRate");
             copyBooleans(source, row, "firstFrame", "seekable", "hls", "subtitleError");
             String decoder = source.optString("decoder");
             if (decoder.matches("(?:c2|OMX)\\.[a-zA-Z0-9._-]{1,80}")) row.put("decoder", decoder);
@@ -98,7 +101,28 @@ final class NativePlaybackDiagnostics
                 if (render != null)
                 {
                     copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll");
-                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz");
+                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames");
+                    JSONObject mapping = render.optJSONObject("frameMapping");
+                    if (mapping != null)
+                    {
+                        number(mapping, "releaseMatches", row, "ptsReleaseMatches");
+                        number(mapping, "ptsMatches", row, "ptsDirectMatches");
+                        number(mapping, "missing", row, "ptsMissing");
+                    }
+                    JSONObject pts = render.optJSONObject("depthPts");
+                    if (pts != null)
+                    {
+                        number(pts, "count", row, "depthPtsSamples");
+                        number(pts, "unknown", row, "depthPtsUnknown");
+                        number(pts, "future", row, "depthPtsFuture");
+                        for (String metric : new String[]{"meanMs", "p95Ms", "maxMs"})
+                        {
+                            Object value = pts.opt(metric);
+                            if (value instanceof Number && Double.isFinite(((Number) value).doubleValue())
+                                    && Math.abs(((Number) value).doubleValue()) <= 86_400_000)
+                                row.put("depthPtsLag" + Character.toUpperCase(metric.charAt(0)) + metric.substring(1), value);
+                        }
+                    }
                     JSONObject timing = render.optJSONObject("timings");
                     if (timing != null) timings(timing, row, "captureToUploadMs", "uploadMs", "drawSubmitMs");
                     JSONObject gpu = render.optJSONObject("gpuRender");
@@ -128,6 +152,12 @@ final class NativePlaybackDiagnostics
                 }
             }
             append(samples, row, MAX_SAMPLES);
+            if (lastMinuteAt < 0 || elapsedMs - lastMinuteAt >= 60_000)
+            {
+                append(minutes, row, MAX_MINUTES);
+                lastMinuteAt = elapsedMs;
+            }
+            if (!"none".equals(BuildConfig.DAILY_SBS)) android.util.Log.i("TachiPlaybackTrial", row.toString());
             if (changed || "open".equals(event)) append(events, row, MAX_EVENTS);
             if (failure) append(failures, row, MAX_FAILURES);
         }
@@ -142,6 +172,10 @@ final class NativePlaybackDiagnostics
                 .append("nativePlaybackTiming=milliseconds; rolling 512 samples; GPU timer excludes compositor; depth age is not end-to-end latency\n")
                 .append("nativePlaybackGpuStabilization=when true, worker stabilizeMs measures raw-depth handoff; GPU completion includes submit and GL scheduling\n")
                 .append("nativePlaybackGpuPreprocess=when true, worker preprocessMs measures host tensor wrapping; GPU preparation and readback are in capture timings; pinned output is host memory\n");
+        out.append("nativePlaybackPts=signed video PTS minus applied depth source PTS at GL draw; exact metadata matches only; not optical presentation latency\n");
+        out.append("nativePlaybackMinutes=last 60 minute snapshots; cumulative counters and recent rolling windows; not full-minute averages\n");
+        out.append("dailySbsProfile=").append(BuildConfig.DAILY_SBS).append('\n');
+        for (JSONObject row : minutes) out.append("playbackMinute=").append(row).append('\n');
         for (JSONObject row : events) out.append("playbackEvent=").append(row).append('\n');
         for (JSONObject row : failures) out.append("playbackFailure=").append(row).append('\n');
         for (JSONObject row : samples) out.append("nativePlayback=").append(row).append('\n');

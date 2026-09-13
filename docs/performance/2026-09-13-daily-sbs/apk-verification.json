@@ -1,0 +1,24 @@
+[
+  {
+    "file": "tachi-sbs-motion-392.apk",
+    "sha256": "63166e85b884df3c2bcc6b296d2c3a0ffc7fb97041310329006f0b8954401f9b",
+    "bytes": 99979754,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "package": "package: name='com.jellyfinforrayneo.client.debug' versionCode='8' versionName='0.3.1-sbs-motion' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'",
+    "debuggable": false,
+    "nativeLibraryAbis": [
+      "arm64-v8a"
+    ]
+  },
+  {
+    "file": "tachi-sbs-quality-518.apk",
+    "sha256": "edf8bbbf2ee885fff817b179b7ae7201b68d4bbe5288624e214eb92c372774f6",
+    "bytes": 99979758,
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "package": "package: name='com.jellyfinforrayneo.client.debug' versionCode='8' versionName='0.3.1-sbs-quality' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'",
+    "debuggable": false,
+    "nativeLibraryAbis": [
+      "arm64-v8a"
+    ]
+  }
+]

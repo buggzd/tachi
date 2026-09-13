@@ -40,6 +40,18 @@ if (hasEnvironmentSigning && !file(environmentSigning.path).isFile()) {
 }
 def hasReleaseSigning = signingPropertiesFile.exists() || hasEnvironmentSigning
 
+def dailySbs = providers.gradleProperty("dailySbs").getOrElse("none")
+if (!(dailySbs in ["none", "quality", "motion"])) throw new GradleException("dailySbs must be quality or motion")
+if (dailySbs != "none") {
+    def expected = dailySbs == "quality" ? ["518", "12"] : ["392", "24"]
+    if (providers.gradleProperty("depthResolution").getOrElse("") != expected[0]
+            || providers.gradleProperty("depthHz").getOrElse("") != expected[1]
+            || providers.gradleProperty("captureSlots").getOrElse("") != "2"
+            || ["realtimeSbs", "gpuDepthStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll"].any {
+                providers.gradleProperty(it).getOrElse("false") != "true"
+            }) throw new GradleException("Use scripts/build-sbs-experiment.sh for a complete daily profile")
+}
+
 def realtimeSbs = providers.gradleProperty("realtimeSbs").getOrElse("false") == "true"
 def realtimeManifest = new groovy.json.JsonSlurper().parse(rootProject.file("realtime-sbs-runtime.json"))
 def npuRoot = new File(repositoryRoot, "StereoLab/.local/npu")
@@ -67,6 +79,7 @@ android {
         applicationId "com.jellyfinforrayneo.client"
         minSdk 26
         targetSdk 29
+        buildConfigField "String", "DAILY_SBS", "\"${dailySbs}\""
         buildConfigField "String", "REALTIME_MODEL_SHA256", "\"${rootProject.depthProfile.sha256}\""
         buildConfigField "String", "REALTIME_DEPTH_RESOLUTION", "\"${rootProject.depthProfile.width}x${rootProject.depthProfile.height}\""
         versionCode appVersionCode
@@ -100,7 +113,8 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            versionNameSuffix "-debug"
+            versionNameSuffix dailySbs == "none" ? "-debug" : "-sbs-${dailySbs}"
+            debuggable dailySbs == "none"
         }
         release {
             minifyEnabled true

@@ -26,13 +26,26 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         // Main thread. Consumer must detach the old decoder Surface before it is released.
         void surfaceReady(Surface surface);
         // GL thread. Top-row-first RGBA8 or normalized float CHW, selected by GPU_PREPROCESS; lease owns bytes.
-        void sample(ByteBuffer bytes, long textureTimestampNs, long capturedNs, long lease, long generation);
+        void sample(ByteBuffer bytes, long textureTimestampNs, long ptsUs, long capturedNs, long lease, long generation);
         void failure();
         void depthFailure(long generation);
     }
 
     private final Host host;
     private final FrameSlot slot;
+    private final FrameTimeline timeline = new FrameTimeline();
+    private final DepthPtsMetrics ptsMetrics = new DepthPtsMetrics();
+    private long videoPtsUs = FrameTimeline.UNKNOWN, depthPtsUs = FrameTimeline.UNKNOWN;
+    private long lastVideoSequence, sequenceGeneration = -1;
+    private volatile long uniqueVideoDraws, supersededVideoFrames;
+    private final long[] pendingDrawVideoPts = new long[64];
+    private int pendingDrawCount;
+
+    void decoderFrame(long ptsUs, long releaseNs)
+    {
+        timeline.decoded(releaseNs, ptsUs, slot.generation());
+    }
+
     private final AtomicBoolean framePending = new AtomicBoolean();
     private final FloatBuffer quad = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder())
             .asFloatBuffer().put(new float[]{-1, -1, 1, -1, -1, 1, 1, 1});
@@ -51,6 +64,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private long pendingLease;
     private long pendingGeneration;
     private long pendingTimestamp;
+    private long pendingPtsUs;
     private long pendingCapturedNs;
     private boolean hasImage;
     private boolean failed;
@@ -98,12 +112,14 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         final byte[] map;
         final long generation;
         final long capturedNs;
+        final long ptsUs;
 
-        DepthPacket(byte[] map, long generation, long capturedNs)
+        DepthPacket(byte[] map, long generation, long capturedNs, long ptsUs)
         {
             this.map = map;
             this.generation = generation;
             this.capturedNs = capturedNs;
+            this.ptsUs = ptsUs;
         }
     }
 
@@ -112,25 +128,27 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         final float[] raw;
         final long generation;
         final long capturedNs;
+        final long ptsUs;
         final long lease;
 
-        RawDepthPacket(float[] raw, long generation, long capturedNs, long lease)
+        RawDepthPacket(float[] raw, long generation, long capturedNs, long lease, long ptsUs)
         {
             this.raw = raw;
             this.generation = generation;
             this.capturedNs = capturedNs;
+            this.ptsUs = ptsUs;
             this.lease = lease;
         }
     }
 
     /** Transfers the capture lease, preserving the exact RGB texture paired with this inference. */
-    boolean offerRawDepth(float[] raw, long generation, long capturedNs, long lease)
+    boolean offerRawDepth(float[] raw, long generation, long capturedNs, long lease, long ptsUs)
     {
         synchronized (rawDepthLock)
         {
             if (closed || !slot.current(lease, generation)) return false;
             if (pendingRawDepth.size() >= BuildConfig.CAPTURE_SLOTS) throw new IllegalStateException("raw depth queue");
-            pendingRawDepth.addLast(new RawDepthPacket(raw, generation, capturedNs, lease));
+            pendingRawDepth.addLast(new RawDepthPacket(raw, generation, capturedNs, lease, ptsUs));
         }
         requestRender();
         return true;
@@ -145,11 +163,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         }
     }
 
-    void offerDepth(byte[] map, long generation, long capturedNs)
+    void offerDepth(byte[] map, long generation, long capturedNs, long ptsUs)
     {
         if (!closed && generation == slot.generation())
         {
-            pendingDepth.set(new DepthPacket(map, generation, capturedNs));
+            pendingDepth.set(new DepthPacket(map, generation, capturedNs, ptsUs));
             requestRender();
         }
     }
@@ -180,6 +198,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"stereo\":" + stereoPreview + ",\"debug\":" + debugDepth
                 + ",\"depthWidth\":" + SAMPLE_WIDTH + ",\"depthHeight\":" + SAMPLE_HEIGHT
                 + ",\"eyeTargetWidth\":" + (render1080 ? 1920 : width / (stereoPreview ? 2 : 1))
+                + ",\"videoDraws\":" + uniqueVideoDraws + ",\"supersededVideoFrames\":" + supersededVideoFrames
+                + ",\"frameMapping\":" + timeline.json() + ",\"depthPts\":" + ptsMetrics.json()
                 + ",\"gpuRender\":" + gpuTimer.json()
                 + ",\"depthTargetHz\":" + BuildConfig.DEPTH_HZ
                 + ",\"asyncCapturePoll\":" + BuildConfig.ASYNC_CAPTURE_POLL
@@ -299,6 +319,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             gpuObserverSerial++;
             gpuPollScheduled = false;
             depthGeneration = -1;
+            depthPtsUs = FrameTimeline.UNKNOWN;
+            pendingDrawCount = 0;
             Surface previousSurface = surface;
             SurfaceTexture previousTexture = texture;
             hasImage = false;
@@ -409,6 +431,16 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             {
                 texture.updateTexImage();
                 texture.getTransformMatrix(textureMatrix);
+                long visit = slot.generation();
+                FrameTimeline.Match match = timeline.match(texture.getTimestamp(), visit);
+                videoPtsUs = match == null ? FrameTimeline.UNKNOWN : match.ptsUs;
+                if (match != null)
+                {
+                    if (sequenceGeneration == visit && lastVideoSequence > 0 && match.sequence > lastVideoSequence)
+                        supersededVideoFrames += Math.max(0, match.sequence - lastVideoSequence - 1);
+                    lastVideoSequence = match.sequence;
+                    sequenceGeneration = visit;
+                }
                 hasImage = true;
             }
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
@@ -429,10 +461,18 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 GLES30.glTexSubImage2D(GLES30.GL_TEXTURE_2D, 0, 0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
                         GLES30.GL_RED, GLES30.GL_UNSIGNED_BYTE, depthUpload);
                 depthCapturedNs = packet.capturedNs;
+                depthPtsUs = packet.ptsUs;
                 depthGeneration = packet.generation;
                 depthUploads++;
                 uploadCost = System.nanoTime() - start;
                 captureAge = System.nanoTime() - packet.capturedNs;
+            }
+            if (fresh) uniqueVideoDraws++;
+            if (stereoPreview && depthEnabled && hasCurrentDepth())
+            {
+                if (activeRawDepth == null) ptsMetrics.record(videoPtsUs, depthPtsUs);
+                else if (pendingDrawCount < pendingDrawVideoPts.length) pendingDrawVideoPts[pendingDrawCount++] = videoPtsUs;
+                else ptsMetrics.record(videoPtsUs, FrameTimeline.UNKNOWN);
             }
             long drawStart = System.nanoTime();
             gpuTimer.begin();
@@ -489,6 +529,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     pendingLease = lease;
                     pendingGeneration = slot.generationOf(lease);
                     pendingTimestamp = texture.getTimestamp();
+                    pendingPtsUs = videoPtsUs;
                     pendingCapturedNs = now;
                     cadence.submitted(now);
                     long submitStart = System.nanoTime();
@@ -580,7 +621,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             sampleBytes.flip();
         }
         timings.record(pendingSubmitCostNs, observedNs, System.nanoTime() - copyStart);
-        host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, pendingCapturedNs, lease, pendingGeneration);
+        host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, pendingPtsUs, pendingCapturedNs, lease, pendingGeneration);
     }
 
     private void processGpuDepth()
@@ -595,9 +636,16 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             {
                 RawDepthPacket packet = activeRawDepth;
                 activeRawDepth = null;
+                // Draws submitted after this compute see its new texture only if it accepted the map.
+                // Resolve their PTS retrospectively so fence-observer delay cannot mislabel the depth.
+                if (packet.generation == slot.generation())
+                    for (int i = 0; i < pendingDrawCount; i++)
+                        ptsMetrics.record(pendingDrawVideoPts[i], result.accepted ? packet.ptsUs : depthPtsUs);
+                pendingDrawCount = 0;
                 if (result.accepted && packet.generation == slot.generation())
                 {
                     depthCapturedNs = packet.capturedNs;
+                    depthPtsUs = packet.ptsUs;
                     depthGeneration = packet.generation;
                     depthUploads++;
                     gpuCompletedCost = gpuSubmitCost;
@@ -621,6 +669,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             return;
         }
         activeRawDepth = packet;
+        pendingDrawCount = 0;
         long start = System.nanoTime();
         // This lease still owns its capture texture, even while the other capture slot is occupied.
         gpuStabilizer.submit(packet.raw, captureTextures[slot.indexOf(packet.lease)], packet.generation != gpuHistoryGeneration);

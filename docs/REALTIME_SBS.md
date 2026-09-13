@@ -59,12 +59,53 @@ CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 [9 月 13 日实机分辨率扫描](performance/2026-09-13-resolution-sweep/README.md)。
 这不等于正式播放器/外接眼镜完整验收，默认发布仍为 266。两种 APK 同 ID，可覆盖安装保留设置。
 
-322、518、644 和失败的 770 模型记录在实验清单中，仅供直接 Gradle lab 扫描复现；
+322、518、644 和失败的 770 模型记录在实验清单中；518 另提供下述日常实验包，其余用于直接 Gradle lab 扫描复现。
 常规打包脚本仍只接受 266 / 392。lab 可用 `-PlabPerformanceBuild=true` 关闭 Debug
 调试标志，再通过 Android `cmd package compile -m speed -f` 实验 ART 预编译。
 该开关只作用于独立 lab，不改变主应用；必须核实系统实际报告 `speed`，
 不能把命令返回 Success 或 Debug 包的 `verify` 当作预编译生效。
 诊断新增 `realtimeDepthResolution` 与 `depthWidth/depthHeight`，避免混淆模型尺寸。
+
+## 日常试看实验包
+
+完整本地模型/运行库就绪后，可生成两档独立文件：
+
+```bash
+./scripts/build-sbs-experiment.sh quality
+./scripts/build-sbs-experiment.sh motion
+```
+
+- `quality`：518×294、12 Hz 目标，优先轮廓清晰度。
+- `motion`：392×224、24 Hz 调度目标，约 20 Hz 是既有 lab 测量，产品更新率以诊断为准。
+
+输出位于 `AndroidApp/app/build/distributions/`，文件名分别为
+`tachi-sbs-quality-518.apk`、`tachi-sbs-motion-392.apk`。均包含对应模型，开启 GPU
+稳定、精确查表 CHW 输入、两个捕获槽、固定主机输出和异步捕获观察。
+脚本运行两模块 JVM 测试、lint、APK 构建及资源校验。
+
+两包沿用开发版 `com.jellyfinforrayneo.client.debug` 和本机 Debug 签名，关闭
+`debuggable`（也关闭 WebView 远程调试），可以互相覆盖并保留已有开发版账号设置。
+它们不覆盖正式版，也不改变 GitHub Lite/Full 的发布默认配置；不同开发电脑签名可能不兼容。
+优先安装 quality，先在手机完成眼镜 3D 显示，再在播放器开启「实时 3D」。
+切换档位需要安装另一 APK；深度慢时保持有效图，不自动变平或回退 CPU。
+
+诊断增加以下测量：
+
+- `depthPtsLagMeanMs/P95Ms/MaxMs`：GL 绘制视频 PTS 减去所用深度的源帧 PTS，保留负值。
+  使用精确解码元数据匹配，最多容忍释放时间微秒截断；`ptsMissing` 与
+  `depthPtsUnknown` 单独报告，不猜测最近帧。历史融合后的深度不代表单一真实曝光时刻。
+- `queueWaitMs`：捕获就绪后到串行工作线程开始的等待。
+- `droppedFrames`：Media3 解码输出丢帧；`supersededVideoFrames`：已匹配解码序列中
+  被 SurfaceTexture 消费跨过的帧。两者均不是物理屏幕呈现丢帧。
+- `playbackMinute`：最近 60 个分钟快照；计数器累计、耗时为近期滚动窗口，不是整分钟平均。
+  实验包还以 `TachiPlaybackTrial` 输出相同的脱敏快照，便于连续采集而不丢失前半程。
+
+PTS 统计包含持有同一视频帧时的深度更新绘制，不是只按新视频帧加权，也不包含显示器光学延迟。
+系统呈现应另用 SurfaceFlinger 图层统计或时间戳验证，不能把 24 fps 视频在 60 Hz
+显示器上的重复刷新当作丢帧。离线汇总可用
+`StereoLab/experiments/summarize_daily_trial.py`，按源编号拆分并排除中断/seek 后的跨段统计。
+[日常包实测](performance/2026-09-13-daily-sbs/README.md)记录 518 的 20 分 39 秒连续窗口、
+392 的顺序对照，以及后续 HLS 缓冲、PTS 长尾和呈现统计边界。
 
 ## 输入与流水线实验
 
@@ -72,7 +113,10 @@ CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 -PasyncCapturePoll=true -PdepthHz=24`（命令中写在同一行）。GPU 输入要求同时开启
 QNN 与 GPU 稳定；captureSlots 只支持 1/2，depthHz 只支持 12/24。全部保持原发布默认值。
 392 的 24 Hz 是目标而非已保证的更新率；518 的推理耗时仍高于 24 Hz 单帧预算。
-GPU CHW 输入仍需主机读回，固定输出缓冲也不是 QNN 注册内存。
+产品的 GPU CHW 输入仍需主机读回，固定输出缓冲也不是 QNN 注册内存。
+独立 benchmark 新增 `fullshared` 阶段，可导出完整 518 图并验证 AHardwareBuffer / HTP
+注册输入输出与 GPU 读写；这条共享路径尚未替换产品 ORT Java 后端，见
+[完整模型验证](performance/2026-09-13-daily-sbs/README.md#完整模型共享缓冲)。
 诊断包括输入路径、槽数、目标频率，以及 queueWait/captureToWorker/workerService 的均值和 P95。
 实测结果、构建命令和共享内存边界见 [GPU 输入与流水线验证](performance/2026-09-13-gpu-input-pipeline/README.md)。
 
@@ -92,7 +136,7 @@ GPU 稳定实验：额外传 `-PgpuDepthStabilization=true` 可将精确分位�
 seek、换源和 Surface 重建清除旧代图，避免使用另一时间或媒体的深度。
 深度稳定器对颜色变化采用连续历史权重，大幅深度变化仍拒绝旧历史；该开发改动只完成
 [离线伪影量化](performance/2026-09-12-artifact-evaluation/README.md)，部分低对比快移边缘有退化，
-仍需实机 A/B。当前没有运动重投影或视频/深度的精确时间配对。
+仍需实机 A/B。当前已能测量视频/深度源帧的 PTS 差，但没有运动重投影或延迟视频以强制时间配对。
 
 复现异常后使用手机设置的「分享诊断日志」。本轮覆盖与未测清单见
 [产品接入验收](performance/2026-09-12-native-product/README.md)。此前 lab 的

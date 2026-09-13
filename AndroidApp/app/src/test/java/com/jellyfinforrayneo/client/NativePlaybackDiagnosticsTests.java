@@ -39,6 +39,37 @@ public class NativePlaybackDiagnosticsTests
     }
 
     @Test
+    public void ptsExportPreservesSignedMeasurementsAndRejectsStrings() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject pts = new JSONObject().put("count", 20).put("unknown", 2).put("future", 1)
+                .put("meanMs", -41.7).put("p95Ms", 125).put("maxMs", "private-secret");
+        JSONObject render = new JSONObject().put("depthPts", pts)
+                .put("frameMapping", new JSONObject().put("releaseMatches", 20).put("missing", 2));
+        log.record(new JSONObject().put("status", "playing")
+                .put("depth", new JSONObject().put("state", "ready").put("render", render)), 0);
+        String report = log.export();
+        assertTrue(report.contains("\"depthPtsLagMeanMs\":-41.7"));
+        assertTrue(report.contains("\"ptsReleaseMatches\":20"));
+        assertTrue(report.contains("\"depthPtsUnknown\":2"));
+        assertFalse(report.contains("private-secret"));
+        assertFalse(report.contains("depthPtsLagMaxMs"));
+    }
+
+    @Test
+    public void minuteSnapshotsAreBoundedIndependentlyOfRecentSamples() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        for (int i = 0; i < 3700; i++)
+            log.record(new JSONObject().put("status", "playing").put("position", i), i * 1000L);
+        String report = log.export();
+        assertEquals(60, report.lines().filter(line -> line.startsWith("playbackMinute=")).count());
+        assertEquals(120, report.lines().filter(line -> line.startsWith("nativePlayback=")).count());
+        assertFalse(report.lines().filter(line -> line.startsWith("playbackMinute="))
+                .anyMatch(line -> line.contains("\"elapsedMs\":0,")));
+    }
+
+    @Test
     public void samplesAreRateLimitedButErrorsAndSubtitleFailuresRemainVisible() throws Exception
     {
         NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();

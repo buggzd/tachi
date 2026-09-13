@@ -130,7 +130,7 @@ public final class NativeVideoEngine implements AutoCloseable
             }
 
             @Override
-            public void sample(ByteBuffer bytes, long timestamp, long capturedNs, long lease, long generation)
+            public void sample(ByteBuffer bytes, long timestamp, long ptsUs, long capturedNs, long lease, long generation)
             {
                 long queuedNs = System.nanoTime();
                 try
@@ -160,8 +160,8 @@ public final class NativeVideoEngine implements AutoCloseable
                                     if (!closed && slot.current(lease, generation))
                                     {
                                         if (result.raw != null)
-                                            rendererOwnsLease = view.offerRawDepth(result.raw, generation, capturedNs, lease);
-                                        else if (result.map != null) view.offerDepth(result.map, generation, capturedNs);
+                                            rendererOwnsLease = view.offerRawDepth(result.raw, generation, capturedNs, lease, ptsUs);
+                                        else if (result.map != null) view.offerDepth(result.map, generation, capturedNs, ptsUs);
                                     }
                                     else discardedDepth++;
                                 }
@@ -199,6 +199,7 @@ public final class NativeVideoEngine implements AutoCloseable
                 if (!closed && slot.generation() == generation) depthFailed();
             }
         }, slot);
+        player.setVideoFrameMetadataListener((ptsUs, releaseNs, format, mediaFormat) -> view.decoderFrame(ptsUs, releaseNs));
         view.suspendSampling(!depthReady);
         player.addListener(new Player.Listener()
         {
@@ -413,6 +414,8 @@ public final class NativeVideoEngine implements AutoCloseable
                 counters.ensureUpdated();
                 state.put("droppedFrames", counters.droppedBufferCount);
                 state.put("decodedFrames", counters.renderedOutputBufferCount);
+                state.put("skippedDecoderFrames", counters.skippedOutputBufferCount);
+                state.put("maxConsecutiveDroppedFrames", counters.maxConsecutiveDroppedBufferCount);
             }
             long now = android.os.SystemClock.elapsedRealtime();
             if (depthMetrics == null || now - metricsAt >= 1000)

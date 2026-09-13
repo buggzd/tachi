@@ -1,0 +1,16 @@
+fullDepthModelSha256=ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1
+fullDepthContextBytes=84460800 graphCount=1
+fullDepthTensor=input version=1 float32 dimensions=1,3,294,518,
+fullDepthTensor=output version=1 float32 dimensions=1,294,518,
+fullDepthRestore=0x0(code=0)
+fullDepthRawReferenceMaxAbs=0 samples=3
+fullDepthRawExecute meanMs=57.0767 p95Ms=57.8428
+fullDepthRegister[0]=0x0(code=0) bytes=1830912
+fullDepthRegister[1]=0x0(code=0) bytes=610304
+fullDepthExecute meanMs=56.2773 p95Ms=57.1684
+fullDepthSharedLoop meanMs=62.1281 p95Ms=63.5627
+fullDepthShared=PASS measuredIterations=100 warmup=5 imageReferences=3 hostImageCopiesPerIteration=0 statusReadBytesPerIteration=4 statusWriteBytesPerIteration=4 absoluteTolerance=0.000001
+fullDepthContextFree=0x0(code=0)
+deviceFree=0x0(code=0)
+backendFree=0x0(code=0)
+directProbeMarker=PASS

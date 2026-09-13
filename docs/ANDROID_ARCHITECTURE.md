@@ -19,7 +19,15 @@ retains HTML/HLS. See [native playback, measured scope and remaining verificatio
 
 The bounded `playbackDiagnostic` bridge accepts only current-session preparation/fallback event enums
 and safe numeric diagnostics. Playback samples, event history and failure history have independent
-limits (120/64/32) and share the application diagnostic clock. No media identity or URL is exported.
+limits (120/64/32) and share the application diagnostic clock. A separate bounded
+60-entry minute-snapshot history preserves long-session trends (cumulative counters and
+recent rolling metrics, not full-minute averages). Daily SBS experimental builds also log
+these sanitized samples for device measurements; ordinary builds do not.
+Decoder release metadata is matched exactly to SurfaceTexture timestamps to carry media PTS
+through capture, inference and depth application. Signed video-minus-depth source PTS at GL
+draw is distinct from wall-clock depth age and physical presentation latency; unmatched
+frames remain explicitly unknown. Decoder drops, GL sequence gaps and compositor drops
+must not be reported interchangeably. No media identity or URL is exported.
 Native video route validation accepts Jellyfin Videos API casing while preserving the proxy base path
 and origin boundary. Rejected current-source opens return a bounded error; embedded subtitle parsing
 is disabled in Media3 because libass/WebVTT owns text rendering.

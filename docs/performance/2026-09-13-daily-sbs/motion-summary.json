@@ -1,0 +1,277 @@
+{
+  "source": 1,
+  "evidence": "GL source PTS, not optical latency; snapshot P95 is not whole-run P95",
+  "runs": [
+    {
+      "seconds": 440.923,
+      "samples": 437,
+      "positionAdvanceSeconds": 440.91900000000004,
+      "maxSampleGapSeconds": 1.018,
+      "deltas": {
+        "depthComputed": 9560,
+        "uploads": 9560,
+        "decodedFrames": 10572,
+        "droppedFrames": 0,
+        "skippedDecoderFrames": 0,
+        "videoDraws": 10572,
+        "supersededVideoFrames": 0,
+        "ptsReleaseMatches": 10572,
+        "ptsDirectMatches": 0,
+        "ptsMissing": 0,
+        "depthPtsSamples": 20053,
+        "depthPtsUnknown": 0,
+        "depthPtsFuture": 0
+      },
+      "depthHz": 21.68179024455517,
+      "rollingSnapshots": {
+        "preprocessMsMean": {
+          "median": 0.042,
+          "max": 0.054,
+          "last": 0.042
+        },
+        "inferenceMsMean": {
+          "median": 31.812,
+          "max": 33.041,
+          "last": 31.674
+        },
+        "inferenceMsP95": {
+          "median": 32.887,
+          "max": 34.371,
+          "last": 32.702
+        },
+        "queueWaitMsMean": {
+          "median": 1.29,
+          "max": 1.738,
+          "last": 1.427
+        },
+        "queueWaitMsP95": {
+          "median": 6.977,
+          "max": 8.36,
+          "last": 7.123
+        },
+        "captureToWorkerMsMean": {
+          "median": 12.26,
+          "max": 13.051,
+          "last": 12.394
+        },
+        "captureToUploadMsMean": {
+          "median": 49.764,
+          "max": 52.723,
+          "last": 49.154
+        },
+        "captureToUploadMsP95": {
+          "median": 59.717,
+          "max": 62.477,
+          "last": 59.24
+        },
+        "gpuMeanMs": {
+          "median": 7.164,
+          "max": 7.208,
+          "last": 7.157
+        },
+        "gpuP95Ms": {
+          "median": 7.298,
+          "max": 7.365,
+          "last": 7.272
+        },
+        "depthPtsLagMeanMs": {
+          "median": 48.4696,
+          "max": 65.8209,
+          "last": 45.0482
+        },
+        "depthPtsLagP95Ms": {
+          "median": 83.423,
+          "max": 125.123,
+          "last": 83.422
+        },
+        "depthPtsLagMaxMs": {
+          "median": 125.134,
+          "max": 125.134,
+          "last": 125.123
+        }
+      },
+      "fiveMinuteWindows": [
+        {
+          "startSeconds": 0,
+          "seconds": 299.344,
+          "samples": 297,
+          "positionAdvanceSeconds": 299.34200000000004,
+          "maxSampleGapSeconds": 1.018,
+          "deltas": {
+            "depthComputed": 6484,
+            "uploads": 6484,
+            "decodedFrames": 7177,
+            "droppedFrames": 0,
+            "skippedDecoderFrames": 0,
+            "videoDraws": 7177,
+            "supersededVideoFrames": 0,
+            "ptsReleaseMatches": 7177,
+            "ptsDirectMatches": 0,
+            "ptsMissing": 0,
+            "depthPtsSamples": 13604,
+            "depthPtsUnknown": 0,
+            "depthPtsFuture": 0
+          },
+          "depthHz": 21.660698059757337,
+          "rollingSnapshots": {
+            "preprocessMsMean": {
+              "median": 0.041,
+              "max": 0.054,
+              "last": 0.051
+            },
+            "inferenceMsMean": {
+              "median": 31.81,
+              "max": 33.041,
+              "last": 31.826
+            },
+            "inferenceMsP95": {
+              "median": 32.907,
+              "max": 34.371,
+              "last": 32.908
+            },
+            "queueWaitMsMean": {
+              "median": 1.294,
+              "max": 1.738,
+              "last": 1.047
+            },
+            "queueWaitMsP95": {
+              "median": 7.007,
+              "max": 8.36,
+              "last": 6.417
+            },
+            "captureToWorkerMsMean": {
+              "median": 12.268,
+              "max": 13.051,
+              "last": 11.78
+            },
+            "captureToUploadMsMean": {
+              "median": 49.889,
+              "max": 52.723,
+              "last": 49.415
+            },
+            "captureToUploadMsP95": {
+              "median": 60.002,
+              "max": 62.477,
+              "last": 58.427
+            },
+            "gpuMeanMs": {
+              "median": 7.158,
+              "max": 7.2,
+              "last": 7.158
+            },
+            "gpuP95Ms": {
+              "median": 7.295,
+              "max": 7.365,
+              "last": 7.307
+            },
+            "depthPtsLagMeanMs": {
+              "median": 48.8769,
+              "max": 64.5175,
+              "last": 50.1803
+            },
+            "depthPtsLagP95Ms": {
+              "median": 83.423,
+              "max": 125.123,
+              "last": 83.423
+            },
+            "depthPtsLagMaxMs": {
+              "median": 125.134,
+              "max": 125.134,
+              "last": 125.133
+            }
+          }
+        },
+        {
+          "startSeconds": 300,
+          "seconds": 140.569,
+          "samples": 140,
+          "positionAdvanceSeconds": 140.562,
+          "maxSampleGapSeconds": 1.017,
+          "deltas": {
+            "depthComputed": 3051,
+            "uploads": 3051,
+            "decodedFrames": 3371,
+            "droppedFrames": 0,
+            "skippedDecoderFrames": 0,
+            "videoDraws": 3370,
+            "supersededVideoFrames": 0,
+            "ptsReleaseMatches": 3370,
+            "ptsDirectMatches": 0,
+            "ptsMissing": 0,
+            "depthPtsSamples": 6400,
+            "depthPtsUnknown": 0,
+            "depthPtsFuture": 0
+          },
+          "depthHz": 21.70464327127603,
+          "rollingSnapshots": {
+            "preprocessMsMean": {
+              "median": 0.043,
+              "max": 0.051,
+              "last": 0.042
+            },
+            "inferenceMsMean": {
+              "median": 31.824,
+              "max": 31.91,
+              "last": 31.674
+            },
+            "inferenceMsP95": {
+              "median": 32.871,
+              "max": 33.09,
+              "last": 32.702
+            },
+            "queueWaitMsMean": {
+              "median": 1.277,
+              "max": 1.688,
+              "last": 1.427
+            },
+            "queueWaitMsP95": {
+              "median": 6.823,
+              "max": 8.01,
+              "last": 7.123
+            },
+            "captureToWorkerMsMean": {
+              "median": 12.242,
+              "max": 13.005,
+              "last": 12.394
+            },
+            "captureToUploadMsMean": {
+              "median": 49.606,
+              "max": 50.626,
+              "last": 49.154
+            },
+            "captureToUploadMsP95": {
+              "median": 59.24,
+              "max": 61.359,
+              "last": 59.24
+            },
+            "gpuMeanMs": {
+              "median": 7.175,
+              "max": 7.208,
+              "last": 7.157
+            },
+            "gpuP95Ms": {
+              "median": 7.31,
+              "max": 7.364,
+              "last": 7.272
+            },
+            "depthPtsLagMeanMs": {
+              "median": 47.0848,
+              "max": 65.8209,
+              "last": 45.0482
+            },
+            "depthPtsLagP95Ms": {
+              "median": 83.423,
+              "max": 125.123,
+              "last": 83.422
+            },
+            "depthPtsLagMaxMs": {
+              "median": 125.133,
+              "max": 125.134,
+              "last": 125.123
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

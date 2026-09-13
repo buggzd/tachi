@@ -1,0 +1,180 @@
+{
+  "quality": {
+    "seconds": 299.159,
+    "samples": 297,
+    "positionAdvanceSeconds": 299.162,
+    "maxSampleGapSeconds": 1.016,
+    "deltas": {
+      "depthComputed": 3590,
+      "uploads": 3590,
+      "decodedFrames": 7173,
+      "droppedFrames": 0,
+      "skippedDecoderFrames": 0,
+      "videoDraws": 7173,
+      "supersededVideoFrames": 0,
+      "ptsReleaseMatches": 7173,
+      "ptsDirectMatches": 0,
+      "ptsMissing": 0,
+      "depthPtsSamples": 10763,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0
+    },
+    "depthHz": 12.000307528772325,
+    "rollingSnapshots": {
+      "preprocessMsMean": {
+        "median": 0.056,
+        "max": 0.063,
+        "last": 0.057
+      },
+      "inferenceMsMean": {
+        "median": 56.365,
+        "max": 56.471,
+        "last": 56.378
+      },
+      "inferenceMsP95": {
+        "median": 57.471,
+        "max": 57.903,
+        "last": 57.503
+      },
+      "queueWaitMsMean": {
+        "median": 0.577,
+        "max": 0.678,
+        "last": 0.443
+      },
+      "queueWaitMsP95": {
+        "median": 1.321,
+        "max": 4.188,
+        "last": 0.615
+      },
+      "captureToWorkerMsMean": {
+        "median": 10.973,
+        "max": 11.338,
+        "last": 10.936
+      },
+      "captureToUploadMsMean": {
+        "median": 72.136,
+        "max": 72.538,
+        "last": 71.894
+      },
+      "captureToUploadMsP95": {
+        "median": 76.465,
+        "max": 78.891,
+        "last": 75.777
+      },
+      "gpuMeanMs": {
+        "median": 7.191,
+        "max": 7.224,
+        "last": 7.211
+      },
+      "gpuP95Ms": {
+        "median": 7.342,
+        "max": 7.371,
+        "last": 7.362
+      },
+      "depthPtsLagMeanMs": {
+        "median": 84.1508,
+        "max": 86.2683,
+        "last": 84.7211
+      },
+      "depthPtsLagP95Ms": {
+        "median": 125.134,
+        "max": 125.134,
+        "last": 125.134
+      },
+      "depthPtsLagMaxMs": {
+        "median": 166.834,
+        "max": 166.834,
+        "last": 166.834
+      }
+    }
+  },
+  "motion": {
+    "seconds": 298.289,
+    "samples": 296,
+    "positionAdvanceSeconds": 298.288,
+    "maxSampleGapSeconds": 1.018,
+    "deltas": {
+      "depthComputed": 6467,
+      "uploads": 6467,
+      "decodedFrames": 7152,
+      "droppedFrames": 0,
+      "skippedDecoderFrames": 0,
+      "videoDraws": 7152,
+      "supersededVideoFrames": 0,
+      "ptsReleaseMatches": 7152,
+      "ptsDirectMatches": 0,
+      "ptsMissing": 0,
+      "depthPtsSamples": 13563,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0
+    },
+    "depthHz": 21.680316739806027,
+    "rollingSnapshots": {
+      "preprocessMsMean": {
+        "median": 0.041,
+        "max": 0.053,
+        "last": 0.041
+      },
+      "inferenceMsMean": {
+        "median": 31.805,
+        "max": 31.926,
+        "last": 31.726
+      },
+      "inferenceMsP95": {
+        "median": 32.883,
+        "max": 33.569,
+        "last": 32.775
+      },
+      "queueWaitMsMean": {
+        "median": 1.277,
+        "max": 1.738,
+        "last": 1.473
+      },
+      "queueWaitMsP95": {
+        "median": 7.059,
+        "max": 8.36,
+        "last": 7.346
+      },
+      "captureToWorkerMsMean": {
+        "median": 12.244,
+        "max": 13.051,
+        "last": 12.593
+      },
+      "captureToUploadMsMean": {
+        "median": 49.797,
+        "max": 50.641,
+        "last": 49.656
+      },
+      "captureToUploadMsP95": {
+        "median": 59.93,
+        "max": 61.591,
+        "last": 59.254
+      },
+      "gpuMeanMs": {
+        "median": 7.159,
+        "max": 7.2,
+        "last": 7.172
+      },
+      "gpuP95Ms": {
+        "median": 7.295,
+        "max": 7.365,
+        "last": 7.29
+      },
+      "depthPtsLagMeanMs": {
+        "median": 48.4696,
+        "max": 64.5175,
+        "last": 45.0483
+      },
+      "depthPtsLagP95Ms": {
+        "median": 83.423,
+        "max": 125.123,
+        "last": 83.422
+      },
+      "depthPtsLagMaxMs": {
+        "median": 125.134,
+        "max": 125.134,
+        "last": 83.423
+      }
+    }
+  }
+}
