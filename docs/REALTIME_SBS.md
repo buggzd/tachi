@@ -66,6 +66,16 @@ CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 不能把命令返回 Success 或 Debug 包的 `verify` 当作预编译生效。
 诊断新增 `realtimeDepthResolution` 与 `depthWidth/depthHeight`，避免混淆模型尺寸。
 
+## 输入与流水线实验
+
+可组合 `-PgpuPreprocess=true -PcaptureSlots=2 -PpinnedDepthOutput=true
+-PasyncCapturePoll=true -PdepthHz=24`（命令中写在同一行）。GPU 输入要求同时开启
+QNN 与 GPU 稳定；captureSlots 只支持 1/2，depthHz 只支持 12/24。全部保持原发布默认值。
+392 的 24 Hz 是目标而非已保证的更新率；518 的推理耗时仍高于 24 Hz 单帧预算。
+GPU CHW 输入仍需主机读回，固定输出缓冲也不是 QNN 注册内存。
+诊断包括输入路径、槽数、目标频率，以及 queueWait/captureToWorker/workerService 的均值和 P95。
+实测结果、构建命令和共享内存边界见 [GPU 输入与流水线验证](performance/2026-09-13-gpu-input-pipeline/README.md)。
+
 ## 操作与边界
 
 GPU 稳定实验：额外传 `-PgpuDepthStabilization=true` 可将精确分位范围、切镜/颜色差、

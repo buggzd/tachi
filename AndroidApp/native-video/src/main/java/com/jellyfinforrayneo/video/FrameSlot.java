@@ -1,24 +1,49 @@
 package com.jellyfinforrayneo.video;
 
-/** One generation-scoped lease, never a FIFO of stale video frames. */
+/** Bounded capture leases. Invalidating never reuses a worker's memory early. */
 final class FrameSlot
 {
     private long generation;
     private long serial;
-    private long active;
-    private long activeGeneration;
+    private final long[] active;
+    private final long[] visits;
+
+    FrameSlot()
+    {
+        this(1);
+    }
+
+    FrameSlot(int capacity)
+    {
+        if (capacity < 1 || capacity > 2) throw new IllegalArgumentException("capture capacity");
+        active = new long[capacity];
+        visits = new long[capacity];
+    }
+
+    synchronized int indexOf(long lease)
+    {
+        if (lease != 0)
+            for (int i = 0; i < active.length; i++)
+                if (active[i] == lease) return i;
+        return -1;
+    }
 
     synchronized long acquire()
     {
-        if (active != 0) return 0;
-        active = ++serial;
-        activeGeneration = generation;
-        return active;
+        for (int i = 0; i < active.length; i++)
+        {
+            if (active[i] != 0) continue;
+            active[i] = ++serial;
+            visits[i] = generation;
+            return active[i];
+        }
+        return 0;
     }
 
     synchronized long generationOf(long lease)
     {
-        return lease != 0 && lease == active ? activeGeneration : -1;
+        int i = indexOf(lease);
+        return i < 0 ? -1 : visits[i];
     }
 
     synchronized long generation()
@@ -28,18 +53,18 @@ final class FrameSlot
 
     synchronized boolean current(long lease, long expectedGeneration)
     {
-        return lease != 0 && lease == active && activeGeneration == expectedGeneration
-                && generation == expectedGeneration;
+        int i = indexOf(lease);
+        return i >= 0 && visits[i] == expectedGeneration && generation == expectedGeneration;
     }
 
     synchronized void release(long lease)
     {
-        if (active == lease) active = 0;
+        int i = indexOf(lease);
+        if (i >= 0) active[i] = 0;
     }
 
     synchronized void invalidate()
     {
-        // Keep an in-flight consumer's lease until it finishes; memory cannot be reused early.
         generation++;
     }
 }

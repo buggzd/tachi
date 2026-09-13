@@ -90,13 +90,15 @@ final class NativePlaybackDiagnostics
                     number(worker, "count", row, "depthComputed");
                     timings(worker, row, "preprocessMs", "inferenceMs", "stabilizeMs");
                 }
+                JSONObject scheduling = depth.optJSONObject("scheduling");
+                if (scheduling != null) timings(scheduling, row, "queueWaitMs", "captureToWorkerMs", "workerServiceMs");
                 JSONObject readback = depth.optJSONObject("readback");
                 if (readback != null) timings(readback, row, "submitMs", "fenceObservedMs", "mapCopyMs");
                 JSONObject render = depth.optJSONObject("render");
                 if (render != null)
                 {
-                    copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization");
-                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight");
+                    copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll");
+                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz");
                     JSONObject timing = render.optJSONObject("timings");
                     if (timing != null) timings(timing, row, "captureToUploadMs", "uploadMs", "drawSubmitMs");
                     JSONObject gpu = render.optJSONObject("gpuRender");
@@ -138,7 +140,8 @@ final class NativePlaybackDiagnostics
                 .append("nativePlaybackRetention=last 120 samples; at most 1 Hz plus state changes; current app process; separate last 64 events and 32 failures\n")
                 .append("nativePlaybackClock=milliseconds since app diagnostic clock started; same clock as events\n")
                 .append("nativePlaybackTiming=milliseconds; rolling 512 samples; GPU timer excludes compositor; depth age is not end-to-end latency\n")
-                .append("nativePlaybackGpuStabilization=when true, worker stabilizeMs measures raw-depth handoff; GPU completion includes submit and GL scheduling\n");
+                .append("nativePlaybackGpuStabilization=when true, worker stabilizeMs measures raw-depth handoff; GPU completion includes submit and GL scheduling\n")
+                .append("nativePlaybackGpuPreprocess=when true, worker preprocessMs measures host tensor wrapping; GPU preparation and readback are in capture timings; pinned output is host memory\n");
         for (JSONObject row : events) out.append("playbackEvent=").append(row).append('\n');
         for (JSONObject row : failures) out.append("playbackFailure=").append(row).append('\n');
         for (JSONObject row : samples) out.append("nativePlayback=").append(row).append('\n');

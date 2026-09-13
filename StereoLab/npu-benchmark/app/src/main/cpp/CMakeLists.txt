@@ -13,4 +13,9 @@ target_include_directories(tachi_qnn_probe PRIVATE
 
 target_compile_features(tachi_qnn_probe PRIVATE cxx_std_17)
 target_compile_options(tachi_qnn_probe PRIVATE -fvisibility=hidden -Wall -Wextra -Werror=return-type)
-target_link_libraries(tachi_qnn_probe PRIVATE log dl)
+target_link_libraries(tachi_qnn_probe PRIVATE log dl android EGL GLESv3)
+
+# The old fallback headers do not describe DMA-BUF registration.
+if(EXISTS "${QNN_INCLUDE_ROOT}/QNN/HTP/QnnHtpMem.h")
+    target_compile_definitions(tachi_qnn_probe PRIVATE TACHI_QNN_SHARED_PROBE=1)
+endif()

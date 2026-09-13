@@ -67,7 +67,7 @@ public final class MainActivity extends Activity {
         System.loadLibrary("tachi_qnn_probe");
     }
 
-    private static native String nativeProbeQnn(String backendDirectory, int socModel);
+    private static native String nativeProbeQnn(String backendDirectory, int socModel, boolean sharedMemory);
 
     @Override
     protected void onCreate(Bundle state) {
@@ -79,7 +79,7 @@ public final class MainActivity extends Activity {
         }
         socModelOverride = launchIntent == null ? null : launchIntent.getStringExtra("soc_model");
         String stage = launchIntent == null ? null : launchIntent.getStringExtra("benchmark_stage");
-        if ("smoke".equals(stage) || "depth".equals(stage))
+        if ("smoke".equals(stage) || "depth".equals(stage) || "shared".equals(stage))
         {
             benchmarkStage = stage;
         }
@@ -126,9 +126,9 @@ public final class MainActivity extends Activity {
             try {
                 String socModel = socModelOverride == null || socModelOverride.isEmpty()
                         ? "660" : socModelOverride;
-                String directResult = nativeProbeQnn(qnnBackend.getParent(), Integer.parseInt(socModel));
+                String directResult = nativeProbeQnn(qnnBackend.getParent(), Integer.parseInt(socModel), "shared".equals(benchmarkStage));
                 append(directResult);
-                if (!directResult.contains("directProbeMarker=PASS") || "direct".equals(benchmarkStage))
+                if (!directResult.contains("directProbeMarker=PASS") || "direct".equals(benchmarkStage) || "shared".equals(benchmarkStage))
                 {
                     append("DIRECT_PROBE_COMPLETE=true\n");
                     return;

@@ -6,6 +6,48 @@ import static org.junit.Assert.*;
 public class NativeVideoTests
 {
     @Test
+    public void twentyFourHzCadenceDoesNotCatchUpWithAnUnboundedBurstAfterPause()
+    {
+        SampleCadence cadence = new SampleCadence(24);
+        int accepted = 0;
+        for (int i = 0; i < 240; i++)
+        {
+            long now = 1_000_000_000L + i * 41_666_667L;
+            if (cadence.due(now))
+            {
+                cadence.submitted(now);
+                accepted++;
+            }
+        }
+        assertEquals(240, accepted);
+        cadence.submitted(100_000_000_000L);
+        assertFalse(cadence.due(100_000_000_000L));
+    }
+
+    @Test
+    public void twoCaptureBuffersStayBoundedAcrossSeekAndLateRelease()
+    {
+        FrameSlot slots = new FrameSlot(2);
+        long first = slots.acquire(), second = slots.acquire();
+        assertNotEquals(slots.indexOf(first), slots.indexOf(second));
+        assertEquals(0, slots.acquire());
+        long oldGeneration = slots.generation();
+        slots.invalidate();
+        assertFalse(slots.current(first, oldGeneration));
+        assertFalse(slots.current(second, oldGeneration));
+        assertEquals(0, slots.acquire());
+        int freedIndex = slots.indexOf(first);
+        slots.release(first);
+        long next = slots.acquire();
+        assertEquals(freedIndex, slots.indexOf(next));
+        slots.release(first);
+        assertTrue(slots.current(next, slots.generation()));
+        assertEquals(0, slots.acquire());
+        slots.release(second);
+        assertTrue(slots.acquire() > next);
+    }
+
+    @Test
     public void decoderJitterDoesNotReduceTwelveHzSamplingToEightHz()
     {
         SampleCadence cadence = new SampleCadence();

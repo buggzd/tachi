@@ -25,7 +25,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     {
         // Main thread. Consumer must detach the old decoder Surface before it is released.
         void surfaceReady(Surface surface);
-        // GL thread. Bytes are tightly packed, top-row-first RGBA; valid until releaseSample.
+        // GL thread. Top-row-first RGBA8 or normalized float CHW, selected by GPU_PREPROCESS; lease owns bytes.
         void sample(ByteBuffer bytes, long textureTimestampNs, long capturedNs, long lease, long generation);
         void failure();
         void depthFailure(long generation);
@@ -36,7 +36,9 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private final AtomicBoolean framePending = new AtomicBoolean();
     private final FloatBuffer quad = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder())
             .asFloatBuffer().put(new float[]{-1, -1, 1, -1, -1, 1, 1, 1});
-    private final ByteBuffer sampleBytes = ByteBuffer.allocateDirect(SAMPLE_BYTES);
+    private final ByteBuffer[] captureBytes = new ByteBuffer[BuildConfig.CAPTURE_SLOTS];
+    private final int[] captureTextures = new int[BuildConfig.CAPTURE_SLOTS];
+    private GpuPreprocessor preprocessor;
     private final float[] textureMatrix = new float[16];
     private volatile SurfaceTexture texture;
     private volatile Surface surface;
@@ -62,7 +64,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile boolean depthEnabled = true;
     private volatile boolean sampling;
     private volatile boolean samplingSuspended;
-    private final SampleCadence cadence = new SampleCadence();
+    private final SampleCadence cadence = new SampleCadence(BuildConfig.DEPTH_HZ);
     private final ReadbackTimings timings = new ReadbackTimings();
     private long pendingSubmitNs;
     private long pendingSubmitCostNs;
@@ -70,7 +72,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private final ByteBuffer depthUpload = ByteBuffer.allocateDirect(SAMPLE_WIDTH * SAMPLE_HEIGHT);
     private final AtomicReference<DepthPacket> pendingDepth = new AtomicReference<>();
     private final Object rawDepthLock = new Object();
-    private RawDepthPacket pendingRawDepth;
+    private final java.util.ArrayDeque<RawDepthPacket> pendingRawDepth = new java.util.ArrayDeque<>();
     private RawDepthPacket activeRawDepth;
     private volatile GpuTemporalDepth gpuStabilizer;
     private long gpuHistoryGeneration = -1;
@@ -127,8 +129,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         synchronized (rawDepthLock)
         {
             if (closed || !slot.current(lease, generation)) return false;
-            if (pendingRawDepth != null) throw new IllegalStateException("raw depth queue");
-            pendingRawDepth = new RawDepthPacket(raw, generation, capturedNs, lease);
+            if (pendingRawDepth.size() >= BuildConfig.CAPTURE_SLOTS) throw new IllegalStateException("raw depth queue");
+            pendingRawDepth.addLast(new RawDepthPacket(raw, generation, capturedNs, lease));
         }
         requestRender();
         return true;
@@ -138,8 +140,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     {
         synchronized (rawDepthLock)
         {
-            if (pendingRawDepth != null) slot.release(pendingRawDepth.lease);
-            pendingRawDepth = null;
+            for (RawDepthPacket packet : pendingRawDepth) slot.release(packet.lease);
+            pendingRawDepth.clear();
         }
     }
 
@@ -179,6 +181,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"depthWidth\":" + SAMPLE_WIDTH + ",\"depthHeight\":" + SAMPLE_HEIGHT
                 + ",\"eyeTargetWidth\":" + (render1080 ? 1920 : width / (stereoPreview ? 2 : 1))
                 + ",\"gpuRender\":" + gpuTimer.json()
+                + ",\"depthTargetHz\":" + BuildConfig.DEPTH_HZ
+                + ",\"asyncCapturePoll\":" + BuildConfig.ASYNC_CAPTURE_POLL
+                + ",\"gpuPreprocess\":" + BuildConfig.GPU_PREPROCESS
+                + ",\"captureSlots\":" + BuildConfig.CAPTURE_SLOTS
+                + ",\"pinnedDepthOutput\":" + BuildConfig.PINNED_DEPTH_OUTPUT
                 + ",\"gpuStabilization\":" + BuildConfig.GPU_DEPTH_STABILIZATION
                 + ",\"gpuStabilize\":" + (stabilizer == null ? "null" : stabilizer.timingsJson())
                 + ",\"gpuStages\":" + (stabilizer == null ? "null" : stabilizer.stageTimingsJson())
@@ -202,6 +209,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         super(context);
         this.host = host;
         this.slot = slot;
+        for (int i = 0; i < captureBytes.length; i++)
+            captureBytes[i] = ByteBuffer.allocateDirect(SAMPLE_BYTES * (BuildConfig.GPU_PREPROCESS ? 3 : 1));
         quad.position(0);
         setEGLContextClientVersion(3);
         setPreserveEGLContextOnPause(true);
@@ -284,6 +293,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             clearPendingRawDepth();
             if (activeRawDepth != null) slot.release(activeRawDepth.lease);
             activeRawDepth = null;
+            preprocessor = null;
             gpuStabilizer = null; // The old GL names belonged to the lost context.
             gpuHistoryGeneration = -1;
             gpuObserverSerial++;
@@ -318,12 +328,15 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 if (previousSurface != null) previousSurface.release();
                 if (previousTexture != null) previousTexture.release();
             });
-            GLES30.glGenTextures(1, name, 0);
-            sampleTexture = name[0];
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, sampleTexture);
-            parameters(GLES30.GL_TEXTURE_2D);
-            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA8, SAMPLE_WIDTH,
-                    SAMPLE_HEIGHT, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+            GLES30.glGenTextures(captureTextures.length, captureTextures, 0);
+            for (int captureTexture : captureTextures)
+            {
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, captureTexture);
+                parameters(GLES30.GL_TEXTURE_2D);
+                GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA8, SAMPLE_WIDTH,
+                        SAMPLE_HEIGHT, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+            }
+            sampleTexture = captureTextures[0];
             GLES30.glGenFramebuffers(1, name, 0);
             fbo = name[0];
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
@@ -365,6 +378,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     throw new IllegalStateException();
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
             }
+            if (BuildConfig.GPU_PREPROCESS) preprocessor = new GpuPreprocessor(SAMPLE_WIDTH, SAMPLE_HEIGHT);
             gpuTimer.create();
             if (BuildConfig.GPU_DEPTH_STABILIZATION)
                 gpuStabilizer = new GpuTemporalDepth(getContext(), SAMPLE_WIDTH, SAMPLE_HEIGHT);
@@ -479,12 +493,19 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     cadence.submitted(now);
                     long submitStart = System.nanoTime();
                     GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
+                    sampleTexture = captureTextures[slot.indexOf(lease)];
+                    GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                            GLES30.GL_TEXTURE_2D, sampleTexture, 0);
                     GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
                     draw(true, 0, false); // Always sample the original image, never the warped output.
-                    GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
-                    GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
-                            GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
-                    GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
+                    if (preprocessor != null) preprocessor.submit(sampleTexture);
+                    else
+                    {
+                        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
+                        GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
+                                GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
+                        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
+                    }
                     GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
                     fence = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
                     if (fence == 0) throw new IllegalStateException();
@@ -494,7 +515,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 }
             }
             if (GLES30.glGetError() != GLES30.GL_NO_ERROR) throw new IllegalStateException();
-            if (fence != 0) postOnAnimation(this::requestRender);
+            if (fence != 0)
+            {
+                if (BuildConfig.ASYNC_CAPTURE_POLL) scheduleGpuPoll();
+                else postOnAnimation(this::requestRender);
+            }
         }
         catch (RuntimeException error)
         {
@@ -519,25 +544,41 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             return;
         }
         long copyStart = System.nanoTime();
-        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
-        ByteBuffer mapped = (ByteBuffer) GLES30.glMapBufferRange(GLES30.GL_PIXEL_PACK_BUFFER,
-                0, SAMPLE_BYTES, GLES30.GL_MAP_READ_BIT);
-        if (mapped == null)
+        ByteBuffer sampleBytes = captureBytes[slot.indexOf(lease)];
+        if (preprocessor != null)
         {
-            slot.release(lease);
-            throw new IllegalStateException();
+            try
+            {
+                preprocessor.copyTo(sampleBytes);
+            }
+            catch (RuntimeException error)
+            {
+                slot.release(lease);
+                throw error;
+            }
         }
-        sampleBytes.clear();
-        mapped.limit(SAMPLE_BYTES);
-        sampleBytes.put(mapped);
-        boolean intact = GLES30.glUnmapBuffer(GLES30.GL_PIXEL_PACK_BUFFER);
-        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
-        if (!intact)
+        else
         {
-            slot.release(lease);
-            throw new IllegalStateException();
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
+            ByteBuffer mapped = (ByteBuffer) GLES30.glMapBufferRange(GLES30.GL_PIXEL_PACK_BUFFER,
+                    0, SAMPLE_BYTES, GLES30.GL_MAP_READ_BIT);
+            if (mapped == null)
+            {
+                slot.release(lease);
+                throw new IllegalStateException();
+            }
+            sampleBytes.clear();
+            mapped.limit(SAMPLE_BYTES);
+            sampleBytes.put(mapped);
+            boolean intact = GLES30.glUnmapBuffer(GLES30.GL_PIXEL_PACK_BUFFER);
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
+            if (!intact)
+            {
+                slot.release(lease);
+                throw new IllegalStateException();
+            }
+            sampleBytes.flip();
         }
-        sampleBytes.flip();
         timings.record(pendingSubmitCostNs, observedNs, System.nanoTime() - copyStart);
         host.sample(sampleBytes.asReadOnlyBuffer(), pendingTimestamp, pendingCapturedNs, lease, pendingGeneration);
     }
@@ -571,8 +612,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         RawDepthPacket packet;
         synchronized (rawDepthLock)
         {
-            packet = pendingRawDepth;
-            pendingRawDepth = null;
+            packet = pendingRawDepth.pollFirst();
         }
         if (packet == null) return;
         if (!slot.current(packet.lease, packet.generation))
@@ -582,8 +622,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         }
         activeRawDepth = packet;
         long start = System.nanoTime();
-        // The lease is still occupied: sampleTexture cannot have been overwritten by another capture.
-        gpuStabilizer.submit(packet.raw, sampleTexture, packet.generation != gpuHistoryGeneration);
+        // This lease still owns its capture texture, even while the other capture slot is occupied.
+        gpuStabilizer.submit(packet.raw, captureTextures[slot.indexOf(packet.lease)], packet.generation != gpuHistoryGeneration);
         // submit queued an independent GPU RGB snapshot, so capture/NPU may now overlap compute.
         slot.release(packet.lease);
         gpuSubmissionSerial++;
@@ -596,7 +636,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     /** Poll a tiny control fence without repeating a full SBS draw or waiting for the next vsync. */
     private void scheduleGpuPoll()
     {
-        if (gpuPollScheduled || closed || activeRawDepth == null) return;
+        if (gpuPollScheduled || closed || (activeRawDepth == null && (!BuildConfig.ASYNC_CAPTURE_POLL || fence == 0))) return;
         gpuPollScheduled = true;
         long observer = gpuObserverSerial;
         postDelayed(() ->
@@ -606,9 +646,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             {
                 if (observer != gpuObserverSerial) return;
                 gpuPollScheduled = false;
-                if (closed || failed || activeRawDepth == null) return;
+                if (closed || failed) return;
                 try
                 {
+                    if (BuildConfig.ASYNC_CAPTURE_POLL) pollSample();
                     boolean wasValid = hasCurrentDepth();
                     long submission = gpuSubmissionSerial;
                     long completedDrawCost = gpuDrawSubmitCost;
@@ -725,6 +766,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         clearPendingRawDepth();
         if (activeRawDepth != null) slot.release(activeRawDepth.lease);
         activeRawDepth = null;
+        if (preprocessor != null) preprocessor.close();
+        preprocessor = null;
         if (gpuStabilizer != null) gpuStabilizer.close();
         gpuStabilizer = null;
         if (texture != null) texture.release();
@@ -732,7 +775,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         gpuTimer.close();
         GLES30.glDeleteBuffers(1, new int[]{pbo}, 0);
         GLES30.glDeleteFramebuffers(2, new int[]{fbo, stereoFbo}, 0);
-        GLES30.glDeleteTextures(4, new int[]{oes, sampleTexture, depthTexture, stereoTexture}, 0);
+        GLES30.glDeleteTextures(captureTextures.length, captureTextures, 0);
+        GLES30.glDeleteTextures(3, new int[]{oes, depthTexture, stereoTexture}, 0);
         GLES30.glDeleteProgram(program);
     }
 }

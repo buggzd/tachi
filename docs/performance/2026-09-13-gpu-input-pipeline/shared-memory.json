@@ -1,0 +1,28 @@
+{
+  "runtime": "QAIRT 2.50.40.260831 / QNN 2.39.0, SM8850 V81",
+  "graph": "quantized uint8 ReLU, 16 elements",
+  "records": [
+    "gpuSharedStage=register index=0",
+    "gpuSharedStage=register index=1",
+    "directGraph=relu_u8 begin",
+    "sharedMemorySymbols=1",
+    "sharedRegister[0]=0x0(code=0)",
+    "sharedRegister[1]=0x0(code=0)",
+    "sharedMemoryRelu100=PASS",
+    "sharedDeregister[0]=0x0(code=0)",
+    "sharedDeregister[1]=0x0(code=0)",
+    "gpuSharedExport fdCount=2 sent=0 received=188",
+    "gpuSharedDataFdMatches=1",
+    "gpuSharedRegister[0]=0x0(code=0)",
+    "gpuSharedExport fdCount=2 sent=0 received=188",
+    "gpuSharedDataFdMatches=1",
+    "gpuSharedRegister[1]=0x0(code=0)",
+    "gpuSharedDeregister[0]=0x0(code=0)",
+    "gpuSharedDeregister[1]=0x0(code=0)",
+    "gpuShared=PASS iterations=100 hostImageCopies=0 statusReadBytesPerIteration=4",
+    "contextFree=0x0(code=0) message=QNN_SUCCESS",
+    "directGraph=relu_u8 PASS",
+    "directProbeMarker=PASS"
+  ],
+  "limits": "Minimal graph only. GPU/HTP interop uses blocking glFinish and synchronous graphExecute, not a production asynchronous depth pipeline. AHardwareBuffer BLOB data fd identified by read-only comparison with public-lock initialized bytes; no vendor handle layout assumed. An initial generic DMA_BUF registration attempt crashed in HTP memRegister; final code uses HTP custom shared-buffer descriptor."
+}

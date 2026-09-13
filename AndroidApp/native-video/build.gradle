@@ -6,6 +6,11 @@ android {
         minSdk 26
         buildConfigField "int", "DEPTH_SAMPLE_WIDTH", "${rootProject.depthProfile.width}"
         buildConfigField "int", "DEPTH_SAMPLE_HEIGHT", "${rootProject.depthProfile.height}"
+        buildConfigField "boolean", "ASYNC_CAPTURE_POLL", providers.gradleProperty("asyncCapturePoll").getOrElse("false")
+        buildConfigField "int", "DEPTH_HZ", providers.gradleProperty("depthHz").getOrElse("12")
+        buildConfigField "boolean", "GPU_PREPROCESS", providers.gradleProperty("gpuPreprocess").getOrElse("false")
+        buildConfigField "boolean", "PINNED_DEPTH_OUTPUT", providers.gradleProperty("pinnedDepthOutput").getOrElse("false")
+        buildConfigField "int", "CAPTURE_SLOTS", providers.gradleProperty("captureSlots").getOrElse("1")
         buildConfigField "boolean", "GPU_DEPTH_STABILIZATION", providers.gradleProperty("gpuDepthStabilization").getOrElse("false")
     }
     buildFeatures { buildConfig true }
@@ -27,3 +32,12 @@ android.sourceSets.main.java.srcDir(qnn ? "src/qnn/java" : "src/standard/java")
 if (qnn) {
     dependencies { compileOnly files(new File(rootProject.projectDir.parentFile, "StereoLab/.local/npu/onnxruntime-android-qnn-1.22.0.aar")) }
 }
+
+if (!(providers.gradleProperty("captureSlots").getOrElse("1") in ["1", "2"]))
+    throw new GradleException("captureSlots must be 1 or 2")
+if (providers.gradleProperty("gpuPreprocess").getOrElse("false") == "true"
+        && (!qnn || providers.gradleProperty("gpuDepthStabilization").getOrElse("false") != "true"))
+    throw new GradleException("gpuPreprocess requires QNN and GPU depth stabilization")
+
+if (!(providers.gradleProperty("depthHz").getOrElse("12") in ["12", "24"]))
+    throw new GradleException("depthHz must be 12 or 24")

@@ -1,0 +1,58 @@
+{
+  "final392-24.apk": {
+    "sha256": "316ad26fd3e735d44578d5118ef6b26a6e5c3ccc43df5231ba86b4fdf892afed",
+    "bytes": 77535038,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "gpu1-pinned392-24.apk": {
+    "sha256": "1ce9e5039a55e89b07bf38f01a681672cc808a39196e9981a180c5caf0f737fa",
+    "bytes": 77535030,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "cpu2-pinned518.apk": {
+    "sha256": "a39431b7af58bf0268f9e8eb15e1bcf1e4b315b732cadad2c16ad29a48ab305f",
+    "bytes": 77534746,
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "vendorLibrariesMatch": true
+  },
+  "verified392-24.apk": {
+    "sha256": "b7160c8e68cbc0833149b3ee9abc0b9e808af70f1f1a11f1a5b2d833380b49bd",
+    "bytes": 77534782,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "gpu2-pinned392-24.apk": {
+    "sha256": "176564f5ea193f4cac595cab194cd51f0e931457ecb040068402d1ce53c917ca",
+    "bytes": 77534274,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "gpu2-pinned518.apk": {
+    "sha256": "159c49abe33d7eb7bc60a9ac55ce1da7c596314c12ac3408fbcca351891dafa2",
+    "bytes": 77534298,
+    "modelSha256": "ded33631aef21dd2498b48bce0a57cfe1a12d841ee9a8e6ff39143c5824c84e1",
+    "vendorLibrariesMatch": true
+  },
+  "gpu2-pinned392.apk": {
+    "sha256": "fef510fd72f6eb1131f5e551864b25ca9f1fb16a279b6f471be4b05feace46b0",
+    "bytes": 77534534,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "lut392-24.apk": {
+    "sha256": "18f18730f784aee72e4471e296fba711502fbe5ede0b8ec027c2c642dbcc5136",
+    "bytes": 77535134,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true
+  },
+  "tachi-gpu-input392-24-20260913-full-debug.apk": {
+    "sha256": "b6bf2764eec2bc36f63f8e39672a0e85cd33838b54552c5f46fc7bf7ee83f2b3",
+    "bytes": 105924903,
+    "modelSha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
+    "vendorLibrariesMatch": true,
+    "productDeviceTested": false,
+    "signatureVerified": true
+  }
+}

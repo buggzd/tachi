@@ -3,7 +3,18 @@ package com.jellyfinforrayneo.video;
 /** Absolute deadlines avoid losing an entire decoder frame to small scheduling jitter. */
 final class SampleCadence
 {
-    private static final long PERIOD_NS = 83_333_333L;
+    private final long periodNs;
+
+    SampleCadence()
+    {
+        this(12);
+    }
+
+    SampleCadence(int hz)
+    {
+        if (hz != 12 && hz != 24) throw new IllegalArgumentException("depth cadence");
+        periodNs = 1_000_000_000L / hz;
+    }
     private long next;
 
     boolean due(long now)
@@ -13,6 +24,6 @@ final class SampleCadence
 
     void submitted(long now)
     {
-        next = next == 0 ? now + PERIOD_NS : now + PERIOD_NS - (now - next) % PERIOD_NS;
+        next = next == 0 ? now + periodNs : now + periodNs - (now - next) % periodNs;
     }
 }

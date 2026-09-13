@@ -152,12 +152,16 @@ std::string describeQnnError(const InterfaceTable& api, Qnn_ErrorHandle_t error)
     return stream.str();
 }
 
+} // namespace
+#include "gpu_shared_probe.h"
+namespace {
+
 template <typename InterfaceTable>
 std::string runDirectReluGraph(
         const InterfaceTable& api,
         Qnn_BackendHandle_t backend,
         Qnn_DeviceHandle_t device,
-        const char* label) {
+        const char* label, bool sharedMemory) {
     std::ostringstream output;
     output << "directGraph=" << label << " begin\n";
     bool chainSuccess = true;
@@ -292,6 +296,58 @@ std::string runDirectReluGraph(
             failedStage = "outputCheck";
         }
     }
+    // Device-only registered-memory experiment, separate from the production depth backend.
+    if (sharedMemory && chainSuccess && outputCheck && api.memRegister && api.memDeRegister) {
+        using Alloc = void* (*)(int, unsigned int, int);
+        using Free = void (*)(void*);
+        using ToFd = int (*)(void*);
+        void* rpcLibrary = dlopen("libcdsprpc.so", RTLD_NOW | RTLD_LOCAL);
+        auto alloc = rpcLibrary ? reinterpret_cast<Alloc>(dlsym(rpcLibrary, "rpcmem_alloc")) : nullptr;
+        auto freeMem = rpcLibrary ? reinterpret_cast<Free>(dlsym(rpcLibrary, "rpcmem_free")) : nullptr;
+        auto toFd = rpcLibrary ? reinterpret_cast<ToFd>(dlsym(rpcLibrary, "rpcmem_to_fd")) : nullptr;
+        output << "sharedMemorySymbols=" << (alloc && freeMem && toFd) << "\n";
+        if (alloc && freeMem && toFd) {
+            void* blocks[2] = {alloc(25, 1, 4096), alloc(25, 1, 4096)};
+            Qnn_MemHandle_t handles[2] = {nullptr, nullptr};
+            bool registered = blocks[0] && blocks[1];
+            for (int i = 0; i < 2 && registered; ++i) {
+                Qnn_MemDescriptor_t desc = QNN_MEM_DESCRIPTOR_INIT;
+                desc.memShape.numDim = 4;
+                desc.memShape.dimSize = dimensions;
+                desc.dataType = QNN_DATATYPE_UFIXED_POINT_8;
+                desc.memType = QNN_MEM_TYPE_ION;
+                desc.ionInfo.fd = toFd(blocks[i]);
+                auto registeredStatus = api.memRegister(context, &desc, 1, &handles[i]);
+                output << "sharedRegister[" << i << "]=" << hexError(registeredStatus) << "\n";
+                registered = registeredStatus == QNN_SUCCESS;
+            }
+            bool matched = registered;
+            if (registered) {
+                Qnn_Tensor_t sharedInput = input, sharedOutput = outputTensor;
+                sharedInput.v1.memType = QNN_TENSORMEMTYPE_MEMHANDLE;
+                sharedInput.v1.memHandle = handles[0];
+                sharedOutput.v1.memType = QNN_TENSORMEMTYPE_MEMHANDLE;
+                sharedOutput.v1.memHandle = handles[1];
+                // Reuse registered handles across changing inputs: catches stale caches/outputs.
+                for (int iteration = 0; iteration < 100 && matched; ++iteration) {
+                    auto* in = static_cast<uint8_t*>(blocks[0]);
+                    auto* out = static_cast<uint8_t*>(blocks[1]);
+                    for (int j = 0; j < 16; ++j) { in[j] = (iteration * 17 + j * 29) & 255; out[j] = 0; }
+                    auto executeStatus = api.graphExecute(graph, &sharedInput, 1, &sharedOutput, 1, nullptr, nullptr);
+                    matched = executeStatus == QNN_SUCCESS;
+                    for (int j = 0; j < 16; ++j) matched = matched && out[j] == std::max<uint8_t>(in[j], 128);
+                }
+            }
+            output << "sharedMemoryRelu100=" << (matched ? "PASS" : "FAIL") << "\n";
+            for (int i = 0; i < 2; ++i) {
+                if (handles[i]) output << "sharedDeregister[" << i << "]=" << hexError(api.memDeRegister(&handles[i], 1)) << "\n";
+                if (blocks[i]) freeMem(blocks[i]);
+            }
+        }
+        if (rpcLibrary) dlclose(rpcLibrary);
+    }
+    if (sharedMemory && chainSuccess && outputCheck && api.memRegister && api.memDeRegister)
+        output << runGpuSharedProbe(api, context, graph, input, outputTensor);
     if (api.contextFree != nullptr) {
         Qnn_ErrorHandle_t freeStatus = api.contextFree(context, nullptr);
         output << "contextFree=" << describeQnnError(api, freeStatus) << "\n";
@@ -306,7 +362,7 @@ std::string runDirectReluGraph(
     return output.str();
 }
 
-std::string runProbe(const std::string& directory, uint32_t socModel) {
+std::string runProbe(const std::string& directory, uint32_t socModel, bool sharedMemory) {
     const std::string adspPath = directory + ";" + kAdspLibraryPath;
     setenv("ADSP_LIBRARY_PATH", adspPath.c_str(), 1);
 
@@ -482,7 +538,7 @@ std::string runProbe(const std::string& directory, uint32_t socModel) {
     if (chainPass) {
         output << "deviceCreateSuccess=soc+signedpd\n";
         const std::string graphResult = runDirectReluGraph(
-                interfaceTable, backend, device, "relu_u8");
+                interfaceTable, backend, device, "relu_u8", sharedMemory);
         output << graphResult;
         chainPass = graphResult.find("directGraph=relu_u8 PASS") != std::string::npos;
         if (interfaceTable.deviceFree != nullptr) {
@@ -512,7 +568,7 @@ std::string runProbe(const std::string& directory, uint32_t socModel) {
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_tachi_stereolab_npubenchmark_MainActivity_nativeProbeQnn(
-        JNIEnv* environment, jobject, jstring backendDirectory, jint socModel) {
+        JNIEnv* environment, jobject, jstring backendDirectory, jint socModel, jboolean sharedMemory) {
     if (backendDirectory == nullptr) {
         return environment->NewStringUTF("directProbe=invalidBackendDirectory\n");
     }
@@ -521,7 +577,7 @@ Java_com_tachi_stereolab_npubenchmark_MainActivity_nativeProbeQnn(
     if (chars != nullptr) {
         environment->ReleaseStringUTFChars(backendDirectory, chars);
     }
-    std::string result = runProbe(directory, static_cast<uint32_t>(socModel));
+    std::string result = runProbe(directory, static_cast<uint32_t>(socModel), sharedMemory == JNI_TRUE);
     logLine(result);
     return environment->NewStringUTF(result.c_str());
 }

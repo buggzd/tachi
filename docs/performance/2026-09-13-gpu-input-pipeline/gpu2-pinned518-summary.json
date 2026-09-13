@@ -1,0 +1,123 @@
+{
+  "shape": [
+    518,
+    294
+  ],
+  "rows": 98,
+  "durationSeconds": 98.925,
+  "depthHz": 11.998989133181704,
+  "positionAdvanceMs": 98924,
+  "ageMedianMs": 133.0,
+  "ageP95Ms": 180,
+  "lastWindowWorker": {
+    "count": 1371,
+    "window": 512,
+    "preprocessMs": {
+      "mean": 0.0581,
+      "p95": 0.1042
+    },
+    "inferenceMs": {
+      "mean": 56.7926,
+      "p95": 58.2946
+    },
+    "stabilizeMs": {
+      "mean": 0.5495,
+      "p95": 0.9471
+    }
+  },
+  "lastWindowRender": {
+    "valid": true,
+    "uploads": 1371,
+    "ageMs": 123,
+    "stereo": true,
+    "debug": true,
+    "depthWidth": 518,
+    "depthHeight": 294,
+    "eyeTargetWidth": 1920,
+    "gpuRender": {
+      "count": 2976,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 10.8458,
+      "p95Ms": 12.0611
+    },
+    "depthTargetHz": 12,
+    "asyncCapturePoll": true,
+    "gpuPreprocess": true,
+    "captureSlots": 2,
+    "pinnedDepthOutput": true,
+    "gpuStabilization": true,
+    "gpuStabilize": {
+      "count": 1370,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 0.007,
+      "p95Ms": 0.0097
+    },
+    "gpuStages": {
+      "count": 1371,
+      "window": 512,
+      "submitMs": {
+        "mean": 0.8869,
+        "p95": 1.4786
+      },
+      "completionMs": {
+        "mean": 9.681,
+        "p95": 22.3909
+      },
+      "statusReadMs": {
+        "mean": 0.0529,
+        "p95": 0.0894
+      }
+    },
+    "timings": {
+      "count": 1371,
+      "window": 512,
+      "captureToUploadMs": {
+        "mean": 91.2399,
+        "p95": 109.3896
+      },
+      "uploadMs": {
+        "mean": 0.8887,
+        "p95": 1.4807
+      },
+      "drawSubmitMs": {
+        "mean": 0.2067,
+        "p95": 0.4714
+      }
+    }
+  },
+  "lastWindowReadback": {
+    "count": 1372,
+    "window": 512,
+    "submitMs": {
+      "mean": 0.4735,
+      "p95": 0.8141
+    },
+    "fenceObservedMs": {
+      "mean": 21.7828,
+      "p95": 35.8805
+    },
+    "mapCopyMs": {
+      "mean": 0.2715,
+      "p95": 0.5279
+    }
+  },
+  "limits": "Rate and age exclude the first 15s of playing+ready by default. Stage values are the final rolling windows, possibly including startup. Depth age is wall clock, not media PTS mismatch. GPU overlaps CPU stages; these are not display frame-rate measurements.",
+  "lastWindowScheduling": {
+    "count": 1371,
+    "window": 512,
+    "queueWaitMs": {
+      "mean": 1.3631,
+      "p95": 9.3556
+    },
+    "captureToWorkerMs": {
+      "mean": 23.935,
+      "p95": 38.6306
+    },
+    "workerServiceMs": {
+      "mean": 57.4755,
+      "p95": 59.1072
+    }
+  }
+}

@@ -630,6 +630,17 @@ results and reset history. Completion polling is nonblocking and does not repeat
 draw SBS. QNN input preparation and host-buffer transfers remain; this is not zero-copy.
 See [device comparison and numerical limits](performance/2026-09-13-gpu-stabilization/README.md).
 
+Further opt-in experiments use `gpuPreprocess`, `captureSlots=2`, `pinnedDepthOutput`,
+`asyncCapturePoll`, and `depthHz=24`. GPU preprocessing requires QNN/GPU stabilization
+and delivers normalized float CHW instead of RGBA to the worker. Each of at most two
+capture leases owns a separate RGB texture and direct buffer until its consumer is done;
+generation invalidation never reuses live worker memory. One readback fence and one
+serial inference worker remain. GPU raw handoff is bounded by the capture capacity.
+The observer may poll readback completion without a full SBS redraw. Default builds
+remain single-slot, CPU input, 12 Hz; pinned ORT host output is not registered QNN memory.
+See [input, pipeline and shared-memory device evidence](performance/2026-09-13-gpu-input-pipeline/README.md).
+
+
 The existing phone diagnostic share includes whitelisted native playback samples: latest
 120 entries, at most 1 Hz plus status/subtitle-error changes. Samples survive player teardown
 within the same Activity/process, but not a force stop; already exported cache files are separate. Formats, decoder, numeric errors,

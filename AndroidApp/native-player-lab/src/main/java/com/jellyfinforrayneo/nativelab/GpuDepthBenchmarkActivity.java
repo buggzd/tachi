@@ -34,6 +34,7 @@ public final class GpuDepthBenchmarkActivity extends Activity implements GLSurfa
     {
         try
         {
+            preprocessCheck();
             benchmark();
         }
         catch (Exception error)
@@ -41,6 +42,69 @@ public final class GpuDepthBenchmarkActivity extends Activity implements GLSurfa
             // Only generated shader/test errors: no media, network or account data exists here.
             Log.e("GpuDepthBenchmark", "FAIL " + error.getMessage());
         }
+    }
+
+    private void preprocessCheck() throws Exception
+    {
+        int w = NativeVideoView.SAMPLE_WIDTH, h = NativeVideoView.SAMPLE_HEIGHT, n = w * h;
+        int[] texture = new int[1];
+        GLES30.glGenTextures(1, texture, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, texture[0]);
+        GLES30.glTexStorage2D(GLES30.GL_TEXTURE_2D, 1, GLES30.GL_RGBA8, w, h);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
+        ByteBuffer rgba = ByteBuffer.allocateDirect(n * 4);
+        for (int i = 0; i < n; i++)
+            rgba.put((byte) i).put((byte) (i / w)).put((byte) (i * 37)).put((byte) 255);
+        rgba.flip();
+        GLES30.glTexSubImage2D(GLES30.GL_TEXTURE_2D, 0, 0, 0, w, h, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, rgba);
+        ByteBuffer out = ByteBuffer.allocateDirect(n * 12).order(java.nio.ByteOrder.nativeOrder());
+        try (com.jellyfinforrayneo.video.GpuPreprocessor gpu = new com.jellyfinforrayneo.video.GpuPreprocessor(w, h))
+        {
+            gpu.submit(texture[0]);
+            GLES30.glFinish(); // Numerical test only.
+            gpu.copyTo(out);
+            float max = 0;
+            float[] means = {.485f, .456f, .406f}, stds = {.229f, .224f, .225f};
+            for (int c = 0; c < 3; c++)
+                for (int i = 0; i < n; i++)
+                {
+                    float expected = ((rgba.get(i * 4 + c) & 255) / 255f - means[c]) / stds[c];
+                    float actual = out.getFloat((c * n + i) * 4);
+                    if (!Float.isFinite(actual)) throw new IllegalStateException("preprocess nonfinite");
+                    max = Math.max(max, Math.abs(expected - actual));
+                }
+            if (max != 0f) throw new IllegalStateException("preprocess values/layout " + max);
+            Log.i("GpuInputBenchmark", "{\"passed\":true,\"width\":" + w + ",\"height\":" + h
+                    + ",\"values\":" + (n * 3) + ",\"maxAbsError\":" + max + "}");
+        }
+        if (BuildConfig.NATIVE_QNN)
+        {
+            try (com.jellyfinforrayneo.video.NativeDepthProcessor processor = LabDepthProcessor.create(this))
+            {
+                processor.prepare();
+                float[] cpu = processor.process(rgba.duplicate(), 1).raw;
+                float[] repeated = processor.process(rgba.duplicate(), 1).raw;
+                float[] gpu = processor.processChw(out.duplicate(), 1).raw;
+                if (cpu == null || gpu == null) throw new IllegalStateException("raw reference unavailable");
+                float max = 0, repeatMax = 0;
+                double squared = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    if (!Float.isFinite(cpu[i]) || !Float.isFinite(gpu[i])) throw new IllegalStateException("inference nonfinite");
+                    repeatMax = Math.max(repeatMax, Math.abs(cpu[i] - repeated[i]));
+                    float delta = Math.abs(repeated[i] - gpu[i]);
+                    max = Math.max(max, delta);
+                    squared += delta * delta;
+                }
+                Log.i("GpuInputBenchmark", "{\"npuInputComparison\":true,\"maxDepthError\":" + max
+                        + ",\"cpuRepeatMaxError\":" + repeatMax + ",\"depthRmse\":" + Math.sqrt(squared / n) + "}");
+            }
+        }
+        GLES30.glDeleteTextures(1, texture, 0);
+        String extensions = GLES30.glGetString(GLES30.GL_EXTENSIONS);
+        Log.i("GpuInputBenchmark", "{\"externalBuffer\":" + extensions.contains("GL_EXT_external_buffer")
+                + ",\"memoryObjectFd\":" + extensions.contains("GL_EXT_memory_object_fd") + "}");
     }
 
     private void benchmark() throws Exception

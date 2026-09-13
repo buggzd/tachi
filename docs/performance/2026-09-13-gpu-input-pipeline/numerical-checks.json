@@ -1,0 +1,48 @@
+{
+  "variant": "final exact lookup normalization",
+  "checks": [
+    {
+      "passed": true,
+      "width": 392,
+      "height": 224,
+      "values": 263424,
+      "maxAbsError": 0.0
+    },
+    {
+      "npuInputComparison": true,
+      "maxDepthError": 0.0,
+      "cpuRepeatMaxError": 0.0,
+      "depthRmse": 0.0
+    },
+    {
+      "externalBuffer": true,
+      "memoryObjectFd": true
+    },
+    {
+      "passed": true,
+      "width": 392,
+      "height": 224,
+      "frames": 80,
+      "rejected": 6,
+      "pixelsCompared": 6849024,
+      "sourceOverwriteCases": 40,
+      "maxR8Error": 1,
+      "meanR8Error": 1.4600620467967408e-06,
+      "cpuMedianMs": 5.508854,
+      "gpuSubmitToObservedMedianMs": 2.308803,
+      "gpu": {
+        "count": 79,
+        "window": 79,
+        "disjoint": 0,
+        "meanMs": 0.0049,
+        "p95Ms": 0.0053
+      }
+    }
+  ],
+  "earlierArithmeticVariant": {
+    "chwMaxAbsError": 7.1525574e-07,
+    "depthMaxAbsError": 0.04309511,
+    "depthRmse": 0.017157614429868847,
+    "replaced": true
+  }
+}

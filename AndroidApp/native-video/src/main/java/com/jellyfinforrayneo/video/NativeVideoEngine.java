@@ -35,10 +35,10 @@ public final class NativeVideoEngine implements AutoCloseable
 
     private final ExoPlayer player;
     private final NativeVideoView view;
-    private final FrameSlot slot = new FrameSlot();
+    private final FrameSlot slot = new FrameSlot(BuildConfig.CAPTURE_SLOTS);
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ThreadPoolExecutor samples = new ThreadPoolExecutor(1, 1, 0,
-            TimeUnit.SECONDS, new ArrayBlockingQueue<>(4)); // One frame, explicit retry close/prepare, and ordered shutdown.
+            TimeUnit.SECONDS, new ArrayBlockingQueue<>(4)); // Up to two leased frames, explicit retry close/prepare, and ordered shutdown.
     private final Listener listener;
     private final SampleConsumer consumer;
     private NativeDepthProcessor depthProcessor;
@@ -52,6 +52,7 @@ public final class NativeVideoEngine implements AutoCloseable
     private String errorComponent = "none";
     private long metricsAt;
     private org.json.JSONObject depthMetrics;
+    private final ReadbackTimings schedulingTimings = new ReadbackTimings("queueWait", "captureToWorker", "workerService");
     private final ReadbackTimings depthTimings = new ReadbackTimings("preprocess", "inference", "stabilize");
     private volatile boolean depthReady;
     private volatile String depthState;
@@ -131,21 +132,28 @@ public final class NativeVideoEngine implements AutoCloseable
             @Override
             public void sample(ByteBuffer bytes, long timestamp, long capturedNs, long lease, long generation)
             {
+                long queuedNs = System.nanoTime();
                 try
                 {
                     samples.execute(() ->
                     {
+                        long workerStart = System.nanoTime();
                         boolean rendererOwnsLease = false;
                         try
                         {
                             if (!closed && slot.current(lease, generation))
                             {
-                                consumer.consume(bytes.asReadOnlyBuffer(), NativeVideoView.SAMPLE_WIDTH,
-                                        NativeVideoView.SAMPLE_HEIGHT, timestamp);
+                                if (!BuildConfig.GPU_PREPROCESS)
+                                {
+                                    consumer.consume(bytes.asReadOnlyBuffer(), NativeVideoView.SAMPLE_WIDTH,
+                                            NativeVideoView.SAMPLE_HEIGHT, timestamp);
+                                }
                                 sampleCount++;
                                 if (depthProcessor != null && depthReady)
                                 {
-                                    DepthResult result = depthProcessor.process(bytes, generation);
+                                    DepthResult result = BuildConfig.GPU_PREPROCESS
+                                            ? depthProcessor.processChw(bytes, generation)
+                                            : depthProcessor.process(bytes, generation);
                                     depthTimings.record(result.preprocessNs, result.inferenceNs, result.stabilizeNs);
                                     int delay = diagnosticDelayMs;
                                     if (delay > 0) Thread.sleep(delay);
@@ -168,6 +176,7 @@ public final class NativeVideoEngine implements AutoCloseable
                         }
                         finally
                         {
+                            schedulingTimings.record(workerStart - queuedNs, workerStart - capturedNs, System.nanoTime() - workerStart);
                             if (!rendererOwnsLease) slot.release(lease);
                         }
                     });
@@ -285,7 +294,8 @@ public final class NativeVideoEngine implements AutoCloseable
     public String depthTimingsJson()
     {
         return "{\"state\":\"" + depthState + "\",\"discarded\":" + discardedDepth
-                + ",\"diagnosticDelayMs\":" + diagnosticDelayMs + ",\"worker\":" + depthTimings.json()
+                + ",\"diagnosticDelayMs\":" + diagnosticDelayMs + ",\"scheduling\":" + schedulingTimings.json()
+                + ",\"worker\":" + depthTimings.json()
                 + ",\"render\":" + view.depthStatusJson() + "}";
     }
 

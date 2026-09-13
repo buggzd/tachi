@@ -38,6 +38,10 @@ public final class QnnDepthProcessor implements NativeDepthProcessor
     private OrtSession session;
     private OnnxTensor tensor;
     private String inputName;
+    private String outputName;
+    private OnnxTensor pinnedOutput;
+    private final FloatBuffer outputStorage = BuildConfig.PINNED_DEPTH_OUTPUT
+            ? ByteBuffer.allocateDirect(PIXELS * 4).order(ByteOrder.nativeOrder()).asFloatBuffer() : null;
     private TemporalDepth stabilizer;
     private long generation = -1;
 
@@ -86,6 +90,12 @@ public final class QnnDepthProcessor implements NativeDepthProcessor
             session = environment.createSession(model, options);
         }
         inputName = session.getInputNames().iterator().next();
+        outputName = session.getOutputNames().iterator().next();
+        if (BuildConfig.PINNED_DEPTH_OUTPUT)
+        {
+            long[] shape = ((ai.onnxruntime.TensorInfo) session.getOutputInfo().get(outputName).getInfo()).getShape();
+            pinnedOutput = OnnxTensor.createTensor(environment, outputStorage, shape);
+        }
         tensor = OnnxTensor.createTensor(environment, input, new long[]{1, 3, HEIGHT, WIDTH});
     }
 
@@ -108,12 +118,7 @@ public final class QnnDepthProcessor implements NativeDepthProcessor
         input.put(chw);
         input.rewind();
         long preprocessed = System.nanoTime();
-        try (OrtSession.Result result = session.run(Collections.singletonMap(inputName, tensor)))
-        {
-            FloatBuffer output = ((OnnxTensor) result.get(0)).getFloatBuffer();
-            if (output.remaining() != PIXELS) throw new IllegalStateException("depth shape");
-            output.get(raw);
-        }
+        infer();
         long inferred = System.nanoTime();
         if (BuildConfig.GPU_DEPTH_STABILIZATION)
         {
@@ -126,8 +131,49 @@ public final class QnnDepthProcessor implements NativeDepthProcessor
     }
 
     @Override
+    public DepthResult processChw(ByteBuffer chwBytes, long visit) throws Exception
+    {
+        if (!BuildConfig.GPU_DEPTH_STABILIZATION || chwBytes.remaining() != PIXELS * 12)
+            throw new IllegalArgumentException("chw shape");
+        long start = System.nanoTime();
+        // ORT wraps the capture's direct buffer; the lease outlives synchronous run.
+        try (OnnxTensor captured = OnnxTensor.createTensor(environment,
+                chwBytes.duplicate().order(ByteOrder.nativeOrder()).asFloatBuffer(),
+                new long[]{1, 3, HEIGHT, WIDTH}))
+        {
+            long prepared = System.nanoTime();
+            infer(captured);
+            long inferred = System.nanoTime();
+            float[] owned = raw.clone();
+            return DepthResult.raw(owned, prepared - start, inferred - prepared, System.nanoTime() - inferred);
+        }
+    }
+
+    private void infer() throws Exception
+    {
+        infer(tensor);
+    }
+
+    private void infer(OnnxTensor source) throws Exception
+    {
+        try (OrtSession.Result result = pinnedOutput == null
+                ? session.run(Collections.singletonMap(inputName, source))
+                : session.run(Collections.singletonMap(inputName, source), Collections.singletonMap(outputName, pinnedOutput)))
+        {
+            // Pinned output avoids getFloatBuffer's per-run heap allocation and copy in ORT 1.22.
+            FloatBuffer output = pinnedOutput == null
+                    ? ((OnnxTensor) result.get(0)).getFloatBuffer() : outputStorage.duplicate();
+            output.rewind();
+            if (output.remaining() != PIXELS) throw new IllegalStateException("depth shape");
+            output.get(raw);
+        }
+    }
+
+    @Override
     public void close() throws Exception
     {
+        if (pinnedOutput != null) pinnedOutput.close();
+        pinnedOutput = null;
         if (tensor != null) tensor.close();
         if (session != null) session.close();
         tensor = null;

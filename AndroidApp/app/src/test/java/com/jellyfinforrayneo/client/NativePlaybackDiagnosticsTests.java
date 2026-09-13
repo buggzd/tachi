@@ -16,6 +16,9 @@ public class NativePlaybackDiagnosticsTests
                 + "\"render\":{\"valid\":true,\"ageMs\":80,\"depthWidth\":392,\"depthHeight\":224,\"gpuRender\":{\"meanMs\":9.5,\"p95Ms\":11},"
                 + "\"gpuStabilization\":true,\"gpuStabilize\":{\"meanMs\":0.1,\"p95Ms\":0.2,\"secret\":\"private-secret\"},"
                 + "\"gpuStages\":{\"completionMs\":{\"mean\":5.5,\"p95\":8,\"url\":\"private-url\"}}}}}");
+        state.getJSONObject("depth").put("scheduling", new JSONObject("{\"queueWaitMs\":{\"mean\":1.2,\"p95\":2.3,\"url\":\"private\"}}"));
+        state.getJSONObject("depth").getJSONObject("render").put("gpuPreprocess", true)
+                .put("pinnedDepthOutput", true).put("asyncCapturePoll", true).put("captureSlots", 2).put("depthTargetHz", 24);
         log.record(state, 0);
         String report = log.export();
         assertTrue(report.contains("c2.qti.hevc.decoder"));
@@ -23,6 +26,10 @@ public class NativePlaybackDiagnosticsTests
         assertTrue(report.contains("gpuMeanMs\":9.5"));
         assertTrue(report.contains("depthWidth\":392"));
         assertTrue(report.contains("depthHeight\":224"));
+        assertTrue(report.contains("queueWaitMsMean\":1.2"));
+        assertTrue(report.contains("gpuPreprocess\":true"));
+        assertTrue(report.contains("captureSlots\":2"));
+        assertTrue(report.contains("depthTargetHz\":24"));
         assertTrue(report.contains("gpuStabilization\":true"));
         assertTrue(report.contains("gpuStabilizeMeanMs\":0.1"));
         assertTrue(report.contains("gpuStabilizeCompletionMeanMs\":5.5"));
