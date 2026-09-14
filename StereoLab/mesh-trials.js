@@ -1,3 +1,4 @@
+import {makeBackgroundLiquid, liquidFragment} from './background-liquid.mjs';
 import {makeElasticGrid, elasticVertex} from './elastic-grid.mjs';
 import {EdgeSplat} from './edge-splat.mjs';
 import {depthIndex} from './quality-trials-core.mjs';
@@ -20,7 +21,8 @@ function program(vertex, fragment) {
     return p;
 }
 let pixel, mesh, edge, elastic, elasticTexture, elasticCacheKey;
-let elasticGrid;
+let elasticGrid, liquid, liquidTexture, liquidCacheKey;
+const frameCount = () => manifest.clips[Number($('clip').value)].frames || manifest.frames;
 function draw() {
     if (!ready || video.readyState < 2) return;
     const profile = manifest.profiles.find(p => p.id === $('profile').value);
@@ -41,6 +43,18 @@ function draw() {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     const useEdge = strategy === 'edge' && !['depth', 'source', 'aligned'].includes(view);
     if (useEdge || view === 'aligned') edge.prepare($('align-edges').checked);
+    $('liquid-controls').hidden = strategy !== 'liquid';
+    const useLiquid = strategy === 'liquid' && !['depth','source','aligned'].includes(view);
+    if(useLiquid){
+        const feather=Number($('liquid-feather').value),amount=Number($('liquid-amount').value);
+        $('liquid-values').textContent=`羽化 ${feather} px · 拉伸 ${Math.round(amount*100)}%`;
+        const key=`${generation}:${profile.id}:${index}:${strength}:${feather}:${amount}`;
+        if(key!==liquidCacheKey){
+            const field=makeBackgroundLiquid(data.bytes.subarray(index*size,(index+1)*size),profile.width,profile.height,strength,feather,amount);
+            gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,liquidTexture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+            gl.texImage2D(gl.TEXTURE_2D,0,gl.RG16F,profile.width,profile.height,0,gl.RG,gl.FLOAT,field);liquidCacheKey=key;
+        }
+    }
     const useElastic = strategy === 'elastic' && !['depth', 'source', 'aligned'].includes(view);
     if (useElastic) {
         const key = `${generation}:${profile.id}:${index}:${strength}:${$('mesh-density').value}`;
@@ -53,10 +67,11 @@ function draw() {
         }
     }
     const useMesh = ['mesh', 'cut'].includes(strategy) && !['depth', 'source', 'aligned'].includes(view);
-    const p = useElastic ? elastic : useMesh ? mesh : pixel;
+    const p = useLiquid ? liquid : useElastic ? elastic : useMesh ? mesh : pixel;
     gl.useProgram(p);
     const loc = name => gl.getUniformLocation(p, name);
     gl.uniform1f(loc('strength'), strength);
+    gl.uniform1i(loc('liquidMap'),6);gl.uniform1i(loc('debugLiquid'),$('liquid-debug').checked?1:0);
     gl.uniform1i(loc('video'), 0); gl.uniform1i(loc('depthMap'), 1);
     gl.clearColor(.28, .02, .3, useElastic ? 0 : 1); gl.clearDepth(1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -80,7 +95,7 @@ function draw() {
     }
     canvas.dataset.ready = 'true'; canvas.dataset.frame = frame; canvas.dataset.depthIndex = index;
     $('seek').value = frame;
-    $('status').textContent = `视频帧 ${frame} / ${manifest.frames - 1} · 深度帧 ${index} · ${profile.width}×${profile.height} · 每眼 1920×1080 · ${useElastic ? '弹性网格：全覆盖，无补洞' : '紫色为空洞（未补区域）'}`;
+    $('status').textContent = `视频帧 ${frame} / ${frameCount() - 1} · 深度帧 ${index} · ${profile.width}×${profile.height} · 每眼 1920×1080 · ${useLiquid ? '背景局部液化 · 未覆盖处保留原始填充' : useElastic ? '弹性网格：全覆盖，无补洞' : '紫色为空洞（未补区域）'}`;
 }
 async function load() {
     const token = ++generation;
@@ -98,18 +113,18 @@ async function load() {
     maps = Object.fromEntries(entries);
     await new Promise((resolve, reject) => { video.onloadeddata = resolve; video.onerror = () => reject(Error('视频加载失败')); video.src = clip.source; video.load(); });
     if (token !== generation) return;
-    frame = 0; ready = true; draw();
+    frame = 0; $('seek').max=frameCount()-1; ready = true; draw();
 }
 function callback(_now, meta) {
-    if (ready) {
+    if (ready && !video.paused) {
         const clip = manifest.clips[Number($('clip').value)];
         if (meta.mediaTime >= clip.duration - .5 / clip.fps) video.currentTime = 0;
-        else { frame = Math.min(manifest.frames - 1, Math.max(0, Math.round(meta.mediaTime * clip.fps))); draw(); }
+        else { frame = Math.min(frameCount() - 1, Math.max(0, Math.round(meta.mediaTime * clip.fps))); draw(); }
     }
     video.requestVideoFrameCallback(callback);
 }
 $('clip').onchange = () => load().catch(fail);
-for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes', 'strength', 'mesh-density']) $(id).oninput = () => {
+for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes', 'strength', 'mesh-density', 'liquid-feather', 'liquid-amount', 'liquid-debug']) $(id).oninput = () => {
     $('threshold-value').value = $('threshold').value;
     if ($('view').value === 'sbs') { $('zoom').value = '1'; canvas.style.transform = ''; }
     $('zoom').disabled = $('view').value === 'sbs'; draw();
@@ -117,12 +132,18 @@ for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fi
 $('play').onclick = () => { if (ready) { if (video.paused) video.play().catch(fail); else video.pause(); } };
 $('restart').onclick = () => { if (ready) video.currentTime = 0; };
 $('seek').oninput = () => { if (ready) { video.pause(); video.currentTime = Number($('seek').value) / manifest.clips[Number($('clip').value)].fps; } };
+video.addEventListener('ended',()=>{if(ready){video.currentTime=0;video.play().catch(fail);}});
+video.addEventListener('seeked',()=>{if(ready){frame=Math.min(frameCount()-1,Math.round(video.currentTime*manifest.clips[Number($('clip').value)].fps));draw();}});
 $('zoom').onchange = () => { canvas.style.transform = `scale(${$('zoom').value})`; };
 canvas.onclick = e => { const r = canvas.parentElement.getBoundingClientRect(); canvas.style.transformOrigin = `${100 * (e.clientX-r.left)/r.width}% ${100 * (e.clientY-r.top)/r.height}%`; };
 $('fullscreen').onclick = () => $('viewer').requestFullscreen().catch(fail);
 canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); fail(Error('图形上下文丢失，请刷新')); });
 try {
     if (!gl || !video.requestVideoFrameCallback) throw Error('需要 WebGL 2 和视频帧回调支持');
+    liquid=program(fullscreenVertex,liquidFragment);
+    liquidTexture=gl.createTexture();gl.activeTexture(gl.TEXTURE6);gl.bindTexture(gl.TEXTURE_2D,liquidTexture);
+    for(const k of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER])gl.texParameteri(gl.TEXTURE_2D,k,gl.LINEAR);
+    for(const k of [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T])gl.texParameteri(gl.TEXTURE_2D,k,gl.CLAMP_TO_EDGE);
     pixel = program(fullscreenVertex, pixelFragment); mesh = program(meshVertex, meshFragment);
     for (let i = 0; i < 2; i++) {
         gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
@@ -137,8 +158,11 @@ try {
     const response = await fetch('/samples/quality-p02-p98/manifest.json');
     if (!response.ok) throw Error('缺少 2%／98% 本地样本');
     manifest = await response.json();
-    $('clip').replaceChildren(...manifest.clips.map((_, i) => new Option(`片段 ${i+1}`, i)));
+    const extra=await fetch('/samples/quality-motion/manifest.json');
+    if(extra.ok){const motion=await extra.json();manifest.clips.push(...motion.clips.map(c=>({...c,frames:motion.frames})));}
+    $('clip').replaceChildren(...manifest.clips.map((c, i) => new Option(c.label || `片段 ${i+1}`, i)));
+    if(extra.ok)$('clip').value=String(manifest.clips.length-1);
     $('profile').replaceChildren(...manifest.profiles.map(p => new Option(p.label, p.id)));
-    $('profile').value = 'p2'; $('seek').max = manifest.frames - 1;
+    $('profile').value = 'p2'; $('seek').max = frameCount() - 1;
     await load(); video.requestVideoFrameCallback(callback);
 } catch (error) { fail(error); }

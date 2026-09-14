@@ -55,12 +55,24 @@ def run(folder, variant, raw, rgba):
 
 
 def main():
-    global OUT
+    global OUT, FRAMES
     parser = argparse.ArgumentParser()
     parser.add_argument('--percentiles', choices=['5-95', '2-98'], default='5-95')
+    parser.add_argument('--extra-source', type=Path, help='Local MP4 in samples; writes a separate mesh-only dataset')
+    parser.add_argument('--frames', type=int, default=96)
     args = parser.parse_args()
+    FRAMES = args.frames
+    if FRAMES < 2 or FRAMES > 1800:
+        parser.error('frames must be 2..1800')
     low, high = map(int, args.percentiles.split('-'))
     dataset = 'quality-v1' if args.percentiles == '5-95' else 'quality-p02-p98'
+    if args.extra_source:
+        if args.percentiles != '2-98':
+            parser.error('mesh extra-source requires --percentiles 2-98')
+        args.extra_source = args.extra_source.resolve()
+        if args.extra_source.parent != (LOCAL / 'samples').resolve():
+            parser.error('extra-source must be directly inside local samples')
+        dataset = 'quality-motion'
     OUT = LOCAL / 'samples' / dataset
     OUT.mkdir(parents=True, exist_ok=True)
     cache = LOCAL / 'quality-cache'
@@ -72,8 +84,8 @@ def main():
                       dict(id='p2', label='392×224 · 当前稳定器 · 半帧率 · 延后 2 帧', width=392, height=224, stride=2, delay=2),
                       dict(id='p3', label='266×154 · 逐帧深度与颜色配对 · 离线上界', width=266, height=154, stride=1, delay=0)],
                   limits='CPU float inference cached offline, actual Java filter, desktop WebGL translation of native gather33. Not QNN timing, not native playback, not source-matched eye-view ground truth. p3 changes update rate AND alignment; it also uses the same per-update filter at higher cadence, changing its wall-time response. This is an upper-bound diagnostic, not a single-variable quality gain. Startup assumes the first depth is available; steady-state comparisons are the target.')
-    for clip in range(3):
-        path = LOCAL / f'samples/clip-{clip}.mp4'
+    for clip in range(1 if args.extra_source else 3):
+        path = args.extra_source or LOCAL / f'samples/clip-{clip}.mp4'
         cap = cv2.VideoCapture(str(path)); fps = cap.get(cv2.CAP_PROP_FPS)
         frames = []
         for _ in range(FRAMES):
@@ -84,7 +96,7 @@ def main():
         cap.release()
         if len(frames) != FRAMES:
             raise RuntimeError('Clip too short')
-        info = dict(id=clip, fps=fps, duration=FRAMES / fps, source=f'/samples/clip-{clip}.mp4',
+        info = dict(id=clip, fps=fps, duration=FRAMES / fps, source=f'/samples/{path.name}', frames=FRAMES, label=f'高动态 · {FRAMES / fps:g} 秒' if args.extra_source else f'片段 {clip+1}',
                     sourceSha256=digest(path), data={}, models={})
         for w, h in [(266,154), (392,224)]:
             model = LOCAL / ('npu/depth-anything-v2-small-fixed-266.onnx' if w == 266 else 'npu/resolution-392/depth-anything-v2-small-fixed-392.onnx')
