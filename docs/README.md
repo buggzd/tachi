@@ -16,6 +16,7 @@
 | 原生播放迁移与独立解码调试入口 | [原生视频](NATIVE_VIDEO.md) |
 | 已采用的性能措施、采样方法和证据范围 | [性能维护](PERFORMANCE.md) |
 | 已实现范围、待开发功能和待复核问题 | [功能路线图](JELLYFIN_FEATURE_ROADMAP.md) |
+| 已尝试与待探索的深度、时序、补洞、网格和 GPU/NPU 路线 | [SBS 技术路线总览](SBS_TECHNICAL_ROUTES.md) |
 | 实时 3D 开发构建与统一实机调试 | [实时 SBS](REALTIME_SBS.md) |
 | 版本号与 Git 标签约束 | [版本规则](VERSIONING.md) |
 | 签名、发布和失败恢复 | [发布手册](RELEASE.md) |

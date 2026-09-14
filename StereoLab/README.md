@@ -9,6 +9,8 @@ NPU 深度与 SBS 合成的并发算力。[tachi 开发分支](../docs/REALTIME_
 
 首轮结果与证据边界见 [2026-09-09 桌面验证](../docs/performance/2026-09-09-stereo-lab/README.md)。
 
+各路线的原理、实现状态、性能证据与取舍见 [SBS 技术路线总览](../docs/SBS_TECHNICAL_ROUTES.md)。
+
 ## 运行
 
 需要 Node.js 22+、Chrome（WebGPU/WebGL 2）、FFmpeg/FFprobe。
