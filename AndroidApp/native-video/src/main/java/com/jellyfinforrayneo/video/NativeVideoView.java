@@ -93,11 +93,15 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private int liquidProgram;
     private final int[] pairedCaptures = new int[BuildConfig.CAPTURE_SLOTS];
     private int pairedVideo;
-    private long pairedGeneration = -1;
-    private long pairedPtsUs = FrameTimeline.UNKNOWN;
+    private volatile long pairedGeneration = -1;
+    private volatile long pairedPtsUs = FrameTimeline.UNKNOWN;
     private volatile long pairedVideoLagUs = -1;
     private volatile long pairedFrames;
     private int copyFbo;
+    private long cachedPair = -1;
+    private int cachedGeometry;
+    private volatile long cachedPairDraws;
+    private volatile long pairRenderUpdates;
     private long gpuHistoryGeneration = -1;
     private long gpuSubmitCost;
     private long gpuCompletedCost;
@@ -110,7 +114,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile long depthCapturedNs;
     private volatile long depthUploads;
     private volatile boolean debugDepth;
-    private volatile boolean render1080;
+    private volatile boolean render1080 = BuildConfig.ALIGNED_LIQUID;
     private int stereoFbo;
     private int stereoTexture;
     private final GpuTimer gpuTimer = new GpuTimer();
@@ -221,8 +225,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"alignedLiquid\":" + BuildConfig.ALIGNED_LIQUID
                 + ",\"liquidStrength\":0.85,\"liquidFeatherPx\":96,\"liquidAmount\":0.65"
                 + ",\"pairedFrames\":" + pairedFrames + ",\"pairedVideoLagUs\":" + pairedVideoLagUs
+                + ",\"cachedPairDraws\":" + cachedPairDraws + ",\"pairRenderUpdates\":" + pairRenderUpdates
+                + ",\"pairedPtsUs\":" + pairedPtsUs
+                + ",\"gpuLiquidCompletion\":" + (liquid == null ? "null" : liquid.completionJson())
                 + ",\"gpuLiquid\":" + (liquid == null ? "null" : liquid.timingsJson())
                 + ",\"timings\":" + presentationTimings.json() + "}";
+    }
+
+    public long pairedPositionUs()
+    {
+        return BuildConfig.ALIGNED_LIQUID && stereoPreview && depthEnabled
+                && pairedGeneration == slot.generation() ? pairedPtsUs : FrameTimeline.UNKNOWN;
     }
 
     public String depthSummary()
@@ -330,6 +343,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             gpuStabilizer = null; // The old GL names belonged to the lost context.
             liquid = null;
             pairedGeneration = -1;
+            cachedPair = -1;
             java.util.Arrays.fill(pairedCaptures, 0);
             pairedVideo = copyFbo = liquidProgram = 0;
             gpuHistoryGeneration = -1;
@@ -512,13 +526,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
             }
             long drawStart = System.nanoTime();
             gpuTimer.begin();
+            int geometry = java.util.Objects.hash(stereoPreview, depthEnabled, debugDepth,
+                    screenScale, screenDisparity, videoAspect, width, height);
+            boolean reusable = BuildConfig.ALIGNED_LIQUID && render1080 && stereoPreview && depthEnabled
+                    && pairedGeneration == slot.generation() && cachedPair == pairedFrames && cachedGeometry == geometry;
             if (render1080)
             {
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, stereoFbo);
-                GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+                if (!reusable) GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
             }
             int eyes = stereoPreview ? 2 : 1;
-            for (int eye = 0; eye < eyes; eye++)
+            for (int eye = 0; !reusable && eye < eyes; eye++)
             {
                 int eyeWidth = render1080 ? 1920 : width / eyes;
                 int eyeHeight = render1080 ? 1080 : height;
@@ -543,6 +561,14 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     if (BuildConfig.ALIGNED_LIQUID) drawPair(0, true);
                     else draw(false, 0, true);
                 }
+            }
+            if (reusable) cachedPairDraws++;
+            else
+            {
+                cachedPair = BuildConfig.ALIGNED_LIQUID && stereoPreview && depthEnabled
+                        && pairedGeneration == slot.generation() ? pairedFrames : -1;
+                cachedGeometry = geometry;
+                if (cachedPair >= 0) pairRenderUpdates++;
             }
             if (render1080)
             {
@@ -682,6 +708,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
 
     private void processGpuDepth()
     {
+        if (liquid != null) liquid.poll();
         gpuCompletedCost = 0;
         gpuCompletedAge = 0;
         if (gpuStabilizer == null) return;
@@ -757,7 +784,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     /** Poll a tiny control fence without repeating a full SBS draw or waiting for the next vsync. */
     private void scheduleGpuPoll()
     {
-        if (gpuPollScheduled || closed || (activeRawDepth == null && (!BuildConfig.ASYNC_CAPTURE_POLL || fence == 0))) return;
+        if (gpuPollScheduled || closed || (activeRawDepth == null && (!BuildConfig.ASYNC_CAPTURE_POLL || fence == 0)
+                && (liquid == null || !liquid.pending()))) return;
         gpuPollScheduled = true;
         long observer = gpuObserverSerial;
         postDelayed(() ->

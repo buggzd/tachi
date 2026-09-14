@@ -219,6 +219,9 @@ final class DisplayModeStateMachine
 
     synchronized Action pause()
     {
+        // Losing phone focus is not a request to rewrite the glasses EDID. A system
+        // dialog can pause us before its disabled-display event reaches the app.
+        if (connected && applied && !transitioning) return Action.NONE;
         transitioning = false;
         hardwareConfirmed = false;
         activeMode = MIRROR_2D;

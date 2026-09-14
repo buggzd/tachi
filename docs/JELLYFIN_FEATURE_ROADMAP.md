@@ -69,3 +69,5 @@
 网页画质实验另保留原始像素、透视/弹性网格、Quality 与时序补洞，并新增可调羽化的背景局部液化及 30 秒高动态片段；未接入原生默认策略、未作手机性能验收，见 [技术路线总览](SBS_TECHNICAL_ROUTES.md) 与 [实验说明](../StereoLab/README.md)。
 
 392 同帧背景液化已提供独立 daily liquid 原生实验构建：GPU 位移场和有界 RGB/深度配对；尚待设备画质、更新率、音画/字幕延迟与热态验收，不替换正式默认。见 [原生液化](performance/2026-09-14-native-liquid/README.md)。
+
+液化实机后续：开发侧已移除稳定模式 onPause 的无条件 2D 往返，增加渲染缓存与字幕配对时钟，提供同 APK 本地素材入口；显示恢复、实际性能、音画同步待复测，见 [修订清单](performance/2026-09-14-native-liquid-followup/README.md)。

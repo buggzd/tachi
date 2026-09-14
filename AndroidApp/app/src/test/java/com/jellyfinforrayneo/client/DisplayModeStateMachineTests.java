@@ -9,6 +9,15 @@ import static org.junit.Assert.assertTrue;
 public final class DisplayModeStateMachineTests
 {
     @Test
+    public void pauseDuringUnconfirmedTransitionStillRequestsSafe2D()
+    {
+        DisplayModeStateMachine machine = new DisplayModeStateMachine(DisplayModeStateMachine.STEREO_SCREEN);
+        machine.setConnected(true, 0L);
+        assertEquals(DisplayModeStateMachine.Action.SWITCH_TO_2D, machine.pause());
+        assertFalse(machine.snapshot().displayModeTransitioning);
+    }
+
+    @Test
     public void connectAndConfirmStereo_SeparatesTransitionFromAppliedState()
     {
         DisplayModeStateMachine machine = new DisplayModeStateMachine(
@@ -96,7 +105,7 @@ public final class DisplayModeStateMachineTests
     }
 
     @Test
-    public void pause_AlwaysRequestsBestEffort2DAndKeepsPreference()
+    public void pause_KeepsConfirmedModeWithoutHardwareRoundTrip()
     {
         DisplayModeStateMachine machine = new DisplayModeStateMachine(
                 DisplayModeStateMachine.STEREO_SCREEN);
@@ -104,10 +113,11 @@ public final class DisplayModeStateMachineTests
         machine.onStereoLayoutChanged(true, 5L);
         machine.onCommandResponse(DisplayModeStateMachine.COMMAND_3D, true, 10L);
 
-        assertEquals(DisplayModeStateMachine.Action.SWITCH_TO_2D, machine.pause());
+        assertEquals(DisplayModeStateMachine.Action.NONE, machine.pause());
+        assertEquals(DisplayModeStateMachine.Action.NONE, machine.setConnected(true, 20L));
         DisplayModeStateMachine.State paused = machine.snapshot();
         assertEquals(DisplayModeStateMachine.STEREO_SCREEN, paused.requestedMode);
-        assertEquals(DisplayModeStateMachine.MIRROR_2D, paused.activeMode);
+        assertEquals(DisplayModeStateMachine.STEREO_SCREEN, paused.activeMode);
         assertFalse(paused.displayModeTransitioning);
     }
 

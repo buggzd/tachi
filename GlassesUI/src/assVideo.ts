@@ -34,7 +34,7 @@ export function bindAssVideo(video: PlaybackSurface, canvas: HTMLCanvasElement, 
       render(metadata.mediaTime)
       schedule()
     })
-    else callback = requestAnimationFrame(() => { callback = 0; render(video.currentTime); schedule() })
+    else callback = requestAnimationFrame(() => { callback = 0; render((video.presentationTime ?? video.currentTime)); schedule() })
   }
   const resize = () => {
     const rect = assVideoRect(video.clientWidth, video.clientHeight, video.videoWidth, video.videoHeight)
@@ -45,16 +45,16 @@ export function bindAssVideo(video: PlaybackSurface, canvas: HTMLCanvasElement, 
     const width = Math.max(1, Math.round(rect.width * scale))
     const height = Math.max(1, Math.round(rect.height * scale))
     if (canvas.width !== width || canvas.height !== height) renderer.resize(width, height)
-    render(video.currentTime, true)
+    render((video.presentationTime ?? video.currentTime), true)
   }
   const update = () => {
     cancel()
     canvas.style.visibility = document.hidden || video.seeking || video.readyState < 2 ? 'hidden' : 'visible'
-    if (!document.hidden) { resize(); render(video.currentTime, true); schedule() }
+    if (!document.hidden) { resize(); render((video.presentationTime ?? video.currentTime), true); schedule() }
   }
   const events = ['loadedmetadata', 'loadeddata', 'resize', 'playing', 'pause', 'waiting', 'seeking', 'seeked', 'ratechange', 'ended', 'emptied']
   events.forEach((event) => video.addEventListener(event, update))
-  const timeupdate = () => { render(video.currentTime); schedule() }
+  const timeupdate = () => { render((video.presentationTime ?? video.currentTime)); schedule() }
   video.addEventListener('timeupdate', timeupdate)
   document.addEventListener('visibilitychange', update)
   window.addEventListener('resize', update)

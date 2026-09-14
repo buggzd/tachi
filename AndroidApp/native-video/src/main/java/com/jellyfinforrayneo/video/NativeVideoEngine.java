@@ -381,6 +381,12 @@ public final class NativeVideoEngine implements AutoCloseable
         try
         {
             state.put("position", player.getCurrentPosition() / 1000.0);
+            long pairedPosition = view.pairedPositionUs();
+            if (pairedPosition != FrameTimeline.UNKNOWN)
+            {
+                state.put("pairedPosition", pairedPosition / 1_000_000.0);
+                state.put("playerMinusPairedMs", player.getCurrentPosition() - pairedPosition / 1000.0);
+            }
             state.put("duration", Math.max(0, player.getDuration()) / 1000.0);
             state.put("buffered", Math.max(0, player.getBufferedPosition()) / 1000.0);
             state.put("seekable", player.isCurrentMediaItemSeekable());

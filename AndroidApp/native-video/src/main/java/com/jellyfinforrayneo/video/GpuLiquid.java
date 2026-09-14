@@ -14,6 +14,10 @@ final class GpuLiquid implements AutoCloseable
     private int program;
     private int output;
     private final GpuTimer timer = new GpuTimer();
+    private final ReadbackTimings completion = new ReadbackTimings("submit", "fenceObserved", "poll");
+    private long fence;
+    private long submittedAt;
+    private long submitCost;
 
     GpuLiquid(Context context, int width, int height) throws Exception
     {
@@ -53,6 +57,9 @@ final class GpuLiquid implements AutoCloseable
 
     void compute(int depthTexture)
     {
+        poll();
+        boolean measure = fence == 0;
+        long start = System.nanoTime();
         timer.begin();
         GLES31.glUseProgram(program);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
@@ -71,6 +78,36 @@ final class GpuLiquid implements AutoCloseable
             output = destination;
         }
         timer.end();
+        if (measure)
+        {
+            fence = GLES31.glFenceSync(GLES31.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            if (fence == 0) throw new IllegalStateException("liquid fence");
+            GLES31.glFlush();
+            submittedAt = System.nanoTime();
+            submitCost = submittedAt - start;
+        }
+    }
+
+    void poll()
+    {
+        if (fence == 0) return;
+        long start = System.nanoTime();
+        int result = GLES31.glClientWaitSync(fence, 0, 0);
+        if (result == GLES31.GL_TIMEOUT_EXPIRED) return;
+        if (result == GLES31.GL_WAIT_FAILED) throw new IllegalStateException("liquid fence wait");
+        GLES31.glDeleteSync(fence);
+        fence = 0;
+        completion.record(submitCost, start - submittedAt, System.nanoTime() - start);
+    }
+
+    boolean pending()
+    {
+        return fence != 0;
+    }
+
+    String completionJson()
+    {
+        return completion.json();
     }
 
     int texture()
@@ -86,6 +123,8 @@ final class GpuLiquid implements AutoCloseable
     @Override
     public void close()
     {
+        if (fence != 0) GLES31.glDeleteSync(fence);
+        fence = 0;
         timer.close();
         GLES31.glDeleteTextures(3, textures, 0);
         GLES31.glDeleteProgram(program);

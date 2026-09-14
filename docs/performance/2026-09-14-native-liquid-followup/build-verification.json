@@ -1,0 +1,20 @@
+{
+  "baselineCommit": "22c4d0a",
+  "apk": "AndroidApp/app/build/distributions/tachi-sbs-liquid-392-followup.apk",
+  "sha256": "aeaa27ea9a06fd25d87b1635c039d72d849c3d1209355e32a3859b83110e9ac2",
+  "bytes": 99985471,
+  "jvm": {
+    "app": {
+      "tests": 139,
+      "failures": 0,
+      "errors": 0
+    },
+    "native-video": {
+      "tests": 22,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "frontendTests": 73,
+  "deviceRetest": "pending; assigned to adb-subagent after commit"
+}

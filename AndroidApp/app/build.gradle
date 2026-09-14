@@ -79,6 +79,7 @@ android {
 
     defaultConfig {
         applicationId "com.jellyfinforrayneo.client"
+        manifestPlaceholders.sbsFixtureEnabled = (dailySbs == "liquid").toString()
         minSdk 26
         targetSdk 29
         buildConfigField "String", "DAILY_SBS", "\"${dailySbs}\""

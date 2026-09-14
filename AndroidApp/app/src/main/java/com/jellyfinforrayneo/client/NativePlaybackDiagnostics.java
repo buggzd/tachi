@@ -70,7 +70,7 @@ final class NativePlaybackDiagnostics
             if (kind.matches("none|unknown|eof|timeout|dns|connect|socket|tls|io|parser|illegal_state|illegal_argument|bounds|invalid_request")) row.put("errorKind", kind);
             String component = source.optString("errorComponent");
             if (component.matches("none|unknown|ssa|subtitle|matroska|datasource|codec")) row.put("errorComponent", component);
-            copyNumbers(source, row, "position", "duration", "buffered", "width", "height", "frameRate",
+            copyNumbers(source, row, "position", "pairedPosition", "playerMinusPairedMs", "duration", "buffered", "width", "height", "frameRate",
                     "droppedFrames", "decodedFrames", "skippedDecoderFrames", "maxConsecutiveDroppedFrames", "errorCode", "httpStatus", "audioChannels", "audioSampleRate");
             copyBooleans(source, row, "firstFrame", "seekable", "hls", "subtitleError");
             String decoder = source.optString("decoder");
@@ -101,7 +101,7 @@ final class NativePlaybackDiagnostics
                 if (render != null)
                 {
                     copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll", "alignedLiquid");
-                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames", "pairedFrames", "pairedVideoLagUs", "liquidStrength", "liquidFeatherPx", "liquidAmount");
+                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames", "pairedFrames", "cachedPairDraws", "pairRenderUpdates", "pairedVideoLagUs", "pairedPtsUs", "liquidStrength", "liquidFeatherPx", "liquidAmount");
                     JSONObject mapping = render.optJSONObject("frameMapping");
                     if (mapping != null)
                     {
@@ -138,6 +138,19 @@ final class NativePlaybackDiagnostics
                         number(stabilize, "meanMs", row, "gpuStabilizeMeanMs");
                         number(stabilize, "p95Ms", row, "gpuStabilizeP95Ms");
                         number(stabilize, "disjoint", row, "gpuStabilizeDisjoint");
+                    }
+                    JSONObject liquidCompletion = render.optJSONObject("gpuLiquidCompletion");
+                    if (liquidCompletion != null)
+                    {
+                        for (String liquidStage : new String[]{"submitMs", "fenceObservedMs", "pollMs"})
+                        {
+                            JSONObject measured = liquidCompletion.optJSONObject(liquidStage);
+                            if (measured != null)
+                            {
+                                number(measured, "mean", row, "liquid" + liquidStage + "Mean");
+                                number(measured, "p95", row, "liquid" + liquidStage + "P95");
+                            }
+                        }
                     }
                     JSONObject liquid = render.optJSONObject("gpuLiquid");
                     if (liquid != null)

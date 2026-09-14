@@ -4,9 +4,9 @@ import { subscribeRuntime } from './runtime'
 /** Media clock/control contract shared by the browser preview and native Android player. */
 export type PlaybackSurface = Pick<HTMLVideoElement, 'currentTime' | 'duration' | 'paused' | 'ended'
   | 'seeking' | 'readyState' | 'playbackRate' | 'videoWidth' | 'videoHeight' | 'clientWidth' | 'clientHeight'
-  | 'play' | 'pause' | 'addEventListener' | 'removeEventListener'>
+  | 'play' | 'pause' | 'addEventListener' | 'removeEventListener'> & { readonly presentationTime?: number }
 export type NativeSnapshot = {
-  token: string; generation: number; status: string; position: number; duration: number; buffered?: number
+  token: string; generation: number; status: string; position: number; pairedPosition?: number; duration: number; buffered?: number
   width?: number; height?: number; pixelRatio?: number; firstFrame?: boolean; seekable?: boolean; rate?: number
   decoder?: string; videoCodec?: string; audioCodec?: string; audioChannels?: number; audioSampleRate?: number
   droppedFrames?: number; decodedFrames?: number; frameRate?: number; errorCode?: number; httpStatus?: number; seekId?: number
@@ -51,6 +51,11 @@ export class NativePlayback extends EventTarget implements PlaybackSurface {
   get currentTime() {
     const elapsed = this.state === 'playing' && !this.seekPending ? Math.min(.25, (performance.now() - this.receivedAt) / 1000) * this.playbackRate : 0
     return Math.min(this.duration || Infinity, this.position + elapsed)
+  }
+  get presentationTime() {
+    const paired = this.snapshot?.pairedPosition
+    return !this.seekPending && typeof paired === 'number' && Number.isFinite(paired)
+      && paired >= 0 && paired <= this.duration ? paired : this.currentTime
   }
   set currentTime(value: number) {
     if (!Number.isFinite(value)) return

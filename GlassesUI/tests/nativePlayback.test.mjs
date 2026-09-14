@@ -65,3 +65,12 @@ test('rejected native open leaves buffering and emits a playback error', t => {
   assert.equal(player.snapshot.status, 'error')
   assert.equal(player.readyState, 0)
 })
+
+test('subtitle presentation clock follows accepted pairs without changing media clock',t=>{
+  const {player,send}=setup(t)
+  send({position:30,pairedPosition:29.88});assert.equal(player.currentTime,30);assert.equal(player.presentationTime,29.88)
+  send({position:31});assert.equal(player.presentationTime,31)
+  send({position:31,pairedPosition:-1});assert.equal(player.presentationTime,31)
+  send({position:31,pairedPosition:NaN});assert.equal(player.presentationTime,31)
+  send({position:31,pairedPosition:30.9});player.currentTime=40;assert.equal(player.presentationTime,40)
+})

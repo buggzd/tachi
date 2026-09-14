@@ -35,8 +35,13 @@ is disabled in Media3 because libass/WebVTT owns text rendering.
 The optional `liquid` daily build stores bounded full-size RGB capture leases, commits RGB/depth
 pairs and computes the background warp on GLES 3.1. It repeats matched pairs when inference
 is slower than decoding, and invalidates pairs on source/seek generations. Pair PTS agreement
-is separate from decoded-video lag; audio/subtitle clocks are not delayed by this experiment.
+is separate from decoded-video lag; audio timing is not delayed by this experiment. ASS/WebVTT use the last accepted pair
+position when available; reporting/seek retain the player media clock.
 See [implementation and pending device checks](performance/2026-09-14-native-liquid/README.md).
+
+Stable, hardware-confirmed modes survive phone Activity pause/resume without an automatic
+USB 2D/3D round trip. Pausing an unconfirmed transition still requests safe 2D; actual
+disconnect/destroy handling is unchanged. An OS-disabled display still needs system consent.
 
 ## Runtime topology
 

@@ -1738,6 +1738,7 @@ function PlayerPage({
   const native = hasNativePlayback()
   const browserVideoRef = useRef<HTMLVideoElement>(null)
   const videoRef = useRef<PlaybackSurface | null>(null)
+  const [subtitleClock, setSubtitleClock] = useState(0)
   useLayoutEffect(() => {
     if (!native) { videoRef.current = browserVideoRef.current; return }
     const player = new NativePlayback(() => playerPageRef.current)
@@ -2470,7 +2471,7 @@ function PlayerPage({
   useEffect(() => {
     const player = videoRef.current
     if (!(player instanceof NativePlayback)) return
-    const time = () => { currentRef.current = player.currentTime; setCurrent(player.currentTime) }
+    const time = () => { currentRef.current = player.currentTime; setCurrent(player.currentTime); setSubtitleClock(player.presentationTime ?? player.currentTime) }
     const duration = () => setTotal(player.duration)
     const loaded = () => setHasVideoFrame(true)
     const waiting = () => statusRef.current !== 'preparing' && updateStatus('buffering')
@@ -2488,11 +2489,12 @@ function PlayerPage({
     return () => { for (const [name, handler] of Object.entries(handlers)) player.removeEventListener(name, handler) }
   }, [handlePlaying, handlePause, handleEnded, failPlayback, updateStatus])
 
+  const subtitlePosition = native ? subtitleClock : current
   const progress = total > 0 ? Math.min(100, Math.max(0, current / total * 100)) : 0
   const subtitleText = useMemo(() => plan?.subtitleFormat === 'ass' ? '' : subtitleCues
-    .filter((cue) => current >= cue.start && current < cue.end)
+    .filter((cue) => subtitlePosition >= cue.start && subtitlePosition < cue.end)
     .map((cue) => cue.text)
-    .join('\n'), [current, subtitleCues, plan?.subtitleFormat])
+    .join('\n'), [subtitlePosition, subtitleCues, plan?.subtitleFormat])
   const titleDetail = item.original && item.original !== item.title ? item.original : item.subtitle
   const episodeLabel = item.sourceType === 'Episode'
     ? `S${String(item.parentIndexNumber ?? 0).padStart(2, '0')} E${String(item.indexNumber ?? 0).padStart(2, '0')}`

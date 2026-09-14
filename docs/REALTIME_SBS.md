@@ -147,3 +147,5 @@ seek、换源和 Surface 重建清除旧代图，避免使用另一时间或媒�
 运行 `scripts/build-sbs-experiment.sh liquid` 构建用户网页偏好参数：392、0.85 位移、96 px 羽化、65% 拉伸。深度逐帧 P2/P98 无历史，局部液化在 GPU compute；两捕获槽保存对应全尺寸视频，处理完成后交换整对画面，忙时重复已匹配画面。普通发布默认与原日常双档不变。
 
 本轮完成开发和桌面/构建验证，尚未 ADB 实测。严格配对可能降低显示更新率并增加音画延迟，音频/字幕未额外补偿；检查诊断 `pairedVideoLagUs` 与 `gpuLiquid`，不要只看配对 PTS 为零。实现、检查结果和实机清单见 [原生液化实验](performance/2026-09-14-native-liquid/README.md)。
+
+实机反馈后的修订增加稳定模式暂停保留、SBS 缓存、液化完成 fence、字幕配对时间与同 APK 本地测试入口；复测操作和证据限制见 [修订说明](performance/2026-09-14-native-liquid-followup/README.md)。音频暂不做固定延迟补偿。
