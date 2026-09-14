@@ -41,7 +41,9 @@ if (hasEnvironmentSigning && !file(environmentSigning.path).isFile()) {
 def hasReleaseSigning = signingPropertiesFile.exists() || hasEnvironmentSigning
 
 def dailySbs = providers.gradleProperty("dailySbs").getOrElse("none")
-if (!(dailySbs in ["none", "quality", "motion"])) throw new GradleException("dailySbs must be quality or motion")
+if (!(dailySbs in ["none", "quality", "motion", "liquid"])) throw new GradleException("dailySbs must be quality, motion or liquid")
+if ((dailySbs == "liquid") != (providers.gradleProperty("alignedLiquid").getOrElse("false") == "true"))
+    throw new GradleException("liquid profile requires alignedLiquid, other app profiles must disable it")
 if (dailySbs != "none") {
     def expected = dailySbs == "quality" ? ["518", "12"] : ["392", "24"]
     if (providers.gradleProperty("depthResolution").getOrElse("") != expected[0]

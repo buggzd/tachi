@@ -11,6 +11,7 @@ android {
         buildConfigField "boolean", "GPU_PREPROCESS", providers.gradleProperty("gpuPreprocess").getOrElse("false")
         buildConfigField "boolean", "PINNED_DEPTH_OUTPUT", providers.gradleProperty("pinnedDepthOutput").getOrElse("false")
         buildConfigField "int", "CAPTURE_SLOTS", providers.gradleProperty("captureSlots").getOrElse("1")
+        buildConfigField "boolean", "ALIGNED_LIQUID", providers.gradleProperty("alignedLiquid").getOrElse("false")
         buildConfigField "boolean", "GPU_DEPTH_STABILIZATION", providers.gradleProperty("gpuDepthStabilization").getOrElse("false")
     }
     buildFeatures { buildConfig true }
@@ -41,3 +42,8 @@ if (providers.gradleProperty("gpuPreprocess").getOrElse("false") == "true"
 
 if (!(providers.gradleProperty("depthHz").getOrElse("12") in ["12", "24"]))
     throw new GradleException("depthHz must be 12 or 24")
+
+if (providers.gradleProperty("alignedLiquid").getOrElse("false") == "true"
+        && (rootProject.depthProfile.width != 392 || !qnn
+        || providers.gradleProperty("gpuDepthStabilization").getOrElse("false") != "true"))
+    throw new GradleException("alignedLiquid requires 392 QNN and GPU depth processing")

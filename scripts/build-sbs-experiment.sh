@@ -5,11 +5,12 @@ readonly PROFILE="${1:-quality}"
 case "${PROFILE}" in
     quality) resolution=518; hz=12 ;;
     motion) resolution=392; hz=24 ;;
-    *) echo 'Usage: build-sbs-experiment.sh [quality|motion]' >&2; exit 2 ;;
+    liquid) resolution=392; hz=24 ;;
+    *) echo 'Usage: build-sbs-experiment.sh [quality|motion|liquid]' >&2; exit 2 ;;
 esac
 cd "${ROOT}"
 AndroidApp/gradlew -p AndroidApp -PdailySbs="${PROFILE}" -PrealtimeSbs=true \
-    -PdepthResolution="${resolution}" -PdepthHz="${hz}" -PcaptureSlots=2 \
+    -PalignedLiquid="$([[ ${PROFILE} == liquid ]] && echo true || echo false)" -PdepthResolution="${resolution}" -PdepthHz="${hz}" -PcaptureSlots=2 \
     -PgpuDepthStabilization=true -PgpuPreprocess=true -PpinnedDepthOutput=true -PasyncCapturePoll=true \
     :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :native-video:testDebugUnitTest :native-video:lintDebug
 scripts/verify-android.sh

@@ -6,6 +6,9 @@ void main() {
     s[i]=0u;
     if(i==0u && shift==24) {
         s[LO]=0u; s[HI]=0u; s[LRANK]=uint(N/20); s[HRANK]=uint(N*19/20);
+        #ifdef ALIGNED_LIQUID
+        s[LRANK]=uint(N*2/100); s[HRANK]=uint(N*98/100); s[INITIAL]=0u;
+#endif
         s[BAD]=0u; s[DIFF]=0u; s[ACCEPT]=0u;
         if(resetHistory!=0) s[INITIAL]=0u;
     }

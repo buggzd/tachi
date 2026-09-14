@@ -7,6 +7,24 @@ import static org.junit.Assert.*;
 public class NativePlaybackDiagnosticsTests
 {
     @Test
+    public void alignedPairAndLiquidMeasurementsSurviveReportExport() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject render = new JSONObject().put("alignedLiquid", true).put("pairedFrames", 9)
+                .put("pairedVideoLagUs", 82000).put("liquidStrength", .85)
+                .put("liquidFeatherPx", 96).put("liquidAmount", .65)
+                .put("gpuLiquid", new JSONObject().put("meanMs", 1.5).put("p95Ms", 2.1));
+        log.record(new JSONObject().put("status", "playing")
+                .put("depth", new JSONObject().put("state", "ready").put("render", render)), 0);
+        String report = log.export();
+        assertTrue(report.contains("\"alignedLiquid\":true"));
+        assertTrue(report.contains("\"pairedFrames\":9"));
+        assertTrue(report.contains("\"pairedVideoLagUs\":82000"));
+        assertTrue(report.contains("\"liquidStrength\":0.85"));
+        assertTrue(report.contains("\"gpuLiquidMeanMs\":1.5"));
+    }
+
+    @Test
     public void exportKeepsTechnicalMeasurementsAndDropsIdentityUrlsAndArbitraryFields() throws Exception
     {
         NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();

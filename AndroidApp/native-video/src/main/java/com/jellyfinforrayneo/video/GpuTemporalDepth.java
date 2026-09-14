@@ -62,7 +62,7 @@ public final class GpuTemporalDepth implements AutoCloseable
         try
         {
             String common = "#version 310 es\n#define W " + width + "\n#define N " + pixels + "\n"
-                    + asset(context, "common.glsl");
+                    + (BuildConfig.ALIGNED_LIQUID ? "#define ALIGNED_LIQUID\n" : "") + asset(context, "common.glsl");
             String[] names = {"clear.comp", "histogram.comp", "select.comp", "filter.comp"};
             for (int i = 0; i < names.length; i++) programs[i] = compile(common + asset(context, names[i]));
             GLES31.glGenBuffers(4, buffers, 0);

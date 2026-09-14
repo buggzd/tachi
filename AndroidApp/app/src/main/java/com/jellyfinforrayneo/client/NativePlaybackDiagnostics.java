@@ -100,8 +100,8 @@ final class NativePlaybackDiagnostics
                 JSONObject render = depth.optJSONObject("render");
                 if (render != null)
                 {
-                    copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll");
-                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames");
+                    copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll", "alignedLiquid");
+                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames", "pairedFrames", "pairedVideoLagUs", "liquidStrength", "liquidFeatherPx", "liquidAmount");
                     JSONObject mapping = render.optJSONObject("frameMapping");
                     if (mapping != null)
                     {
@@ -138,6 +138,13 @@ final class NativePlaybackDiagnostics
                         number(stabilize, "meanMs", row, "gpuStabilizeMeanMs");
                         number(stabilize, "p95Ms", row, "gpuStabilizeP95Ms");
                         number(stabilize, "disjoint", row, "gpuStabilizeDisjoint");
+                    }
+                    JSONObject liquid = render.optJSONObject("gpuLiquid");
+                    if (liquid != null)
+                    {
+                        number(liquid, "meanMs", row, "gpuLiquidMeanMs");
+                        number(liquid, "p95Ms", row, "gpuLiquidP95Ms");
+                        number(liquid, "disjoint", row, "gpuLiquidDisjoint");
                     }
                     JSONObject stages = render.optJSONObject("gpuStages");
                     if (stages != null)

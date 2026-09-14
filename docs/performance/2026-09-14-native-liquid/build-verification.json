@@ -1,0 +1,27 @@
+{
+  "profile": "liquid",
+  "depthShape": [
+    392,
+    224
+  ],
+  "strength": 0.85,
+  "featherPx": 96,
+  "amount": 0.65,
+  "apkBytes": 99983275,
+  "apkSha256": "a13df790c741c4e4dc0c500f67edbd7290bab4c2be55f2cc1420d7f2c46bca0b",
+  "jvm": {
+    "app": {
+      "tests": 138,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "native-video": {
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "deviceValidation": "not run; ADB unavailable by user instruction"
+}

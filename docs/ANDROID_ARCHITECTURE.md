@@ -32,6 +32,12 @@ Native video route validation accepts Jellyfin Videos API casing while preservin
 and origin boundary. Rejected current-source opens return a bounded error; embedded subtitle parsing
 is disabled in Media3 because libass/WebVTT owns text rendering.
 
+The optional `liquid` daily build stores bounded full-size RGB capture leases, commits RGB/depth
+pairs and computes the background warp on GLES 3.1. It repeats matched pairs when inference
+is slower than decoding, and invalidates pairs on source/seek generations. Pair PTS agreement
+is separate from decoded-video lag; audio/subtitle clocks are not delayed by this experiment.
+See [implementation and pending device checks](performance/2026-09-14-native-liquid/README.md).
+
 ## Runtime topology
 
 ```text

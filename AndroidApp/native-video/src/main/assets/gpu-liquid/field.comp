@@ -1,0 +1,34 @@
+#version 310 es
+precision highp float;
+precision highp int;
+layout(local_size_x=8,local_size_y=8) in;
+layout(binding=0) uniform highp sampler2D depthMap;
+layout(binding=1) uniform highp sampler2D seedMap;
+layout(binding=2) uniform highp sampler2D previousMap;
+layout(rgba32f,binding=0) writeonly uniform highp image2D resultMap;
+uniform int phase;
+float d(ivec2 p){return texelFetch(depthMap,p,0).r;}
+void main(){
+ ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=textureSize(depthMap,0);
+ if(any(greaterThanEqual(p,size)))return;
+ float depth=d(p);vec2 value=vec2(0.);
+ if(phase==0){
+  int radius=int(ceil(96.*float(size.x)/1920.));
+  for(int e=0;e<2;e++)for(int k=1;k<=radius;k++){
+   ivec2 q=p+ivec2((e==0?1:-1)*k,0);if(q.x<0||q.x>=size.x)break;
+   float gap=max(0.,d(q)-depth),distance=max(0.,float(k-1)*1920./float(size.x));
+   value[e]=max(value[e],gap*smoothstep(.025,.12,gap)*(1.-smoothstep(0.,96.,distance)));
+  }
+ }else{
+  value=texelFetch(seedMap,p,0).rg*.35;float total=.35;
+  for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
+   ivec2 q=p+ivec2(x,y);if(any(lessThan(q,ivec2(0)))||any(greaterThanEqual(q,size)))continue;
+   float w=(1.-smoothstep(.015,.07,abs(depth-d(q))))*float(x==0?2:1)*float(y==0?1:2);
+   value+=texelFetch(previousMap,q,0).rg*w;total+=w;
+  }
+  value=min(vec2(1.-depth),value/total);
+ }
+ // First eight phases retain correction. Final pass writes signed normalized displacements.
+ if(phase==8)value=vec2(1.,-1.)*.016*.85*(vec2(depth-.5)+.65*value);
+ imageStore(resultMap,p,vec4(value,0.,1.));
+}
