@@ -15,16 +15,26 @@ try {
         await page.waitForTimeout(100);
         const frame = await page.locator('canvas').getAttribute('data-frame');
         const images = [];
-        for (const strategy of ['pixel', 'mesh', 'cut']) {
+        for (const strategy of ['pixel', 'mesh', 'cut', 'edge']) {
             await page.selectOption('#strategy', strategy);
             assert.equal(await page.locator('canvas').getAttribute('data-frame'), frame);
             images.push(await page.evaluate(() => document.querySelector('canvas').toDataURL()));
             assert.equal(await page.evaluate(() => document.querySelector('canvas').getContext('webgl2').getError()), 0);
         }
         assert.notEqual(images[0], images[1]);
+        assert.notEqual(images[0], images[3]);
+        await page.uncheck('#fill-holes');
+        const unfilled = await page.evaluate(() => document.querySelector('canvas').toDataURL());
+        await page.check('#fill-holes');
+        assert.notEqual(unfilled, await page.evaluate(() => document.querySelector('canvas').toDataURL()));
+        await page.uncheck('#align-edges');
+        await page.check('#align-edges');
+        await page.selectOption('#lanes', '1');
+        await page.selectOption('#lanes', '4');
         await page.selectOption('#view', 'sbs');
         assert.equal(await page.locator('canvas').getAttribute('width'), '3840');
         await page.selectOption('#view', 'depth');
+        await page.selectOption('#view', 'aligned');
         await page.selectOption('#view', 'source');
         await page.selectOption('#view', 'eye');
     }
@@ -65,6 +75,57 @@ try {
     assert.equal(geometry.zeroEyeMaxError, 0, 'projected source texture must reconstruct original at zero eye translation');
     assert.equal(geometry.cutAllHoles, true, 'depth discontinuity triangles must be rejected');
     assert.equal(geometry.error, 0);
+    const edgeChecks = await page.evaluate(async () => {
+        const {EdgeSplat} = await import('/edge-splat.mjs');
+        const c = document.createElement('canvas'); c.width = 1920; c.height = 1080;
+        const g = c.getContext('webgl2');
+        const compile = (vs, fs) => {
+            const p = g.createProgram();
+            for (const [type, source] of [[g.VERTEX_SHADER, vs], [g.FRAGMENT_SHADER, fs]]) {
+                const s = g.createShader(type); g.shaderSource(s, source); g.compileShader(s);
+                if (!g.getShaderParameter(s, g.COMPILE_STATUS)) throw Error(g.getShaderInfoLog(s));
+                g.attachShader(p, s);
+            }
+            g.linkProgram(p);
+            if (!g.getProgramParameter(p, g.LINK_STATUS)) throw Error(g.getProgramInfoLog(p));
+            return p;
+        };
+        // Near red rectangle on a far blue background; horizontal edges are exact.
+        const rgb = new Uint8Array(1920 * 1080 * 4), depth = new Uint8Array(1920 * 1080);
+        for (let y=0;y<1080;y++) for (let x=0;x<1920;x++) {
+            const near=x>=800&&x<1120, i=y*1920+x;
+            rgb.set(near?[255,0,0,255]:[0,0,255,255], i*4); depth[i]=near?230:25;
+        }
+        for (let unit=0;unit<2;unit++) {
+            g.activeTexture(g.TEXTURE0+unit);g.bindTexture(g.TEXTURE_2D,g.createTexture());
+            g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.NEAREST);
+            g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.NEAREST);
+            g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);
+            g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
+            g.texImage2D(g.TEXTURE_2D,0,unit?g.R8:g.RGBA8,1920,1080,0,unit?g.RED:g.RGBA,g.UNSIGNED_BYTE,unit?depth:rgb);
+        }
+        const renderer=new EdgeSplat(g,compile);renderer.prepare(false);
+        const row=()=>{const b=new Uint8Array(1920*4);g.readPixels(0,540,1920,1,g.RGBA,g.UNSIGNED_BYTE,b);return b;};
+        renderer.draw(0,0,true,4); const zero=row();
+        let zeroError=0;for(let x=0;x<1920*4;x++)zeroError=Math.max(zeroError,Math.abs(zero[x]-rgb[540*1920*4+x]));
+        const results=[];
+        for(const eye of [1,-1]) {
+            renderer.draw(eye,0,false,4);const holes=row();
+            renderer.draw(eye,0,true,4);const filled=row();
+            let tested=0,redLeak=0;
+            for(let x=760;x<1160;x++)if(holes[x*4]>140&&holes[x*4+2]>140){
+                tested++;redLeak=Math.max(redLeak,filled[x*4]);
+            }
+            results.push({tested,redLeak});
+        }
+        return {zeroError,results,error:g.getError()};
+    });
+    assert.equal(edgeChecks.zeroError,0,'zero-disparity coverage must exactly reconstruct source');
+    assert.equal(edgeChecks.error,0);
+    for(const eye of edgeChecks.results){
+        assert.ok(eye.tested>5,'fixture must expose an interior disocclusion');
+        assert.equal(eye.redLeak,0,'background repair must not drag red foreground into blue background');
+    }
     assert.deepEqual(errors, []);
     await page.screenshot({path: '.local/mesh-trials-preview.png'});
     console.log('PASS: three real clips, playback, paused strategy switching, SBS/depth/source, GL errors');

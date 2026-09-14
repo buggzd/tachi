@@ -1,3 +1,4 @@
+import {EdgeSplat} from './edge-splat.mjs';
 import {depthIndex} from './quality-trials-core.mjs';
 import {fullscreenVertex, pixelFragment, meshVertex, meshFragment} from './mesh-shaders.mjs';
 const $ = id => document.getElementById(id);
@@ -17,7 +18,7 @@ function program(vertex, fragment) {
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(p));
     return p;
 }
-let pixel, mesh;
+let pixel, mesh, edge;
 function draw() {
     if (!ready || video.readyState < 2) return;
     const profile = manifest.profiles.find(p => p.id === $('profile').value);
@@ -30,7 +31,9 @@ function draw() {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, profile.width, profile.height, 0, gl.RED, gl.UNSIGNED_BYTE, data.bytes.subarray(index * size, (index + 1) * size));
     gl.activeTexture(gl.TEXTURE0); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-    const useMesh = strategy !== 'pixel' && !['depth', 'source'].includes(view);
+    const useEdge = strategy === 'edge' && !['depth', 'source', 'aligned'].includes(view);
+    if (useEdge || view === 'aligned') edge.prepare($('align-edges').checked);
+    const useMesh = ['mesh', 'cut'].includes(strategy) && !['depth', 'source', 'aligned'].includes(view);
     const p = useMesh ? mesh : pixel;
     gl.useProgram(p);
     const loc = name => gl.getUniformLocation(p, name);
@@ -45,6 +48,8 @@ function draw() {
         gl.disable(gl.DEPTH_TEST); gl.uniform1i(loc('depthOnly'), view === 'depth' ? 1 : 0);
     }
     for (let eye = 0; eye < (view === 'sbs' ? 2 : 1); eye++) {
+        if (view === 'aligned') { edge.showDepth(); continue; }
+        if (useEdge) { edge.draw(eye === 0 ? 1 : -1, eye * 1920, $('fill-holes').checked, Number($('lanes').value)); continue; }
         gl.viewport(eye * 1920, 0, 1920, 1080);
         gl.uniform1f(loc('eye'), view === 'source' ? 0 : eye === 0 ? 1 : -1);
         gl.drawArrays(gl.TRIANGLES, 0, useMesh ? (profile.width - 1) * (profile.height - 1) * 6 : 3);
@@ -80,7 +85,7 @@ function callback(_now, meta) {
     video.requestVideoFrameCallback(callback);
 }
 $('clip').onchange = () => load().catch(fail);
-for (const id of ['profile', 'strategy', 'view', 'threshold']) $(id).oninput = () => {
+for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes']) $(id).oninput = () => {
     $('threshold-value').value = $('threshold').value;
     if ($('view').value === 'sbs') { $('zoom').value = '1'; canvas.style.transform = ''; }
     $('zoom').disabled = $('view').value === 'sbs'; draw();
@@ -100,6 +105,7 @@ try {
         for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.LINEAR);
         for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
     }
+    edge = new EdgeSplat(gl, program);
     const response = await fetch('/samples/quality-v1/manifest.json');
     if (!response.ok) throw Error('缺少 quality-v1 本地样本');
     manifest = await response.json();
