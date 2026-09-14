@@ -37,6 +37,36 @@ try {
         await page.selectOption('#view', 'aligned');
         await page.selectOption('#view', 'source');
         await page.selectOption('#view', 'eye');
+        if (clip === 0) {
+            const setStrength = async value => page.locator('#strength').evaluate((input, v) => {
+                input.value = v; input.dispatchEvent(new Event('input', {bubbles:true}));
+            }, String(value));
+            await setStrength(0);
+            await page.selectOption('#view', 'source');
+            await page.evaluate(() => {
+                const c=document.querySelector('canvas'),g=c.getContext('webgl2');
+                window.zeroReference=new Uint8Array(c.width*c.height*4);
+                g.readPixels(0,0,c.width,c.height,g.RGBA,g.UNSIGNED_BYTE,window.zeroReference);
+            });
+            await page.selectOption('#view', 'eye');
+            for (const strategy of ['pixel','mesh','cut','edge']) {
+                await page.selectOption('#strategy',strategy);
+                const error = await page.evaluate(() => {
+                    const c=document.querySelector('canvas'),g=c.getContext('webgl2'),out=new Uint8Array(window.zeroReference.length);
+                    g.readPixels(0,0,c.width,c.height,g.RGBA,g.UNSIGNED_BYTE,out);
+                    let max=0;for(let i=0;i<out.length;i++)max=Math.max(max,Math.abs(out[i]-window.zeroReference[i]));
+                    return max;
+                });
+                assert.ok(error<=1, `${strategy} at zero strength must reconstruct source: ${error}`);
+            }
+            await setStrength(2);
+            for (const strategy of ['pixel','mesh','cut','edge']) {
+                await page.selectOption('#strategy', strategy);
+                assert.equal(await page.evaluate(() => document.querySelector('canvas').getContext('webgl2').getError()),0);
+            }
+            await setStrength(1);
+        }
+
     }
     const geometry = await page.evaluate(async () => {
         const {meshVertex, meshFragment} = await import('/mesh-shaders.mjs');
@@ -60,6 +90,7 @@ try {
             else { gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 2, 2, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array([0,255,0,255])); }
         }
         const loc = name => gl.getUniformLocation(p, name);
+        gl.uniform1f(loc('strength'), 1);
         gl.uniform1i(loc('video'), 0); gl.uniform1i(loc('depthMap'), 1);
         gl.uniform2i(loc('grid'), 2, 2); gl.uniform1f(loc('eye'), 0);
         gl.enable(gl.DEPTH_TEST); gl.viewport(0, 0, 64, 32);

@@ -2,12 +2,12 @@ export const fullscreenVertex = `#version 300 es
     out vec2 uv;void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));uv=p;gl_Position=vec4(p*2.-1.,0,1);}`;
 export const pixelFragment = `#version 300 es
     precision highp float;uniform sampler2D video;uniform sampler2D depthMap;
-    uniform float eye;uniform int depthOnly;in vec2 uv;out vec4 color;
+    uniform float eye;uniform float strength;uniform int depthOnly;in vec2 uv;out vec4 color;
     float depthAt(vec2 p){return texture(depthMap,vec2(p.x,1.-p.y)).r;}
     void main(){if(depthOnly==1){color=vec4(vec3(depthAt(uv)),1);return;}
     vec2 source=uv;if(eye!=0.){float best=-1.;float bestError=1e6;bool found=false;
-    for(int i=-16;i<=16;i++){vec2 q=uv+vec2(float(i)/1920.,0);
-    if(q.x>=0.&&q.x<=1.){float d=depthAt(q);float error=abs(q.x+eye*(d-.5)*.016-uv.x);
+    for(int i=-32;i<=32;i++){if(abs(float(i))>ceil(16.*strength))continue;vec2 q=uv+vec2(float(i)/1920.,0);
+    if(q.x>=0.&&q.x<=1.){float d=depthAt(q);float error=abs(q.x+eye*(d-.5)*.016*strength-uv.x);
     if(error<.75/1920.){if(!found||d>best){source=q;best=d;found=true;}}
     else if(!found&&error<bestError){source=q;bestError=error;}}}}
     color=texture(video,source);}`;
@@ -18,7 +18,7 @@ export const meshVertex = `#version 300 es
 precision highp float;
 uniform sampler2D depthMap;
 uniform ivec2 grid;
-uniform float eye;
+uniform float eye;uniform float strength;
 uniform float threshold;
 out vec3 projected;
 flat out float rejected;
@@ -33,11 +33,11 @@ void main(){
   float d=depthAt(vec2(base+offsets[first+i])/vec2(grid-1));
   lo=min(lo,d);hi=max(hi,d);
  }
- rejected=hi-lo>threshold?1.:0.;
+ rejected=hi-lo>threshold&&strength>0.?1.:0.;
  vec2 uv=vec2(base+offsets[corner])/vec2(grid-1);
  float d=depthAt(uv); float z=1./(.5+d);
  vec2 xy=(uv*2.-1.)*z;
- xy.x+=2.*eye*.016*(1.-z);
+ xy.x+=2.*eye*.016*strength*(1.-z);
  // Near/far planes 0.5/3, positive camera-space Z.
  gl_Position=vec4(xy,1.4*z-1.2,z);
  projected=vec3(uv*z,z);

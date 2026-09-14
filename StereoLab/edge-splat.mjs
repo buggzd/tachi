@@ -28,7 +28,7 @@ void main(){
 }`;
 export const coverageSplat = `#version 300 es
 precision highp float;
-uniform sampler2D video, aligned; uniform float eye; uniform int lanes;
+uniform sampler2D video, aligned; uniform float eye;uniform float strength; uniform int lanes;
 in vec2 uv; layout(location=0) out vec4 color; layout(location=1) out vec4 geometry;
 void main(){
  ivec2 size=textureSize(aligned,0); int center=int(gl_FragCoord.x);
@@ -36,10 +36,10 @@ void main(){
  for(int lane=0;lane<4;lane++){
   if(lane>=lanes)break;
   float target=float(center)+(float(lane)+.5)/float(lanes); float best=-1.; vec3 rgb=vec3(0);
-  for(int dx=-17;dx<=17;dx++){
+  for(int dx=-33;dx<=33;dx++){
    int sx=center+dx; if(sx<0||sx>=size.x)continue;
    ivec2 p=ivec2(sx,int(gl_FragCoord.y));float d=texelFetch(aligned,p,0).r;
-   float projected=float(sx)+.5+eye*(d-.5)*.016*float(size.x);
+   float projected=float(sx)+.5+eye*(d-.5)*.016*strength*float(size.x);
    if(target>=projected-.5&&target<projected+.5&&d>best){
     best=d;rgb=texture(video,(vec2(p)+.5)/vec2(size)).rgb;
    }
@@ -57,7 +57,7 @@ void main(){
  vec4 c=texelFetch(rendered,p,0); if(c.a>=.999){color=vec4(c.rgb,1);return;}
  if(fillHoles==0){color=vec4(c.rgb+(1.-c.a)*vec3(.6,0,.6),1);return;}
  float far=2.; int left=-1,right=-1;
- for(int i=1;i<=32;i++){
+ for(int i=1;i<=64;i++){
   if(left<0&&p.x-i>=0&&texelFetch(rendered,p-ivec2(i,0),0).a>.999)left=p.x-i;
   if(right<0&&p.x+i<size.x&&texelFetch(rendered,p+ivec2(i,0),0).a>.999)right=p.x+i;
  }
@@ -111,8 +111,8 @@ void main(){color=vec4(vec3(texture(aligned,uv).r),1);}`);
         this.uniforms(this.guide,{video:0,depthMap:1,alignEdges:align?1:0});g.drawArrays(g.TRIANGLES,0,3);g.bindFramebuffer(g.FRAMEBUFFER,null);}
     showDepth(){const g=this.gl;g.bindFramebuffer(g.FRAMEBUFFER,null);g.viewport(0,0,1920,1080);
         this.uniforms(this.preview,{aligned:2});g.drawArrays(g.TRIANGLES,0,3);}
-    draw(eye,viewport,fill,lanes){const g=this.gl;g.disable(g.DEPTH_TEST);g.bindFramebuffer(g.FRAMEBUFFER,this.splatFbo);g.viewport(0,0,1920,1080);
-        this.uniforms(this.splat,{video:0,aligned:2,lanes});g.uniform1f(g.getUniformLocation(this.splat,'eye'),eye);g.drawArrays(g.TRIANGLES,0,3);
+    draw(eye,viewport,fill,lanes,strength=1){const g=this.gl;g.disable(g.DEPTH_TEST);g.bindFramebuffer(g.FRAMEBUFFER,this.splatFbo);g.viewport(0,0,1920,1080);
+        this.uniforms(this.splat,{video:0,aligned:2,lanes});g.uniform1f(g.getUniformLocation(this.splat,'eye'),eye);g.uniform1f(g.getUniformLocation(this.splat,'strength'),strength);g.drawArrays(g.TRIANGLES,0,3);
         g.bindFramebuffer(g.FRAMEBUFFER,null);g.viewport(viewport,0,1920,1080);
         this.uniforms(this.fill,{rendered:3,geometryMap:4,fillHoles:fill?1:0});g.drawArrays(g.TRIANGLES,0,3);}
 }

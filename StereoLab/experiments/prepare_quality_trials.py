@@ -1,4 +1,5 @@
 """Precompute actual Java depth variants for reproducible, blinded viewing; no phone timing claim."""
+import argparse
 import hashlib
 import json
 import os
@@ -25,8 +26,12 @@ def digest(path):
         return hashlib.file_digest(f, 'sha256').hexdigest()
 
 
-def filters(folder, w, h):
+def filters(folder, w, h, percentile_low=5, percentile_high=95):
     code = SOURCE.read_text()
+    original = 'float nextLow = sorted[pixels / 20], nextHigh = sorted[pixels * 19 / 20];'
+    if code.count(original) != 1:
+        raise RuntimeError('Review normalization source before generating a variant')
+    code = code.replace(original, f'float nextLow = sorted[pixels * {percentile_low} / 100], nextHigh = sorted[pixels * {percentile_high} / 100];')
     gate = 'if (!reset && Math.abs(value - previous[i]) < .12f)'
     if code.count(gate) != 1:
         raise RuntimeError('Production gate changed: review no-history ablation')
@@ -50,11 +55,18 @@ def run(folder, variant, raw, rgba):
 
 
 def main():
+    global OUT
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--percentiles', choices=['5-95', '2-98'], default='5-95')
+    args = parser.parse_args()
+    low, high = map(int, args.percentiles.split('-'))
+    dataset = 'quality-v1' if args.percentiles == '5-95' else 'quality-p02-p98'
+    OUT = LOCAL / 'samples' / dataset
     OUT.mkdir(parents=True, exist_ok=True)
     cache = LOCAL / 'quality-cache'
     cache.mkdir(exist_ok=True)
     report = dict(schema=1, productionSha256=digest(SOURCE), frames=FRAMES,
-                  simulatedDelayFrames=2, clips=[], profiles=[
+                  normalization=dict(lowPercentile=low, highPercentile=high, scope='per-update bounds with 0.15 smoothing; reset on photometric cuts'), simulatedDelayFrames=2, clips=[], profiles=[
                       dict(id='p0', label='266×154 · 当前稳定器 · 半帧率 · 延后 2 帧', width=266, height=154, stride=2, delay=2),
                       dict(id='p1', label='266×154 · 无像素历史融合 · 半帧率 · 延后 2 帧', width=266, height=154, stride=2, delay=2),
                       dict(id='p2', label='392×224 · 当前稳定器 · 半帧率 · 延后 2 帧', width=392, height=224, stride=2, delay=2),
@@ -100,7 +112,7 @@ def main():
                 del session
             info['models'][str(w)] = dict(sha256=model_sha, desktopCpuMedianMs=float(np.median(times)), shape=[h,w])
             with tempfile.TemporaryDirectory(prefix='tachi-quality-java-') as temp:
-                folder = Path(temp); filters(folder,w,h)
+                folder = Path(temp); filters(folder,w,h,low,high)
                 for profile in report['profiles']:
                     if profile['width'] != w:
                         continue
@@ -108,7 +120,7 @@ def main():
                     maps = run(folder, 'NoHistoryDepth' if profile['id']=='p1' else 'TemporalDepth', raw[::stride], rgba[::stride])
                     file = OUT / f'clip-{clip}-{profile["id"]}.bin'
                     file.write_bytes(maps.tobytes())
-                    info['data'][profile['id']] = dict(url=f'/samples/quality-v1/{file.name}', bytes=file.stat().st_size, sha256=digest(file), count=len(maps))
+                    info['data'][profile['id']] = dict(url=f'/samples/{dataset}/{file.name}', bytes=file.stat().st_size, sha256=digest(file), count=len(maps))
         report['clips'].append(info)
         print('clip',clip,'complete',flush=True)
     (OUT / 'manifest.json').write_text(json.dumps(report,indent=2)+'\n')

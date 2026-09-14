@@ -23,6 +23,8 @@ function draw() {
     if (!ready || video.readyState < 2) return;
     const profile = manifest.profiles.find(p => p.id === $('profile').value);
     const data = maps[profile.id], index = depthIndex(frame, profile, data.count);
+    const strength = Math.max(0, Math.min(2, Number($('strength').value)));
+    $('strength-value').value = `${strength.toFixed(2)}× · 每眼最大 ${(15.36 * strength).toFixed(1)} px`;
     const view = $('view').value, strategy = $('strategy').value;
     const width = view === 'sbs' ? 3840 : 1920;
     if (canvas.width !== width) canvas.width = width;
@@ -37,6 +39,7 @@ function draw() {
     const p = useMesh ? mesh : pixel;
     gl.useProgram(p);
     const loc = name => gl.getUniformLocation(p, name);
+    gl.uniform1f(loc('strength'), strength);
     gl.uniform1i(loc('video'), 0); gl.uniform1i(loc('depthMap'), 1);
     gl.clearColor(.28, .02, .3, 1); gl.clearDepth(1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -49,7 +52,7 @@ function draw() {
     }
     for (let eye = 0; eye < (view === 'sbs' ? 2 : 1); eye++) {
         if (view === 'aligned') { edge.showDepth(); continue; }
-        if (useEdge) { edge.draw(eye === 0 ? 1 : -1, eye * 1920, $('fill-holes').checked, Number($('lanes').value)); continue; }
+        if (useEdge) { edge.draw(eye === 0 ? 1 : -1, eye * 1920, $('fill-holes').checked, Number($('lanes').value), strength); continue; }
         gl.viewport(eye * 1920, 0, 1920, 1080);
         gl.uniform1f(loc('eye'), view === 'source' ? 0 : eye === 0 ? 1 : -1);
         gl.drawArrays(gl.TRIANGLES, 0, useMesh ? (profile.width - 1) * (profile.height - 1) * 6 : 3);
@@ -85,7 +88,7 @@ function callback(_now, meta) {
     video.requestVideoFrameCallback(callback);
 }
 $('clip').onchange = () => load().catch(fail);
-for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes']) $(id).oninput = () => {
+for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes', 'strength']) $(id).oninput = () => {
     $('threshold-value').value = $('threshold').value;
     if ($('view').value === 'sbs') { $('zoom').value = '1'; canvas.style.transform = ''; }
     $('zoom').disabled = $('view').value === 'sbs'; draw();
@@ -106,8 +109,8 @@ try {
         for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
     }
     edge = new EdgeSplat(gl, program);
-    const response = await fetch('/samples/quality-v1/manifest.json');
-    if (!response.ok) throw Error('缺少 quality-v1 本地样本');
+    const response = await fetch('/samples/quality-p02-p98/manifest.json');
+    if (!response.ok) throw Error('缺少 2%／98% 本地样本');
     manifest = await response.json();
     $('clip').replaceChildren(...manifest.clips.map((_, i) => new Option(`片段 ${i+1}`, i)));
     $('profile').replaceChildren(...manifest.profiles.map(p => new Option(p.label, p.id)));
