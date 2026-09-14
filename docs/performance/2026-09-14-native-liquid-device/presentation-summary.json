@@ -1,0 +1,57 @@
+{
+  "source": "SurfaceFlinger --latency sampled from external presentation layer",
+  "collectorRows": 256,
+  "collectorElapsedSeconds": 579.789,
+  "nominalRefreshNs": 16666666,
+  "allFrameTriples": 32512,
+  "validFrameTriples": 32182,
+  "invalidFrameTriples": 330,
+  "invalidSentinel": "9223372036854775807",
+  "deduplicated": {
+    "desired": {
+      "samples": 28700,
+      "intervals": 28699,
+      "meanMs": 20.291,
+      "medianMs": 19.523,
+      "p95Ms": 31.552,
+      "minMs": 0.364,
+      "maxMs": 3795.816,
+      "gt25ms": 3336,
+      "gt50ms": 91,
+      "gt100ms": 23,
+      "gt500ms": 12
+    },
+    "actualPresent": {
+      "samples": 28700,
+      "intervals": 28699,
+      "meanMs": 20.289,
+      "medianMs": 16.61,
+      "p95Ms": 33.221,
+      "minMs": 16.608,
+      "maxMs": 3820.329,
+      "gt25ms": 4985,
+      "gt50ms": 39,
+      "gt100ms": 23,
+      "gt500ms": 12
+    },
+    "frameReady": {
+      "samples": 28700,
+      "intervals": 28699,
+      "meanMs": 20.291,
+      "medianMs": 19.317,
+      "p95Ms": 20.636,
+      "minMs": 17.277,
+      "maxMs": 3795.642,
+      "gt25ms": 374,
+      "gt50ms": 26,
+      "gt100ms": 23,
+      "gt500ms": 12
+    }
+  },
+  "caveats": [
+    "The latency dump is a rolling history, so rows overlap and are deduplicated by timestamp.",
+    "The collector stopped at about 580 seconds although the structured playback window was about 1198 seconds.",
+    "Invalid sentinel timestamps and collector gaps are excluded from interval statistics; observed long gaps are not independently attributed to display drops.",
+    "This measures SurfaceFlinger timestamps, not optical photon latency."
+  ]
+}

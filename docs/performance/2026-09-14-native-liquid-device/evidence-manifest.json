@@ -1,0 +1,39 @@
+{
+  "commit": "372985b",
+  "redacted": true,
+  "trackedEvidence": [
+    "device-summary.json",
+    "performance-summary.json",
+    "presentation-summary.json",
+    "test-matrix.md",
+    "evidence/depth-preview.png",
+    "evidence/sbs-playing.png",
+    "evidence/2d-mode.png",
+    "evidence/seek-buffering.png",
+    "evidence/seek-recovered.png",
+    "evidence/mirror-prompt.png",
+    "evidence/display-recovery-black.png"
+  ],
+  "localSourceEvidence": [
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/trial.log",
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/summary-final.json",
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/presentation-exact.jsonl",
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/display.txt",
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/thermal-before.txt",
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/thermal-mid.txt",
+    "StereoLab/.local/native-liquid-device/retest-20260914/long-20m/thermal-after.txt",
+    "StereoLab/.local/native-liquid-device/retest-20260914/live-confirm/adb-devices.txt",
+    "StereoLab/.local/native-liquid-device/retest-20260914/live-confirm/package-baseline.txt"
+  ],
+  "excludedFromGit": [
+    "ADB serial and LAN address",
+    "Jellyfin account, token, and private URL",
+    "raw logcat and unredacted device dumps",
+    "APK, video, SDK binaries, and generated build output"
+  ],
+  "derivation": {
+    "performance": "Extract JSON records after TachiPlaybackTrial from trial.log; use first/last counter deltas and compute statistics across 1182 snapshots.",
+    "presentation": "Parse presentation-exact.jsonl, discard sentinel timestamps, deduplicate each timestamp column, and calculate intervals in milliseconds.",
+    "reproducibleInputs": "The two local raw files above are intentionally outside the commit because they are device logs. The formulas and caveats are recorded in performance-summary.json and presentation-summary.json."
+  }
+}

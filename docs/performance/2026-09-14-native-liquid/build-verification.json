@@ -23,5 +23,17 @@
       "skipped": 0
     }
   },
-  "deviceValidation": "not run; ADB unavailable by user instruction"
+  "deviceValidation": {
+    "status": "partial",
+    "report": "../2026-09-14-native-liquid-device/README.md",
+    "scope": "392 QNN + strict same-frame pairing + GPU liquid on Android 16 / 2509FPN0BC",
+    "longPlaybackSeconds": 1198.111,
+    "depthHz": 18.906,
+    "blockers": [
+      "external display recovery can require manual mirroring after player exit or display rebuild",
+      "high-dynamic testvideo-4.mp4 frames 347/579 were not replayed through the APK entry",
+      "audio/subtitle timing was not independently measured",
+      "GPU liquid timer does not cover the complete liquid pass"
+    ]
+  }
 }

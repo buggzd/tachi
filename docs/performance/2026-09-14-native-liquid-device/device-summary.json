@@ -1,0 +1,52 @@
+{
+  "testDate": "2026-09-14",
+  "commit": "372985b",
+  "apk": {
+    "file": "AndroidApp/app/build/distributions/tachi-sbs-liquid-392.apk",
+    "sha256": "a13df790c741c4e4dc0c500f67edbd7290bab4c2be55f2cc1420d7f2c46bca0b",
+    "versionName": "0.3.1-sbs-liquid",
+    "versionCode": 8,
+    "abi": "arm64-v8a",
+    "dataPreservedOnInstall": true
+  },
+  "device": {
+    "model": "2509FPN0BC",
+    "product": "popsicle",
+    "android": "16",
+    "socFamily": "Qualcomm canoe",
+    "adbTransport": "wireless; serial withheld",
+    "externalDisplay": {
+      "stateAtCollection": "ON",
+      "resolution": "3840x1080",
+      "refreshHz": 60,
+      "displayName": "SmartGlasses"
+    }
+  },
+  "app": {
+    "package": "com.jellyfinforrayneo.client.debug",
+    "decoder": "c2.qti.hevc.decoder",
+    "source": "existing Jellyfin test source 7; server identity withheld"
+  },
+  "experiment": {
+    "depthWidth": 392,
+    "depthHeight": 224,
+    "depthTargetHz": 24,
+    "strictSameFrame": true,
+    "historyFusion": false,
+    "depthRangeEma": false,
+    "normalization": "per-frame P2/P98",
+    "liquidStrength": 0.85,
+    "liquidFeatherPx": 96,
+    "liquidAmount": 0.65,
+    "gpuPreprocess": true,
+    "gpuStabilization": true,
+    "pinnedDepthOutput": true,
+    "asyncCapturePoll": true,
+    "captureSlots": 2
+  },
+  "limits": [
+    "The high-dynamic local file testvideo-4.mp4 was not reachable through the installed playback entry during this run.",
+    "No optical latency or power-meter measurement was available.",
+    "Audio and subtitle timing was not instrumented independently of the Media3 clock."
+  ]
+}

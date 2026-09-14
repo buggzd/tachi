@@ -1,0 +1,108 @@
+{
+  "commit": "372985b",
+  "structuredPlaybackWindow": {
+    "seconds": 1198.111,
+    "samples": 1182,
+    "maxSampleGapSeconds": 1.109,
+    "state": "all samples playing + depthState=ready + valid=true + stereo=true",
+    "source": "existing Jellyfin test source 7"
+  },
+  "counterDeltas": {
+    "depthComputed": 22652,
+    "uploads": 22652,
+    "pairedFrames": 22652,
+    "decodedFrames": 28726,
+    "videoDraws": 28675,
+    "supersededVideoFrames": 51,
+    "droppedFrames": 0,
+    "skippedDecoderFrames": 0,
+    "ptsReleaseMatches": 28675,
+    "ptsDirectMatches": 0,
+    "ptsMissing": 0,
+    "depthPtsSamples": 64788,
+    "depthPtsUnknown": 0,
+    "depthPtsFuture": 0
+  },
+  "rates": {
+    "depthHz": 18.906,
+    "decodedVideoHz": 23.976,
+    "videoDrawHz": 23.933,
+    "pairedFrameHz": 18.906,
+    "note": "Depth Hz is NPU sampling; it is not display refresh or video frame rate."
+  },
+  "snapshotStatistics": {
+    "definition": "Mean and P95 are calculated across 1182 one-second-ish diagnostic snapshots; they are not a sum of pipeline stages.",
+    "qnnInferenceMsMeanField": {
+      "mean": 30.761,
+      "p95": 31.125,
+      "min": 30.25,
+      "max": 31.189
+    },
+    "gpuPipelineMsMeanField": {
+      "mean": 17.034,
+      "p95": 18.592,
+      "min": 13.475,
+      "max": 18.61,
+      "scope": "instrumented GLES GPU timer scope"
+    },
+    "queueWaitMsMeanField": {
+      "mean": 1.838,
+      "p95": 2.114,
+      "min": 1.373,
+      "max": 2.492
+    },
+    "captureToWorkerMsMeanField": {
+      "mean": 19.589,
+      "p95": 23.951,
+      "min": 10.333,
+      "max": 24.516
+    },
+    "captureToUploadMsMeanField": {
+      "mean": 75.768,
+      "p95": 86.115,
+      "min": 56.989,
+      "max": 88.618
+    },
+    "pairedVideoLagMs": {
+      "mean": 82.86,
+      "p95": 125.0,
+      "min": 0.0,
+      "max": 167.0,
+      "definition": "Latest decoded video PTS minus the video PTS in the accepted video/depth pair; this is not optical latency."
+    },
+    "displayAgeMs": {
+      "mean": 102.717,
+      "p95": 147.0,
+      "min": 41.0,
+      "max": 204.0,
+      "definition": "Age field reported by the player diagnostics."
+    }
+  },
+  "gpuLiquidTimer": {
+    "usable": false,
+    "reportedMeanMsAcrossSnapshots": 0.209,
+    "reportedMedianMs": 0.003,
+    "reportedP95Ms": 0.021,
+    "reportedMaxMs": 8.391,
+    "disjointDelta": 0,
+    "reason": "The timer does not reliably cover the complete liquid compute and completion path; the spread between near-zero values and multi-millisecond outliers is inconsistent with the full GPU pass. Do not use it as the liquid stage cost."
+  },
+  "thermalAndPower": {
+    "thermalStatus": "0 at before/mid/after snapshots",
+    "batteryLevel": "100%",
+    "batteryTemperatureC": {
+      "before": 32.3,
+      "mid": 38.4,
+      "after": 40.9
+    },
+    "charging": true,
+    "powerConclusion": "No power conclusion; the run was charged and no power meter was used."
+  },
+  "presentation": "presentation-summary.json",
+  "measurementBoundaries": [
+    "The structured playback log covers about 20 minutes, just under 1200 seconds; it is not a 30-minute run.",
+    "The SurfaceFlinger collector covers about 580 seconds and uses a rolling history with overlapping rows; see presentation-summary.json.",
+    "A zero depthPtsLag means the accepted pair has matching media PTS in this instrument, not zero end-to-end delay.",
+    "The GPU and NPU timing fields are independent snapshots. They must not be added as if they were serial stages."
+  ]
+}
