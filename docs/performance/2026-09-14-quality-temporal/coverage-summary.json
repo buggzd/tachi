@@ -1,0 +1,29 @@
+{
+  "scope": "accumulated incomplete-coverage pixels across both eyes, not recovered area or correctness",
+  "clips": [
+    {
+      "missing": 26135310,
+      "future": 5846366,
+      "past": 1055918,
+      "clip": 1,
+      "frames": 96,
+      "acceptedFraction": 0.2640980344216311
+    },
+    {
+      "missing": 26532239,
+      "future": 16020095,
+      "past": 894085,
+      "clip": 2,
+      "frames": 96,
+      "acceptedFraction": 0.6374953881577804
+    },
+    {
+      "missing": 32294456,
+      "future": 20412349,
+      "past": 1522652,
+      "clip": 3,
+      "frames": 96,
+      "acceptedFraction": 0.6792187798425835
+    }
+  ]
+}

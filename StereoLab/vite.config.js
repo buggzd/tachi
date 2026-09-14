@@ -10,6 +10,7 @@ export default defineConfig({
         main: resolve(import.meta.dirname, 'index.html'),
         quality: resolve(import.meta.dirname, 'quality-trials.html'),
         mesh: resolve(import.meta.dirname, 'mesh-trials.html'),
+        fullQuality: resolve(import.meta.dirname, 'full-quality-trials.html'),
     } } },
     plugins: [{
         name: 'local-stereo-assets',

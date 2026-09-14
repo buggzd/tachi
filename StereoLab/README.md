@@ -271,3 +271,45 @@ python StereoLab/experiments/prepare_quality_trials.py --percentiles 2-98
 原 gather 在 1 倍仍使用 ±16 搜索，随强度最多扩为 ±32；子像素覆盖最多枚举
 ±33 源像素，背景边界搜索扩大为 64px。改变强度不改变输入深度，强度越大，
 露底与深度误差通常越明显。原独立盲测页维持固定强度，避免改变既有评分条件。
+
+## 完整 Quality 与时序背景补洞
+
+`full-quality-trials.html` 是离线生成结果的独立播放器。原 `mesh-trials.html` 和
+所有原策略继续保留。参考渲染核心按 MIT 许可隔离在 `vendor/qinglong-quality`，
+逐文件来源校验值与许可证随源码保留；包入口替换为空初始化，不运行下载项目的
+应用、安装器或深度推理。渲染实现文件不变，使用原实际相对深度 Quality 入口：
+区域/测地线边缘归属、单侧深度重采样、前景 matte 扩展、16 级横向覆盖、
+前景优先遮挡、背景排除掩膜、Telea 修补及覆盖合成。没有把未启用的 exemplar
+分支当作已执行功能。完整指的是深度→双眼的相对深度渲染路径，不包含上游模型、
+整镜头归一化、视频编码应用、米制深度路线或原项目界面。
+
+该页固定原强度 1×（参考设置 stereo_strength=3.2、convergence=0.5），
+每眼 1920×1080，沿用同一 392×224、2%／98%、半帧率且模拟滞后两帧的深度。
+比较原 gather33 的 CPU 翻译、完整 Quality、Quality 加时序补洞、补洞来源及
+Quality 补洞前覆盖。网页只解码预生成视频，不代表手机实时性能。所有对照统一
+H.264 CRF16 编码，编码细节损失属于证据限制。原 gather 翻译采用 OpenCV 深度
+双线性插值，浮点边界与浏览器实现可能有微小差别。
+
+时序补洞是独立实验：前后 1/3 帧（无跨片段回环），在 480px 图像上计算双向
+DIS 光流，通过背景深度、颜色一致性和前后向误差筛选匹配，再用 RANSAC 拟合
+背景仿射运动。将当前缺失区域按背景视差逆映射回源坐标，再映射到候选帧。
+候选深度必须属于相近背景，并排除前景附近 5×5 区域。只填缺失覆盖；不接受的
+位置精确保留完整 Quality 结果。来源图绿色为未来、蓝色为过去、紫色为仍用
+Quality、黑色为完整覆盖；统计按像素计数，含部分覆盖。前视 3 帧约 125ms，
+另需实际处理时间。该算法不是稠密三维背景重建：仿射近似不能处理所有视差、
+动态背景及复杂遮挡；保守门槛也可能拒绝有用候选，仍可能产生匹配错误和闪烁。
+
+复现（macOS C++ 编译器；Python 实验环境）：
+
+```bash
+uv pip install --python <实验Python> -r StereoLab/experiments/quality-reference-requirements.txt
+<实验Python> StereoLab/experiments/build_quality_core.py
+<实验Python> StereoLab/experiments/test_quality_reference.py
+<实验Python> StereoLab/experiments/test_temporal_background.py
+<实验Python> StereoLab/experiments/prepare_full_quality.py
+cd StereoLab && node verify-full-quality.mjs
+```
+
+生成物、C++ 二进制、视频帧缓存和含片源截图全部放在忽略的 `.local`。
+三片段清单记录参考源码校验、深度清单校验、实际未来/过去填充量和计算耗时。
+功能测试不等于主观画质通过；需用户观看轮廓、背景纹理和时间稳定性。

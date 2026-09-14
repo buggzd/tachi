@@ -1,0 +1,2 @@
+# Keep the upstream snapshot byte-identical, including CRLF, for SHA-256 checks.
+* -text whitespace=cr-at-eol

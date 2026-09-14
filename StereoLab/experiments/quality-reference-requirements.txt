@@ -1,0 +1,4 @@
+torch==2.8.0
+pybind11==3.0.1
+opencv-contrib-python-headless==4.11.0.86
+numpy==2.4.6
