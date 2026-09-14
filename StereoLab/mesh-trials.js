@@ -95,7 +95,7 @@ function draw() {
     }
     canvas.dataset.ready = 'true'; canvas.dataset.frame = frame; canvas.dataset.depthIndex = index;
     $('seek').value = frame;
-    $('status').textContent = `视频帧 ${frame} / ${frameCount() - 1} · 深度帧 ${index} · ${profile.width}×${profile.height} · 每眼 1920×1080 · ${useLiquid ? '背景局部液化 · 未覆盖处保留原始填充' : useElastic ? '弹性网格：全覆盖，无补洞' : '紫色为空洞（未补区域）'}`;
+    $('status').textContent = `视频帧 ${frame} / ${frameCount() - 1} · 深度采样对应视频帧 ${index*profile.stride} · 错位 ${frame-index*profile.stride} 帧 · ${profile.width}×${profile.height} · 每眼 1920×1080 · ${useLiquid ? '背景局部液化 · 未覆盖处保留原始填充' : useElastic ? '弹性网格：全覆盖，无补洞' : '紫色为空洞（未补区域）'}`;
 }
 async function load() {
     const token = ++generation;
@@ -160,9 +160,19 @@ try {
     manifest = await response.json();
     const extra=await fetch('/samples/quality-motion/manifest.json');
     if(extra.ok){const motion=await extra.json();manifest.clips.push(...motion.clips.map(c=>({...c,frames:motion.frames})));}
+    for(const dataset of ['quality-p02-p98', ...(extra.ok?['quality-motion']:[])]){
+        const response=await fetch(`/samples/${dataset}/aligned.json`);
+        if(!response.ok)throw Error('缺少严格同帧深度，请生成 aligned 数据');
+        const aligned=await response.json();
+        if(!manifest.profiles.some(p=>p.id===aligned.profile.id))manifest.profiles.push(aligned.profile);
+        for(const entry of aligned.clips){
+            const clip=manifest.clips.find(c=>c.sourceSha256===entry.sourceSha256);
+            if(clip)clip.data[aligned.profile.id]=entry.data;
+        }
+    }
     $('clip').replaceChildren(...manifest.clips.map((c, i) => new Option(c.label || `片段 ${i+1}`, i)));
     if(extra.ok)$('clip').value=String(manifest.clips.length-1);
     $('profile').replaceChildren(...manifest.profiles.map(p => new Option(p.label, p.id)));
-    $('profile').value = 'p2'; $('seek').max = frameCount() - 1;
+    $('profile').value = 'p4'; $('seek').max = frameCount() - 1;
     await load(); video.requestVideoFrameCallback(callback);
 } catch (error) { fail(error); }

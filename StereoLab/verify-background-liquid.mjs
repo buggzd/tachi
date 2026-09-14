@@ -6,6 +6,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(process.argv[2]||'http://127.0.0.1:4190/mesh-trials.html');
  await page.waitForSelector('canvas[data-ready="true"]');
+ assert.equal(await page.locator('#profile').inputValue(),'p4');
  const count=await page.locator('#clip option').count();assert.equal(count,4,'high motion dataset available');
  const set=async(id,v)=>page.locator(`#${id}`).evaluate((e,v)=>{e.value=v;e.dispatchEvent(new Event('input'));},String(v));
  for(let clip=0;clip<count;clip++){
@@ -19,7 +20,9 @@ try{
   await page.selectOption('#view','eye');
   assert.equal(await page.locator('canvas').evaluate(c=>c.getContext('webgl2').getError()),0);
  }
- await page.click('#play');await page.waitForFunction(()=>Number(document.querySelector('canvas').dataset.frame)>460);await page.click('#play');
+ await set('seek',579);await page.waitForFunction(()=>document.querySelector('canvas').dataset.frame==='579');
+ assert.equal(await page.locator('canvas').getAttribute('data-depth-index'),'579');
+ await page.click('#play');await page.waitForFunction(()=>Number(document.querySelector('canvas').dataset.frame)>589);await page.click('#play');
  await page.locator('canvas').screenshot({path:'StereoLab/.local/background-liquid-preview.png'});
  await set('seek',898);await page.waitForFunction(()=>Number(document.querySelector('canvas').dataset.frame)===898);await page.click('#play');
  await page.waitForFunction(()=>Number(document.querySelector('canvas').dataset.frame)<30);await page.click('#play');
