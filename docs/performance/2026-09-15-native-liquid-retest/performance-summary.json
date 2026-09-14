@@ -1,0 +1,78 @@
+{
+  "sourceCommit": "0c3b4d8",
+  "source": "StereoLab/.local/native-liquid-device/retest-20260915-followup/fixture-valid/logcat-45s.txt",
+  "selection": "Longest consecutive playing/valid/stereo run in this file; gap <= 2500 ms, no paired counter reset. Other files not concatenated.",
+  "samples": 119,
+  "durationSeconds": 119.604,
+  "pairedFrameHz": 21.378883649376274,
+  "counterDeltas": {
+    "pairedFrames": 2557,
+    "cachedPairDraws": 4495,
+    "pairRenderUpdates": 2557
+  },
+  "firstPairedPtsUs": 41000,
+  "lastPairedPtsUs": 119564458,
+  "lastSnapshotRollingStatistics": {
+    "gpuRender": {
+      "count": 4761,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 14.7575,
+      "p95Ms": 33.6139
+    },
+    "gpuLiquid": {
+      "count": 2557,
+      "window": 512,
+      "disjoint": 0,
+      "meanMs": 0.0028,
+      "p95Ms": 0.0039
+    },
+    "gpuLiquidCompletion": {
+      "count": 2558,
+      "window": 512,
+      "submitMs": {
+        "mean": 5.3426,
+        "p95": 15.4863
+      },
+      "fenceObservedMs": {
+        "mean": 9.0869,
+        "p95": 41.7234
+      },
+      "pollMs": {
+        "mean": 0.0155,
+        "p95": 0.0246
+      }
+    },
+    "timings": {
+      "count": 2558,
+      "window": 512,
+      "captureToUploadMs": {
+        "mean": 70.5693,
+        "p95": 96.2843
+      },
+      "uploadMs": {
+        "mean": 1.8971,
+        "p95": 8.1906
+      },
+      "drawSubmitMs": {
+        "mean": 0.0395,
+        "p95": 0.0689
+      }
+    },
+    "pairedVideoLagUs": 125125,
+    "depthPts": {
+      "count": 7053,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    },
+    "frameMapping": {
+      "releaseMatches": 2861,
+      "ptsMatches": 0,
+      "missing": 0
+    }
+  },
+  "limits": "Short fixture run, not a 20\u201330 minute Jellyfin acceptance run. Rolling statistics are one final snapshot, not whole-run percentiles; fence observation is not pure GPU compute. Software PTS is not measured AV latency."
+}

@@ -70,4 +70,4 @@
 
 392 同帧背景液化已提供独立 daily liquid 原生实验构建：GPU 位移场和有界 RGB/深度配对；尚待设备画质、更新率、音画/字幕延迟与热态验收，不替换正式默认。见 [原生液化](performance/2026-09-14-native-liquid/README.md)。
 
-液化实机后续：开发侧已移除稳定模式 onPause 的无条件 2D 往返，增加渲染缓存与字幕配对时钟，提供同 APK 本地素材入口；显示恢复、实际性能、音画同步待复测，见 [修订清单](performance/2026-09-14-native-liquid-followup/README.md)。
+液化实机后续：开发侧已移除稳定模式 onPause 的无条件 2D 往返，增加渲染缓存与字幕配对时钟，提供同 APK 本地素材入口；修订版兼容素材短测为 21.38 Hz，高动态原片解码与正式播放器恢复受阻，显示恢复、音画同步及长时验收仍未完成，见 [复测报告](performance/2026-09-15-native-liquid-retest/README.md)。

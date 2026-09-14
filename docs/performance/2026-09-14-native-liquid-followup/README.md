@@ -39,3 +39,7 @@ adb shell am start -n com.jellyfinforrayneo.client.debug/com.jellyfinforrayneo.c
 5. Jellyfin 播放，复核 ASS/WebVTT 在暂停、seek、深度开关后同步，再独立判断音频领先。短测通过才继续 20–30 分钟；问题出现时保留证据，不拼接播放窗口。
 
 修订 APK：`AndroidApp/app/build/distributions/tachi-sbs-liquid-392-followup.apk`。
+
+## 复测阶段结果
+
+见 [9 月 15 日收尾报告](../2026-09-15-native-liquid-retest/README.md)：兼容素材短测有有效配对和缓存计数，高动态原片解码及正式播放器恢复阻塞；同步、显示恢复和长时验收仍未完成。

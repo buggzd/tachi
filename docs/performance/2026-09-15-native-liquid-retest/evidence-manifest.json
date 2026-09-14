@@ -1,0 +1,30 @@
+{
+  "storage": "Local ignored originals retained; no raw logcat, device desktop or media screenshots published.",
+  "files": [
+    {
+      "path": "StereoLab/.local/native-liquid-device/retest-20260915-followup/fixture-valid/logcat-45s.txt",
+      "bytes": 13137478,
+      "sha256": "5e975d008a8ad8acb447facf6451ebe040f8da10afee2dbd4fe11e5c46cbc004"
+    },
+    {
+      "path": "StereoLab/.local/native-liquid-device/retest-20260915-followup/fixture-motion/logcat-after-select.txt",
+      "bytes": 3878056,
+      "sha256": "87763970249769b7a98d123c561a5cf9f464245ab170fd86a2f52993369e6cc2"
+    },
+    {
+      "path": "StereoLab/.local/native-liquid-device/retest-20260915-followup/jellyfin/continued/hdmi-resume.png",
+      "bytes": 234842,
+      "sha256": "02293bdfb8e1ea078b4652c4b2b4559d3cb836ce48722102f882cce730eda041"
+    },
+    {
+      "path": "StereoLab/.local/native-liquid-device/retest-20260915-followup/jellyfin/continued/logcat-resume.txt",
+      "bytes": 7047031,
+      "sha256": "c15dea3e4a66b4b229b4ef03a05a233d3c60841d53116418a52dfef66f2e9799"
+    },
+    {
+      "path": "StereoLab/.local/native-liquid-device/retest-20260914-followup/current/install/install.txt",
+      "bytes": 165,
+      "sha256": "8260a783225d5e6a54a62c0f563a7ff0a32202f3c3e0bcc2eaab0a915ae7a617"
+    }
+  ]
+}
