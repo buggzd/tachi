@@ -1,3 +1,4 @@
+import {makeElasticGrid, elasticVertex} from './elastic-grid.mjs';
 import {EdgeSplat} from './edge-splat.mjs';
 import {depthIndex} from './quality-trials-core.mjs';
 import {fullscreenVertex, pixelFragment, meshVertex, meshFragment} from './mesh-shaders.mjs';
@@ -18,14 +19,19 @@ function program(vertex, fragment) {
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(p));
     return p;
 }
-let pixel, mesh, edge;
+let pixel, mesh, edge, elastic, elasticTexture, elasticCacheKey;
+let elasticGrid;
 function draw() {
     if (!ready || video.readyState < 2) return;
     const profile = manifest.profiles.find(p => p.id === $('profile').value);
     const data = maps[profile.id], index = depthIndex(frame, profile, data.count);
     const strength = Math.max(0, Math.min(2, Number($('strength').value)));
-    $('strength-value').value = `${strength.toFixed(2)}× · 每眼最大 ${(15.36 * strength).toFixed(1)} px`;
+    $('strength-value').value = `${strength.toFixed(2)}× · ${$('strategy').value === 'elastic' ? '参考幅度' : '每眼最大'} ${(15.36 * strength).toFixed(1)} px`;
     const view = $('view').value, strategy = $('strategy').value;
+    $('edge-controls').hidden = strategy !== 'edge' && view !== 'aligned';
+    $('edge-explanation').hidden = strategy !== 'edge' && view !== 'aligned';
+    $('threshold').disabled = strategy !== 'cut';
+    $('mesh-density').disabled = strategy !== 'elastic';
     const width = view === 'sbs' ? 3840 : 1920;
     if (canvas.width !== width) canvas.width = width;
     gl.activeTexture(gl.TEXTURE1); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -35,15 +41,30 @@ function draw() {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     const useEdge = strategy === 'edge' && !['depth', 'source', 'aligned'].includes(view);
     if (useEdge || view === 'aligned') edge.prepare($('align-edges').checked);
+    const useElastic = strategy === 'elastic' && !['depth', 'source', 'aligned'].includes(view);
+    if (useElastic) {
+        const key = `${generation}:${profile.id}:${index}:${strength}:${$('mesh-density').value}`;
+        if (key !== elasticCacheKey) {
+            const columns = Number($('mesh-density').value), rows = Math.round((columns-1)*1080/1920)+1;
+            elasticGrid = makeElasticGrid(data.bytes.subarray(index*size,(index+1)*size),profile.width,profile.height,strength,columns,rows);
+            gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D,elasticTexture); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+            gl.texImage2D(gl.TEXTURE_2D,0,gl.RG32F,columns,rows,0,gl.RG,gl.FLOAT,elasticGrid.targets);
+            elasticCacheKey=key;
+        }
+    }
     const useMesh = ['mesh', 'cut'].includes(strategy) && !['depth', 'source', 'aligned'].includes(view);
-    const p = useMesh ? mesh : pixel;
+    const p = useElastic ? elastic : useMesh ? mesh : pixel;
     gl.useProgram(p);
     const loc = name => gl.getUniformLocation(p, name);
     gl.uniform1f(loc('strength'), strength);
     gl.uniform1i(loc('video'), 0); gl.uniform1i(loc('depthMap'), 1);
-    gl.clearColor(.28, .02, .3, 1); gl.clearDepth(1);
+    gl.clearColor(.28, .02, .3, useElastic ? 0 : 1); gl.clearDepth(1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    if (useMesh) {
+    if (useElastic) {
+        gl.disable(gl.DEPTH_TEST);
+        gl.uniform1i(loc('elasticMap'),5);
+        gl.uniform2i(loc('grid'),elasticGrid.columns,elasticGrid.rows);
+    } else if (useMesh) {
         gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS);
         gl.uniform2i(loc('grid'), profile.width, profile.height);
         gl.uniform1f(loc('threshold'), strategy === 'cut' ? Number($('threshold').value) : 2);
@@ -55,11 +76,11 @@ function draw() {
         if (useEdge) { edge.draw(eye === 0 ? 1 : -1, eye * 1920, $('fill-holes').checked, Number($('lanes').value), strength); continue; }
         gl.viewport(eye * 1920, 0, 1920, 1080);
         gl.uniform1f(loc('eye'), view === 'source' ? 0 : eye === 0 ? 1 : -1);
-        gl.drawArrays(gl.TRIANGLES, 0, useMesh ? (profile.width - 1) * (profile.height - 1) * 6 : 3);
+        gl.drawArrays(gl.TRIANGLES, 0, useElastic ? (elasticGrid.columns-1)*(elasticGrid.rows-1)*6 : useMesh ? (profile.width - 1) * (profile.height - 1) * 6 : 3);
     }
     canvas.dataset.ready = 'true'; canvas.dataset.frame = frame; canvas.dataset.depthIndex = index;
     $('seek').value = frame;
-    $('status').textContent = `视频帧 ${frame} / ${manifest.frames - 1} · 深度帧 ${index} · ${profile.width}×${profile.height} · 每眼 1920×1080 · 紫色为空洞（网格模式）`;
+    $('status').textContent = `视频帧 ${frame} / ${manifest.frames - 1} · 深度帧 ${index} · ${profile.width}×${profile.height} · 每眼 1920×1080 · ${useElastic ? '弹性网格：全覆盖，无补洞' : '紫色为空洞（未补区域）'}`;
 }
 async function load() {
     const token = ++generation;
@@ -88,7 +109,7 @@ function callback(_now, meta) {
     video.requestVideoFrameCallback(callback);
 }
 $('clip').onchange = () => load().catch(fail);
-for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes', 'strength']) $(id).oninput = () => {
+for (const id of ['profile', 'strategy', 'view', 'threshold', 'align-edges', 'fill-holes', 'lanes', 'strength', 'mesh-density']) $(id).oninput = () => {
     $('threshold-value').value = $('threshold').value;
     if ($('view').value === 'sbs') { $('zoom').value = '1'; canvas.style.transform = ''; }
     $('zoom').disabled = $('view').value === 'sbs'; draw();
@@ -109,6 +130,10 @@ try {
         for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
     }
     edge = new EdgeSplat(gl, program);
+    elastic = program(elasticVertex, meshFragment);
+    elasticTexture=gl.createTexture();gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,elasticTexture);
+    for(const k of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER])gl.texParameteri(gl.TEXTURE_2D,k,gl.NEAREST);
+    for(const k of [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T])gl.texParameteri(gl.TEXTURE_2D,k,gl.CLAMP_TO_EDGE);
     const response = await fetch('/samples/quality-p02-p98/manifest.json');
     if (!response.ok) throw Error('缺少 2%／98% 本地样本');
     manifest = await response.json();

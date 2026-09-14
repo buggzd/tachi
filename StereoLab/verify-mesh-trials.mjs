@@ -15,14 +15,14 @@ try {
         await page.waitForTimeout(100);
         const frame = await page.locator('canvas').getAttribute('data-frame');
         const images = [];
-        for (const strategy of ['pixel', 'mesh', 'cut', 'edge']) {
+        for (const strategy of ['elastic', 'pixel', 'mesh', 'cut', 'edge']) {
             await page.selectOption('#strategy', strategy);
             assert.equal(await page.locator('canvas').getAttribute('data-frame'), frame);
             images.push(await page.evaluate(() => document.querySelector('canvas').toDataURL()));
             assert.equal(await page.evaluate(() => document.querySelector('canvas').getContext('webgl2').getError()), 0);
         }
         assert.notEqual(images[0], images[1]);
-        assert.notEqual(images[0], images[3]);
+        assert.notEqual(images[0], images[4]);
         await page.uncheck('#fill-holes');
         const unfilled = await page.evaluate(() => document.querySelector('canvas').toDataURL());
         await page.check('#fill-holes');
@@ -49,7 +49,7 @@ try {
                 g.readPixels(0,0,c.width,c.height,g.RGBA,g.UNSIGNED_BYTE,window.zeroReference);
             });
             await page.selectOption('#view', 'eye');
-            for (const strategy of ['pixel','mesh','cut','edge']) {
+            for (const strategy of ['elastic','pixel','mesh','cut','edge']) {
                 await page.selectOption('#strategy',strategy);
                 const error = await page.evaluate(() => {
                     const c=document.querySelector('canvas'),g=c.getContext('webgl2'),out=new Uint8Array(window.zeroReference.length);
@@ -60,7 +60,7 @@ try {
                 assert.ok(error<=1, `${strategy} at zero strength must reconstruct source: ${error}`);
             }
             await setStrength(2);
-            for (const strategy of ['pixel','mesh','cut','edge']) {
+            for (const strategy of ['elastic','pixel','mesh','cut','edge']) {
                 await page.selectOption('#strategy', strategy);
                 assert.equal(await page.evaluate(() => document.querySelector('canvas').getContext('webgl2').getError()),0);
             }
@@ -68,6 +68,18 @@ try {
         }
 
     }
+    await page.selectOption('#strategy','elastic');
+    for(const density of ['97','193','385']){
+        await page.selectOption('#mesh-density',density);
+        const uncovered=await page.evaluate(()=>{
+            const c=document.querySelector('canvas'),g=c.getContext('webgl2'),b=new Uint8Array(c.width*c.height*4);
+            g.readPixels(0,0,c.width,c.height,g.RGBA,g.UNSIGNED_BYTE,b);
+            let holes=0;for(let i=0;i<b.length;i+=4)if(b[i+3]!==255)holes++;
+            return holes;
+        });
+        assert.equal(uncovered,0,'elastic mesh must cover the screen');
+    }
+    await page.selectOption('#mesh-density','193');
     const geometry = await page.evaluate(async () => {
         const {meshVertex, meshFragment} = await import('/mesh-shaders.mjs');
         const c = document.createElement('canvas'); c.width = 64; c.height = 32;

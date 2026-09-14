@@ -43,6 +43,7 @@
 | [2026-09-13 GPU 输入与双捕获流水线](performance/2026-09-13-gpu-input-pipeline/README.md) | CHW 数值对照、12/24 Hz 实测、原生 QNN 与 GPU 共享缓冲最小图验证 |
 | [2026-09-14 完整 Quality 与时序补洞](performance/2026-09-14-quality-temporal/README.md) | 隔离复用完整参考渲染核心、前后帧背景实验与网页同帧对照；非手机性能测量 |
 | [SBS 伪影量化与首轮优化](performance/2026-09-12-artifact-evaluation/README.md) | 论文指标、真实 Java 消融、真值合成/真实片段代理量与已知退化；未实机验收 |
+| [2026-09-14 iw3 与连续扭曲](archive/2026-09-14-iw3-warp.md) | RowFlowV3 反向采样源码阅读与无补洞弹性网格的区别；未运行 iw3 |
 | [DLSS / FSR 时序重建研究](archive/2026-09-12-dlss-fsr-sbs.md) | 最新公开集成资料、历史裁剪及 SBS 迁移边界 |
 | [2026-09-12 用户诊断与双包测量](performance/2026-09-12-user-diagnostics/README.md) | 成功播放样本的证据边界、失败记录缺失及 Lite/Full 包体实测 |
 | [v0.3.0 发布说明](releases/v0.3.0.md) | 已发布版本的能力快照；其他版本见 [GitHub Releases](https://github.com/buggzd/tachi/releases) |
