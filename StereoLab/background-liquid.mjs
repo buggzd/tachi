@@ -4,25 +4,54 @@ export function makeBackgroundLiquid(bytes, width, height, strength, feather=64,
     if(bytes.length!==width*height || !Number.isFinite(strength+feather+amount) || strength<0 || strength>2 || feather<1 || feather>256 || amount<0 || amount>1) throw Error('Invalid liquid inputs');
     const targets=new Float32Array(width*height*2);
     const radius=Math.ceil(feather*width/1920);
+    const depth=Float32Array.from(bytes,v=>v/255);
+    const smooth=(lo,hi,v)=>{const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));return t*t*(3-2*t);};
+    // Conductance is identical for both eyes and every solver iteration.
+    const weights=new Float32Array(width*height*9),totals=new Float32Array(width*height);
+    const offsets=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)offsets.push(dy*width+dx);
     for(let y=0;y<height;y++)for(let x=0;x<width;x++) {
-        const d=bytes[y*width+x]/255;
-        for(let e=0;e<2;e++) {
-            const eye=e===0?1:-1;
+        const i=y*width+x;let slot=0,total=.35;
+        for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++,slot++) {
+            const nx=x+dx,ny=y+dy;if(nx<0||nx>=width||ny<0||ny>=height)continue;
+            const w=(1-smooth(.015,.07,Math.abs(depth[i]-depth[ny*width+nx])))*(dx===0?2:1)*(dy===0?1:2);
+            weights[i*9+slot]=w;total+=w;
+        }
+        totals[i]=total;
+    }
+    for(let e=0;e<2;e++) {
+        const eye=e===0?1:-1;
+        let field=new Float32Array(width*height),next=new Float32Array(field.length);
+        for(let y=0;y<height;y++)for(let x=0;x<width;x++) {
+            const i=y*width+x,d=depth[i];
             let correction=0;
-            // For the left eye, an opening has background on the left;
-            // the right eye reverses this. Do not deform the foreground.
+            // Continuous confidence and strongest supported boundary: no first-hit switch.
             for(let k=1;k<=radius;k++) {
                 const nx=x+eye*k;
                 if(nx<0 || nx>=width)break;
-                const near=bytes[y*width+nx]/255;
-                if(near-d<.08)continue;
+                const gap=depth[y*width+nx]-d;
+                const confidence=smooth(.025,.12,gap);
                 const distance=Math.max(0,(k-1)*1920/width);
-                const t=Math.min(1,distance/feather);
-                const falloff=1-t*t*(3-2*t);
-                correction=Math.max(correction,(near-d)*falloff);
-                break;
+                const falloff=1-smooth(0,feather,distance);
+                correction=Math.max(correction,Math.max(0,gap)*confidence*falloff);
             }
-            targets[((height-1-y)*width+x)*2+e]=eye*.016*strength*((d-.5)+amount*correction);
+            field[i]=correction;
+        }
+        const seed=field.slice();
+        // Screen-space 2D diffusion with depth conductance. It smooths displacement,
+        // not RGB; a foreground/background discontinuity blocks propagation.
+        for(let pass=0;pass<8;pass++) {
+            for(let i=0;i<field.length;i++) {
+                let sum=seed[i]*.35;
+                for(let k=0;k<9;k++) {
+                    const w=weights[i*9+k];if(w>0)sum+=field[i+offsets[k]]*w;
+                }
+                next[i]=Math.min(1-depth[i],sum/totals[i]);
+            }
+            [field,next]=[next,field];
+        }
+        for(let y=0;y<height;y++)for(let x=0;x<width;x++) {
+            const i=y*width+x;
+            targets[((height-1-y)*width+x)*2+e]=eye*.016*strength*((bytes[i]/255-.5)+amount*field[i]);
         }
     }
     return targets;
@@ -39,7 +68,14 @@ void main(){
  for(int i=-33;i<=33;i++){
   if(abs(float(i))>ceil(16.*strength)+1.)continue;
   vec2 q=uv+vec2(float(i)/1920.,0.);if(q.x<0.||q.x>1.)continue;
-  float d=depthAt(q),error=abs(q.x+shiftAt(q)-uv.x);
+  float d=depthAt(q),projected=q.x+shiftAt(q),error=abs(projected-uv.x);
+  // Invert continuous projected source segments. Point-only acceptance leaves
+  // gaps whenever a stretched source texel covers more than 1.5 target pixels.
+  vec2 r=vec2(min(1.,q.x+1./1920.),q.y);
+  float dr=depthAt(r),end=r.x+shiftAt(r),span=end-projected;
+  if(span>1e-7 && abs(dr-d)<.06 && uv.x>=projected && uv.x<=end){
+   float t=(uv.x-projected)/span;q=mix(q,r,t);d=mix(d,dr,t);error=0.;
+  }
   if(error<.75/1920.){if(!found||d>best){source=q;best=d;found=true;}}
   else if(!found&&error<bestError){source=q;bestError=error;}
  }
