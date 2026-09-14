@@ -3,6 +3,7 @@
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>tachi · 画质盲测</title>
 <link rel="stylesheet" href="/quality-trials.css"></head>
 <body><main>
+<a href="/mesh-trials.html">深度网格 / 原像素偏移对照 →</a>
 <header><div><span class="eyebrow">tachi / SBS LAB</span><h1>先看画面，再看方案。</h1><p>同一片段，四组匿名处理。分别感受边缘残影、深度抖动和细节。</p></div><button id="export">导出评分</button></header>
 <div class="notice">预计算深度对照，可比较画面；不代表手机 NPU 的实时速度。单眼便于观察边缘，SBS 供眼镜查看。所有评分仅保存在本机。</div>
 <section class="toolbar"><label>片段 <select id="clip"><option value="0">片段 1</option><option value="1">片段 2</option><option value="2">片段 3</option></select></label><nav id="variants" aria-label="匿名方案"></nav><label>查看 <select id="view"><option value="eye">单眼画面</option><option value="sbs">SBS 双眼</option><option value="depth">实际深度</option><option value="source">原片参照</option></select></label></section>

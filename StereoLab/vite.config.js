@@ -6,6 +6,11 @@ import { resolve, sep } from 'node:path';
 export default defineConfig({
     server: { host: '127.0.0.1', port: 4188, strictPort: true },
     worker: { format: 'es' },
+    build: { rollupOptions: { input: {
+        main: resolve(import.meta.dirname, 'index.html'),
+        quality: resolve(import.meta.dirname, 'quality-trials.html'),
+        mesh: resolve(import.meta.dirname, 'mesh-trials.html'),
+    } } },
     plugins: [{
         name: 'local-stereo-assets',
         configureServer(server) {
