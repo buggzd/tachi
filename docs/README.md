@@ -44,6 +44,11 @@
 | [2026-09-13 GPU 深度稳定](performance/2026-09-13-gpu-stabilization/README.md) | 精确分位数与历史融合的 compute 实现、颜色快照配对、CPU/GPU 数值检查及实机并发对照 |
 | [2026-09-13 日常双档与完整模型共享缓冲](performance/2026-09-13-daily-sbs/README.md) | 518 的 20 分 39 秒产品连续窗口、392 顺序对照、PTS/呈现/缓冲边界与完整模型 GPU/HTP 共享验证 |
 | [2026-09-13 GPU 输入与双捕获流水线](performance/2026-09-13-gpu-input-pipeline/README.md) | CHW 数值对照、12/24 Hz 实测、原生 QNN 与 GPU 共享缓冲最小图验证 |
+| [2026-09-16 液化 shader 对照](performance/2026-09-16-liquid-shaders/README.md) | 两轮扩散融合与重建采样复用，实际 GLES 等价验证和完整 tachi 三分钟对照 |
+| [2026-09-15 捕获／液化排队](performance/2026-09-15-capture-order/README.md) | 同片源约 3 分钟：22.68→23.62 Hz，捕获到绘制开始 85.80→82.06 ms，采用补采后提交液化 |
+| [2026-09-15 GPU 轮询短测](performance/2026-09-15-gpu-poll-short/README.md) | 同片源约 3 分钟 A/B/A，22.77／23.37／22.98 Hz；独立线程暂不默认启用 |
+| [2026-09-15 新版 tachi 实际播放](performance/2026-09-15-native-liquid-product/README.md) | Jellyfin HEVC/VTT 外接 SBS 连续 21 分 25 秒、22.54 Hz；补采诊断、呈现与热态证据 |
+| [2026-09-15 24 Hz 优化](performance/2026-09-15-liquid-24hz/README.md) | 手机同素材优化至 23.48 Hz；GPU 邻域复用、PTS 采样、同帧补采与按结果绘制，未保证 24 Hz |
 | [2026-09-15 液化修订版复测](performance/2026-09-15-native-liquid-retest/README.md) | 短测 21.38 Hz，原片解码及正式播放器恢复阻塞，未完成长时/同步验收 |
 | [2026-09-14 液化实机后续修订](performance/2026-09-14-native-liquid-followup/README.md) | 显示暂停修订、合成缓存、完成计时、字幕时钟与本地测试入口；复测部分通过 |
 | [2026-09-14 原生同帧 GPU 液化](performance/2026-09-14-native-liquid/README.md) | 392 / 0.85 / 96 px / 65% 原生实验、成对视频缓冲和桌面 shader 数值验证；见 [实机报告](performance/2026-09-14-native-liquid-device/README.md) |

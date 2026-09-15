@@ -1,0 +1,27 @@
+[
+  {
+    "path": "StereoLab/.local/product-liquid-20260915/memory.jsonl",
+    "bytes": 4737,
+    "sha256": "70352b3482513def3d8171fb1dcf5cdc0e3ce4564a0ddd6b59c8ce3e0c2cfd20"
+  },
+  {
+    "path": "StereoLab/.local/product-liquid-20260915/playback.log",
+    "bytes": 3922201,
+    "sha256": "75a9692a8d7e1b39d03eb162949c689f1b967cdff4c7f5d09b5fb3575dfe3965"
+  },
+  {
+    "path": "StereoLab/.local/product-liquid-20260915/presentation-current-hal.jsonl",
+    "bytes": 1478096,
+    "sha256": "3a5bfc1c49e454e6a807720e5082f3937018793130852ce989727d31a7e9b60b"
+  },
+  {
+    "path": "StereoLab/.local/product-liquid-20260915/presentation-dense.jsonl",
+    "bytes": 1877618,
+    "sha256": "4907b38489c38974e32cb75f35fae01664d41ab76cdf119755f9bf1d3c07004b"
+  },
+  {
+    "path": "StereoLab/.local/product-liquid-20260915/presentation.jsonl",
+    "bytes": 2128261,
+    "sha256": "09a1530cf44ac52001842caf018bd55f54212970c0ebbdbf659b21ed40abe705"
+  }
+]

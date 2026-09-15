@@ -92,3 +92,5 @@ Surface、音轨与初始化，准备请求记录安全错误分类及可取得�
 
 独立 lab 的操作与历史基线见 [lab 记录](archive/2026-09-12-native-video-lab.md)，
 旧 WebView 实现见 [历史实现](archive/2026-09-10-webview-realtime-sbs.md)。
+
+实时液化诊断增加 captureCandidates/captureCadenceSkips/captureFenceSkips/captureSlotSkips、captureSubmitted、captureRetryAttempts/captureRetrySubmitted；提交总数包含补采，需按连续有效窗口计算增量。pairedPtsUs 支持最长 24 小时媒体时间，playerMinusPairedMs 保留正负；软件时间差不等于实际音画延迟。

@@ -1,0 +1,293 @@
+{
+  "scope": "Sequential phone fixture SBS, same local source media range 20\u2013110 s; longest contiguous valid segment per run. Not external-display or thermal controlled A/B/A. Last rolling statistics are not whole-run percentiles.",
+  "results": {
+    "baseline": {
+      "samples": 88,
+      "seconds": 88.301,
+      "pairedHz": 16.341830783343337,
+      "firstPositionMs": 20811,
+      "lastPositionMs": 109120,
+      "captureAdmissionDelta": {
+        "candidates": 2068,
+        "cadenceSkips": 241,
+        "fenceSkips": 36,
+        "slotSkips": 347,
+        "submitted": 1444
+      },
+      "lastRolling": {
+        "worker": {
+          "count": 1847,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.0573,
+            "p95": 0.1151
+          },
+          "inferenceMs": {
+            "mean": 31.858,
+            "p95": 33.3786
+          },
+          "stabilizeMs": {
+            "mean": 0.3122,
+            "p95": 0.6108
+          }
+        },
+        "scheduling": {
+          "count": 1847,
+          "window": 512,
+          "queueWaitMs": {
+            "mean": 3.7655,
+            "p95": 28.6472
+          },
+          "captureToWorkerMs": {
+            "mean": 26.3143,
+            "p95": 49.2686
+          },
+          "workerServiceMs": {
+            "mean": 32.285,
+            "p95": 33.8189
+          }
+        },
+        "render": {
+          "count": 3820,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 14.7247,
+          "p95Ms": 35.7505
+        },
+        "liquid": {
+          "count": 1847,
+          "window": 512,
+          "submitMs": {
+            "mean": 4.9726,
+            "p95": 16.2485
+          },
+          "fenceObservedMs": {
+            "mean": 24.9793,
+            "p95": 55.5894
+          },
+          "pollMs": {
+            "mean": 0.0181,
+            "p95": 0.0313
+          }
+        },
+        "timings": {
+          "count": 1847,
+          "window": 512,
+          "captureToUploadMs": {
+            "mean": 89.751,
+            "p95": 131.2879
+          },
+          "uploadMs": {
+            "mean": 1.8512,
+            "p95": 12.1688
+          },
+          "drawSubmitMs": {
+            "mean": 0.0835,
+            "p95": 0.1846
+          }
+        }
+      },
+      "lastDepthPts": {
+        "count": 5529,
+        "unknown": 0,
+        "future": 0,
+        "meanMs": 0.0,
+        "p95Ms": 0.0,
+        "maxMs": 0.0
+      },
+      "lastPairedVideoLagUs": 83417
+    },
+    "sharedTile": {
+      "samples": 89,
+      "seconds": 89.345,
+      "pairedHz": 19.95634898427444,
+      "firstPositionMs": 20252,
+      "lastPositionMs": 109594,
+      "captureAdmissionDelta": {
+        "candidates": 2136,
+        "cadenceSkips": 141,
+        "fenceSkips": 1,
+        "slotSkips": 211,
+        "submitted": 1783
+      },
+      "lastRolling": {
+        "worker": {
+          "count": 2164,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.0659,
+            "p95": 0.1578
+          },
+          "inferenceMs": {
+            "mean": 31.9803,
+            "p95": 34.4714
+          },
+          "stabilizeMs": {
+            "mean": 0.3382,
+            "p95": 0.6529
+          }
+        },
+        "scheduling": {
+          "count": 2164,
+          "window": 512,
+          "queueWaitMs": {
+            "mean": 3.2027,
+            "p95": 25.3391
+          },
+          "captureToWorkerMs": {
+            "mean": 22.8905,
+            "p95": 41.6024
+          },
+          "workerServiceMs": {
+            "mean": 32.4412,
+            "p95": 34.9501
+          }
+        },
+        "render": {
+          "count": 4347,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 15.7915,
+          "p95Ms": 34.3107
+        },
+        "liquid": {
+          "count": 2164,
+          "window": 512,
+          "submitMs": {
+            "mean": 3.8817,
+            "p95": 13.2534
+          },
+          "fenceObservedMs": {
+            "mean": 13.9691,
+            "p95": 46.4993
+          },
+          "pollMs": {
+            "mean": 0.0218,
+            "p95": 0.0324
+          }
+        },
+        "timings": {
+          "count": 2164,
+          "window": 512,
+          "captureToUploadMs": {
+            "mean": 75.8135,
+            "p95": 99.1661
+          },
+          "uploadMs": {
+            "mean": 1.223,
+            "p95": 3.6134
+          },
+          "drawSubmitMs": {
+            "mean": 0.0647,
+            "p95": 0.1457
+          }
+        }
+      },
+      "lastDepthPts": {
+        "count": 6421,
+        "unknown": 0,
+        "future": 0,
+        "meanMs": 0.0,
+        "p95Ms": 0.0,
+        "maxMs": 0.0
+      },
+      "lastPairedVideoLagUs": 83417
+    },
+    "pts": {
+      "samples": 89,
+      "seconds": 89.168,
+      "pairedHz": 21.207159519109993,
+      "firstPositionMs": 20611,
+      "lastPositionMs": 109775,
+      "captureAdmissionDelta": {
+        "candidates": 2131,
+        "cadenceSkips": 0,
+        "fenceSkips": 2,
+        "slotSkips": 238,
+        "submitted": 1891
+      },
+      "lastRolling": {
+        "worker": {
+          "count": 2353,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.0561,
+            "p95": 0.0959
+          },
+          "inferenceMs": {
+            "mean": 31.2529,
+            "p95": 32.5159
+          },
+          "stabilizeMs": {
+            "mean": 0.27,
+            "p95": 0.5773
+          }
+        },
+        "scheduling": {
+          "count": 2353,
+          "window": 512,
+          "queueWaitMs": {
+            "mean": 3.2521,
+            "p95": 22.226
+          },
+          "captureToWorkerMs": {
+            "mean": 21.4938,
+            "p95": 41.7576
+          },
+          "workerServiceMs": {
+            "mean": 31.6237,
+            "p95": 33.0582
+          }
+        },
+        "render": {
+          "count": 4299,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 14.7331,
+          "p95Ms": 32.0572
+        },
+        "liquid": {
+          "count": 2353,
+          "window": 512,
+          "submitMs": {
+            "mean": 4.2889,
+            "p95": 15.43
+          },
+          "fenceObservedMs": {
+            "mean": 12.9717,
+            "p95": 46.3061
+          },
+          "pollMs": {
+            "mean": 0.0159,
+            "p95": 0.0282
+          }
+        },
+        "timings": {
+          "count": 2353,
+          "window": 512,
+          "captureToUploadMs": {
+            "mean": 74.1826,
+            "p95": 98.1119
+          },
+          "uploadMs": {
+            "mean": 1.2461,
+            "p95": 4.9001
+          },
+          "drawSubmitMs": {
+            "mean": 0.0452,
+            "p95": 0.0989
+          }
+        }
+      },
+      "lastDepthPts": {
+        "count": 6539,
+        "unknown": 0,
+        "future": 0,
+        "meanMs": 0.0,
+        "p95Ms": 0.0,
+        "maxMs": 0.0
+      },
+      "lastPairedVideoLagUs": 83417
+    }
+  }
+}

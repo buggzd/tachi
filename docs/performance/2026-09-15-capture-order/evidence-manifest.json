@@ -1,0 +1,52 @@
+[
+  {
+    "file": "baseline-presentation.jsonl",
+    "bytes": 594600,
+    "sha256": "ed7ec4f03fb664f6171579fc403b66ea27fd8bfcbf5a14adf2f368a5af311ba3"
+  },
+  {
+    "file": "baseline.log",
+    "bytes": 733503,
+    "sha256": "87cdcd38aec4c9b2e8330024833e8e7bf7cdaad5f867d19e9c5b5533650ce62c"
+  },
+  {
+    "file": "candidate-presentation.jsonl",
+    "bytes": 594566,
+    "sha256": "4c2dbddfac51854fb1f34b2b04df972d35d0366955888142f6f5cce6b09d65b8"
+  },
+  {
+    "file": "candidate-v2-presentation.jsonl",
+    "bytes": 601410,
+    "sha256": "c105958dbf979a1e176465c4c61f60eb317d7c184c713def7aede10a83dbf187"
+  },
+  {
+    "file": "candidate-v2.log",
+    "bytes": 725159,
+    "sha256": "f824efd2732e1bd4680fb17d5949a279cafd69be172775dadf64cf723bdb478a"
+  },
+  {
+    "file": "candidate.log",
+    "bytes": 737142,
+    "sha256": "e7b3cc693f2c871a2797bce2f750b0d957ff399d945be8bf812242660b40656f"
+  },
+  {
+    "file": "recovery.log",
+    "bytes": 1746527,
+    "sha256": "9d1e679d8be59c952d3ebb2125fdc032be18a1b9629625d9e9e33c9d3e0d35cd"
+  },
+  {
+    "file": "tachi-sbs-liquid-capture-baseline.apk",
+    "bytes": 99987475,
+    "sha256": "e20b4c50ded43bb95741f0f7caa6485c40c573881ed4c0628273a9cabda196fe"
+  },
+  {
+    "file": "tachi-sbs-liquid-capture-first-v1.apk",
+    "bytes": 99987403,
+    "sha256": "8221f4eb383ca75e1b6bf0b95e4c67c3bfce5cfe5cfc8f9d9e2467c91d502ce0"
+  },
+  {
+    "file": "tachi-sbs-liquid-capture-first.apk",
+    "bytes": 99987823,
+    "sha256": "a6bcbabebc585cfb8f2ffb3bc54274a12d2fede364244962ab78e63df4becd89"
+  }
+]

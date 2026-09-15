@@ -1,0 +1,47 @@
+[
+  {
+    "file": "baseline-presentation.jsonl",
+    "bytes": 615050,
+    "sha256": "dccea2e455d23e4a8285d6a33349b127c27c4359fd61ed1fc5ba2998b9b1746a"
+  },
+  {
+    "file": "baseline.log",
+    "bytes": 559980,
+    "sha256": "189533752b8c451bfeb542f83f4a6b53e5f08674fc76a689b86ce727980a2380"
+  },
+  {
+    "file": "cached-presentation.jsonl",
+    "bytes": 608231,
+    "sha256": "e5529d0d70c71cd6465d5fa382d5ae518135e5d9cd03c8e9ed191027853b7d18"
+  },
+  {
+    "file": "cached.log",
+    "bytes": 692412,
+    "sha256": "65dac1ce4396d68d466c31d408d6638eddbc84c6a63bf97acb4d29d93029f5e1"
+  },
+  {
+    "file": "fused-presentation.jsonl",
+    "bytes": 601378,
+    "sha256": "3d151e52520d4c242594337bbb316019c81f4fcd23e5dec440ec4f3a8d854926"
+  },
+  {
+    "file": "fused.log",
+    "bytes": 722506,
+    "sha256": "9dee44ac450b65da48cf9ba27308b903b78b5f293746a7ad3921332b51ee1804"
+  },
+  {
+    "file": "tachi-sbs-liquid-shader-baseline.apk",
+    "bytes": 99990465,
+    "sha256": "f82dead67b130fed4a43d1731512e828caacae3633e631086e4e82724d029e55"
+  },
+  {
+    "file": "tachi-sbs-liquid-shader-fused.apk",
+    "bytes": 99990593,
+    "sha256": "c8e4a4218a70154603b5c3df1f5bca512fa9eea780c93cab8d5656001212afae"
+  },
+  {
+    "file": "tachi-sbs-liquid-shader-cached.apk",
+    "bytes": 99990609,
+    "sha256": "31fbbcd55a82594f7749153b89b476451a81ffc199f163f891a88d3d6dd85816"
+  }
+]

@@ -2,6 +2,8 @@ package com.jellyfinforrayneo.video;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
@@ -31,6 +33,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         void depthFailure(long generation);
     }
 
+    // Timer only: all GLES work stays on the owning GLSurfaceView thread.
+    private final HandlerThread pollThread;
+    private final Handler pollHandler;
+    private final ReadbackTimings pollTimings = new ReadbackTimings("pollWake", "pollGlQueue", "pollService");
     private final Host host;
     private final FrameSlot slot;
     private final FrameTimeline timeline = new FrameTimeline();
@@ -78,6 +84,16 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile boolean depthEnabled = true;
     private volatile boolean sampling;
     private volatile boolean samplingSuspended;
+    private long deferredCaptureGeneration = -1;
+    private long deferredCapturePts = FrameTimeline.UNKNOWN;
+    private volatile long captureRetries;
+    private volatile long captureRetrySubmissions;
+    private volatile long captureCandidates;
+    private volatile long captureCadenceSkips;
+    private volatile long captureFenceSkips;
+    private volatile long captureSlotSkips;
+    private volatile long captureSubmissions;
+    private final PairedSampleCadence pairedCadence = new PairedSampleCadence(BuildConfig.DEPTH_HZ);
     private final SampleCadence cadence = new SampleCadence(BuildConfig.DEPTH_HZ);
     private final ReadbackTimings timings = new ReadbackTimings();
     private long pendingSubmitNs;
@@ -97,6 +113,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile long pairedPtsUs = FrameTimeline.UNKNOWN;
     private volatile long pairedVideoLagUs = -1;
     private volatile long pairedFrames;
+    private long liquidComputedPair = -1;
+    private long pairedReadyNs;
+    private long lastMeasuredPair = -1;
+    private final ReadbackTimings pairDrawTimings = new ReadbackTimings("pairReadyToDraw", "pairCaptureToDraw", "pairDrawSubmit");
     private int copyFbo;
     private long cachedPair = -1;
     private int cachedGeometry;
@@ -214,6 +234,13 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"videoDraws\":" + uniqueVideoDraws + ",\"supersededVideoFrames\":" + supersededVideoFrames
                 + ",\"frameMapping\":" + timeline.json() + ",\"depthPts\":" + ptsMetrics.json()
                 + ",\"gpuRender\":" + gpuTimer.json()
+                + ",\"captureAdmission\":{\"candidates\":" + captureCandidates
+                + ",\"cadenceSkips\":" + captureCadenceSkips
+                + ",\"fenceSkips\":" + captureFenceSkips
+                + ",\"slotSkips\":" + captureSlotSkips
+                + ",\"submitted\":" + captureSubmissions
+                + ",\"retryAttempts\":" + captureRetries
+                + ",\"retrySubmitted\":" + captureRetrySubmissions + "}"
                 + ",\"depthTargetHz\":" + BuildConfig.DEPTH_HZ
                 + ",\"asyncCapturePoll\":" + BuildConfig.ASYNC_CAPTURE_POLL
                 + ",\"gpuPreprocess\":" + BuildConfig.GPU_PREPROCESS
@@ -226,6 +253,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"liquidStrength\":0.85,\"liquidFeatherPx\":96,\"liquidAmount\":0.65"
                 + ",\"pairedFrames\":" + pairedFrames + ",\"pairedVideoLagUs\":" + pairedVideoLagUs
                 + ",\"cachedPairDraws\":" + cachedPairDraws + ",\"pairRenderUpdates\":" + pairRenderUpdates
+                + ",\"liquidFusedRounds\":" + BuildConfig.LIQUID_FUSED_ROUNDS
+                + ",\"liquidCacheSamples\":" + BuildConfig.LIQUID_CACHE_SAMPLES
+                + ",\"captureBeforeLiquid\":" + BuildConfig.CAPTURE_BEFORE_LIQUID
+                + ",\"pairDrawTimings\":" + pairDrawTimings.json()
                 + ",\"pairedPtsUs\":" + pairedPtsUs
                 + ",\"gpuLiquidCompletion\":" + (liquid == null ? "null" : liquid.completionJson())
                 + ",\"gpuLiquid\":" + (liquid == null ? "null" : liquid.timingsJson())
@@ -245,6 +276,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     }
 
     /** Numerical diagnostics only; no source addresses or image content. */
+    public String pollTimingsJson()
+    {
+        return pollTimings.json();
+    }
+
     public String readbackTimingsJson()
     {
         return timings.json();
@@ -254,6 +290,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     {
         super(context);
         this.host = host;
+        if (BuildConfig.GPU_POLL_OFF_MAIN)
+        {
+            pollThread = new HandlerThread("tachi-gpu-poll");
+            pollThread.start();
+            pollHandler = new Handler(pollThread.getLooper());
+        }
+        else
+        {
+            pollThread = null;
+            pollHandler = new Handler(android.os.Looper.getMainLooper());
+        }
         this.slot = slot;
         for (int i = 0; i < captureBytes.length; i++)
             captureBytes[i] = ByteBuffer.allocateDirect(SAMPLE_BYTES * (BuildConfig.GPU_PREPROCESS ? 3 : 1));
@@ -316,6 +363,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     void close()
     {
         closed = true;
+        pollHandler.removeCallbacksAndMessages(null);
+        if (pollThread != null) pollThread.quitSafely();
         sampling = false;
         slot.invalidate();
         pendingDepth.set(null);
@@ -524,12 +573,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 else if (pendingDrawCount < pendingDrawVideoPts.length) pendingDrawVideoPts[pendingDrawCount++] = videoPtsUs;
                 else ptsMetrics.record(videoPtsUs, FrameTimeline.UNKNOWN);
             }
+            // Capture has already inserted its input fence. Queue the current pair's
+            // liquid field afterwards, allowing input completion before this compute.
+            submitPairLiquid();
             long drawStart = System.nanoTime();
             gpuTimer.begin();
             int geometry = java.util.Objects.hash(stereoPreview, depthEnabled, debugDepth,
                     screenScale, screenDisparity, videoAspect, width, height);
             boolean reusable = BuildConfig.ALIGNED_LIQUID && render1080 && stereoPreview && depthEnabled
                     && pairedGeneration == slot.generation() && cachedPair == pairedFrames && cachedGeometry == geometry;
+            boolean firstPairDraw = BuildConfig.ALIGNED_LIQUID && pairedGeneration == slot.generation()
+                    && stereoPreview && depthEnabled && lastMeasuredPair != pairedFrames;
             if (render1080)
             {
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, stereoFbo);
@@ -585,6 +639,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
             }
             gpuTimer.end();
+            if (firstPairDraw)
+            {
+                pairDrawTimings.record(drawStart - pairedReadyNs, drawStart - depthCapturedNs,
+                        System.nanoTime() - drawStart);
+                lastMeasuredPair = pairedFrames;
+            }
             if (activeRawDepth != null && gpuDrawSubmitCost == 0)
                 gpuDrawSubmitCost = System.nanoTime() - drawStart;
             if (uploadCost > 0) presentationTimings.record(captureAge, uploadCost, System.nanoTime() - drawStart);
@@ -605,49 +665,78 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private void captureCurrentFrame(boolean fresh)
     {
         long now = System.nanoTime();
-        if (fresh && sampling && !samplingSuspended && fence == 0 && cadence.due(now))
+        if (!sampling || samplingSuspended) return;
+        if (!fresh && (!BuildConfig.ALIGNED_LIQUID || framePending.get()
+                || deferredCaptureGeneration != slot.generation()
+                || deferredCapturePts != videoPtsUs || videoPtsUs == FrameTimeline.UNKNOWN)) return;
+        deferredCaptureGeneration = -1;
+        if (fresh) captureCandidates++;
+        else captureRetries++;
+        boolean mediaCadence = BuildConfig.ALIGNED_LIQUID && videoPtsUs != FrameTimeline.UNKNOWN;
+        if (!(mediaCadence ? pairedCadence.due(videoPtsUs, slot.generation()) : cadence.due(now)))
         {
-            long lease = slot.acquire();
-            if (lease != 0)
-            {
-                pendingLease = lease;
-                pendingGeneration = slot.generationOf(lease);
-                pendingTimestamp = texture.getTimestamp();
-                pendingPtsUs = videoPtsUs;
-                pendingCapturedNs = now;
-                cadence.submitted(now);
-                long submitStart = System.nanoTime();
-                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
-                sampleTexture = captureTextures[slot.indexOf(lease)];
-                GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
-                        GLES30.GL_TEXTURE_2D, sampleTexture, 0);
-                if (BuildConfig.ALIGNED_LIQUID)
-                {
-                    GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
-                            GLES30.GL_TEXTURE_2D, pairedCaptures[slot.indexOf(lease)], 0);
-                    GLES30.glViewport(0, 0, 1920, 1080);
-                    draw(false, 0, false);
-                    GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
-                            GLES30.GL_TEXTURE_2D, sampleTexture, 0);
-                }
-                GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
-                draw(true, 0, false); // Always sample the original image, never the warped output.
-                if (preprocessor != null) preprocessor.submit(sampleTexture);
-                else
-                {
-                    GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
-                    GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
-                            GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
-                    GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
-                }
-                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-                fence = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-                if (fence == 0) throw new IllegalStateException();
-                GLES30.glFlush();
-                pendingSubmitNs = System.nanoTime();
-                pendingSubmitCostNs = pendingSubmitNs - submitStart;
-            }
+            captureCadenceSkips++;
+            return;
         }
+        if (fence != 0)
+        {
+            if (fresh) captureFenceSkips++;
+            deferCurrentCapture();
+            return;
+        }
+        long lease = slot.acquire();
+        if (lease == 0)
+        {
+            if (fresh) captureSlotSkips++;
+            deferCurrentCapture();
+            return;
+        }
+        captureSubmissions++;
+        if (!fresh) captureRetrySubmissions++;
+        pendingLease = lease;
+        pendingGeneration = slot.generationOf(lease);
+        pendingTimestamp = texture.getTimestamp();
+        pendingPtsUs = videoPtsUs;
+        pendingCapturedNs = now;
+        if (mediaCadence) pairedCadence.submitted(videoPtsUs);
+        else cadence.submitted(now);
+        long submitStart = System.nanoTime();
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
+        sampleTexture = captureTextures[slot.indexOf(lease)];
+        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                GLES30.GL_TEXTURE_2D, sampleTexture, 0);
+        if (BuildConfig.ALIGNED_LIQUID)
+        {
+            GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                    GLES30.GL_TEXTURE_2D, pairedCaptures[slot.indexOf(lease)], 0);
+            GLES30.glViewport(0, 0, 1920, 1080);
+            draw(false, 0, false);
+            GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                    GLES30.GL_TEXTURE_2D, sampleTexture, 0);
+        }
+        GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
+        draw(true, 0, false); // Always sample the original image, never the warped output.
+        if (preprocessor != null) preprocessor.submit(sampleTexture);
+        else
+        {
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
+            GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
+                    GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
+        }
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
+        fence = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        if (fence == 0) throw new IllegalStateException();
+        GLES30.glFlush();
+        pendingSubmitNs = System.nanoTime();
+        pendingSubmitCostNs = pendingSubmitNs - submitStart;
+    }
+
+    private void deferCurrentCapture()
+    {
+        if (!BuildConfig.ALIGNED_LIQUID || videoPtsUs == FrameTimeline.UNKNOWN) return;
+        deferredCaptureGeneration = slot.generation();
+        deferredCapturePts = videoPtsUs;
     }
 
     private void pollSample()
@@ -737,10 +826,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                         pairedVideo = pairedCaptures[index];
                         pairedCaptures[index] = previousDisplay;
                         copyTexture(gpuStabilizer.texture(), depthTexture, SAMPLE_WIDTH, SAMPLE_HEIGHT);
-                        liquid.compute(depthTexture);
+                        if (!BuildConfig.CAPTURE_BEFORE_LIQUID) liquid.compute(depthTexture);
                         pairedPtsUs = packet.ptsUs;
                         pairedGeneration = packet.generation;
                         pairedFrames++;
+                        pairedReadyNs = System.nanoTime();
+                        if (!BuildConfig.CAPTURE_BEFORE_LIQUID) liquidComputedPair = pairedFrames;
                         requestRender();
                     }
                     depthCapturedNs = packet.capturedNs;
@@ -781,6 +872,15 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         scheduleGpuPoll();
     }
 
+    private void submitPairLiquid()
+    {
+        if (!BuildConfig.ALIGNED_LIQUID || pairedGeneration != slot.generation()
+                || liquidComputedPair == pairedFrames) return;
+        liquid.compute(depthTexture);
+        liquidComputedPair = pairedFrames;
+        scheduleGpuPoll();
+    }
+
     /** Poll a tiny control fence without repeating a full SBS draw or waiting for the next vsync. */
     private void scheduleGpuPoll()
     {
@@ -788,14 +888,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 && (liquid == null || !liquid.pending()))) return;
         gpuPollScheduled = true;
         long observer = gpuObserverSerial;
-        postDelayed(() ->
+        long scheduledNs = System.nanoTime();
+        pollHandler.postDelayed(() ->
         {
             if (closed) return;
+            long wakeNs = System.nanoTime();
             queueEvent(() ->
             {
                 if (observer != gpuObserverSerial) return;
                 gpuPollScheduled = false;
                 if (closed || failed) return;
+                long enteredNs = System.nanoTime();
                 try
                 {
                     if (BuildConfig.ASYNC_CAPTURE_POLL) pollSample();
@@ -803,6 +906,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     long submission = gpuSubmissionSerial;
                     long completedDrawCost = gpuDrawSubmitCost;
                     processGpuDepth();
+                    // Retry only after a depth job completed and released its lease. The OES
+                    // image is still latched; skip if a newer decoder frame awaits consumption.
+                    if (gpuCompletedCost > 0) captureCurrentFrame(false);
+                    // Capture's fence, when a retry succeeds, now precedes the field.
+                    // Do not add a separate wait for the next draw to submit current output.
+                    submitPairLiquid();
                     if (gpuCompletedCost > 0)
                     {
                         presentationTimings.record(gpuCompletedAge, gpuCompletedCost, completedDrawCost);
@@ -812,12 +921,21 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                         // The first accepted map needs a draw to turn on depth/debug rendering.
                         if (!wasValid) requestRender();
                     }
-                    if (gpuSubmissionSerial != submission) requestRender();
+                    // Paired output requests a draw only on acceptance above. Submitting its
+                    // normalization job has no new visible pair and needs no cached SBS blit.
+                    if (!BuildConfig.ALIGNED_LIQUID && gpuSubmissionSerial != submission) requestRender();
                     scheduleGpuPoll();
                 }
                 catch (RuntimeException error)
                 {
                     fail();
+                }
+                finally
+                {
+                    // Wake includes the requested 2 ms. Queue measures Java scheduling,
+                    // not GPU execution or an exact hardware completion timestamp.
+                    pollTimings.record(wakeNs - scheduledNs, enteredNs - wakeNs,
+                            System.nanoTime() - enteredNs);
                 }
             });
         }, 2);
@@ -867,7 +985,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private int liquidProgram() throws Exception
     {
         String fragment;
-        try (java.io.InputStream input = getContext().getAssets().open("gpu-liquid/render.frag"))
+        try (java.io.InputStream input = getContext().getAssets().open(BuildConfig.LIQUID_CACHE_SAMPLES ? "gpu-liquid/render-cached.frag" : "gpu-liquid/render.frag"))
         {
             java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
             byte[] chunk = new byte[4096];

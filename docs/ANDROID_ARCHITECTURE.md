@@ -659,8 +659,30 @@ full-model shared memory is independently benchmarked, not yet the product backe
 Controls/subtitles remain outside the warped layer. ASS/WebVTT prefer the paired
 presentation position when valid; media reporting retains the Media3 clock. Audio has
 no additional fixed delay compensation. Pair PTS agreement alone does not establish
-AV synchronization or zero display latency. Target sampling is 24 Hz, not a guaranteed
-presentation rate. The latest short retest and remaining recovery/long-run checks are
+AV synchronization or zero display latency. Known source PTS drives liquid sampling admission, resetting on generation changes or
+backward media time; capture/worker durations retain a monotonic wall clock. Unknown
+PTS uses the legacy wall-clock cadence. GPU liquid diffusion reuses an FP32 shared
+neighborhood tile without changing iteration count or arithmetic.
+A blocked liquid capture can retry only the still-latched frame with the same PTS and
+generation and no pending newer decoder frame. Successful capture consumes the retry;
+new frames/generations supersede it. This adds no buffer slots. Normalization submission
+alone does not request a paired redraw; accepted pairs still do.
+An opt-in `gpuPollOffMain` timer uses a dedicated HandlerThread; GL operations remain
+on the GLSurfaceView queue with the same bounded, generation-checked observer. Close
+cancels callbacks and quits the timer. Exported poll wake (including the requested
+2 ms), GL queue and service durations measure host scheduling, not GPU execution.
+The switch defaults off: sequential three-minute A/B/A runs showed only a small
+uncontrolled difference; see [short comparison](performance/2026-09-15-gpu-poll-short/README.md).
+Liquid daily builds enable `captureBeforeLiquid`: after accepting the matching
+RGB/depth and releasing its lease, attempt the existing bounded capture retry, then
+submit the pair's liquid field immediately on the GL queue. Draw callbacks likewise
+capture before submitting any pending field. A pair serial prevents duplicate field
+submission; generation checks reject stale work, and rendering follows its field.
+The exported first-pair-draw timings distinguish capture-to-draw-start from depth
+acceptance. They do not include GPU completion or physical presentation.
+See [capture-order short comparison](performance/2026-09-15-capture-order/README.md).
+Target sampling is 24 Hz, not a guaranteed
+presentation rate. The latest product long-run evidence and remaining recovery/compatibility checks are
 listed in the current guide.
 
 Native commands are limited to 16 KiB and URLs to 12 KiB, matching the active session's

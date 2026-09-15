@@ -1,0 +1,47 @@
+[
+  {
+    "file": "baseline-presentation.jsonl",
+    "bytes": 594719,
+    "sha256": "3b89417dc4af46899c85af9fa41902e1ec11654640ad65ccf4be38d61f0355d1"
+  },
+  {
+    "file": "baseline-repeat-presentation.jsonl",
+    "bytes": 601448,
+    "sha256": "ca040684210a9363ee1deb411aa58838ed6f33cdb1be94ae064b27597c526e76"
+  },
+  {
+    "file": "baseline-repeat.log",
+    "bytes": 680100,
+    "sha256": "b514bfbba252ecc583fd6ee1629eba49eff2f9c802aa30c32aa6525878200d0b"
+  },
+  {
+    "file": "baseline.log",
+    "bytes": 911723,
+    "sha256": "1cd00bc6002eae8e3c29d754197a45403ec3db27985db99eb6fe2f5f0b9dc72a"
+  },
+  {
+    "file": "candidate-presentation.jsonl",
+    "bytes": 587790,
+    "sha256": "1e94fa126c9802a040826bafd91eea5479837708efc3bc7832110fd025a9d3f2"
+  },
+  {
+    "file": "candidate.log",
+    "bytes": 1000709,
+    "sha256": "6cbc4e589e33e7079c5541f4302856a85f5faeecf1466bf2d061f20f86d4cb75"
+  },
+  {
+    "file": "recovery.log",
+    "bytes": 830316,
+    "sha256": "69963196dddf47b82202c2e23f1e5c79af193f5a40e0d55e7b84d1ada6749683"
+  },
+  {
+    "file": "tachi-sbs-liquid-poll-baseline.apk",
+    "bytes": 99987283,
+    "sha256": "fd4eaaafa607b8895c602e60d594c09c67a2bb12147f735250aef464ae932882"
+  },
+  {
+    "file": "tachi-sbs-liquid-poll-candidate.apk",
+    "bytes": 99987235,
+    "sha256": "5537199bbd611170a35d64fb1a2e167c34f613a5023dbe27768388f999b8a4ed"
+  }
+]

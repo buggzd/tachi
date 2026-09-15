@@ -1,0 +1,17 @@
+{
+  "baselineApkSha256": "0ce74fd9e1eb9e450d74bbf510fee8d43d77a2cff3b8d2f0760cf4fade71ca92",
+  "candidateApkSha256": "40abc6784ef105e09aa4dc57c6b8da59ff6eef065bd71c71093f2ec05dbb95bf",
+  "checks": [
+    "app/native-video JVM tests",
+    "app/native-video lint",
+    "assembleDebug",
+    "verify-android.sh",
+    "glslang compute compile",
+    "desktop tile arithmetic parity",
+    "PairedSampleCadence tests: 23.976 fps, 30 fps, seek/new generation/unknown PTS"
+  ],
+  "devicePerformance": "Final retry/no-extra-draw candidate: 23.479 Hz in 89.145 s phone fixture window; seek, pause/resume, renderer SBS/2D toggles checked; no 24 Hz guarantee or external hardware/long-run acceptance",
+  "ptsCandidateApkSha256": "ac4d490177a9da385355297cc67f0a6ec0bf69017b937d357267e246ed534e46",
+  "retryCandidateApkSha256": "64b92882b726e93547aca75f3fca475d9cec29586077af0579e6bc0d6414d607",
+  "retryNoExtraDrawApkSha256": "0385c51e489e9367ff5c8847e336d99c77367b115091a157fd0fa67e714b99c4"
+}

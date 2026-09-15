@@ -1,0 +1,96 @@
+{
+  "scope": "Android GLES actual workgroups; synthetic RGB, optional real depth. Alternating glFinish wall medians are isolated workload timings, not product FPS.",
+  "cases": [
+    {
+      "case": 0,
+      "width": 1,
+      "height": 1,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 0.854115,
+      "fusedMs": 0.558229,
+      "renderMs": 8.31734,
+      "cachedMs": 8.51646
+    },
+    {
+      "case": 1,
+      "width": 7,
+      "height": 9,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 0.344948,
+      "fusedMs": 0.291042,
+      "renderMs": 7.60333,
+      "cachedMs": 8.23266
+    },
+    {
+      "case": 2,
+      "width": 131,
+      "height": 67,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 0.266875,
+      "fusedMs": 0.256875,
+      "renderMs": 7.17984,
+      "cachedMs": 7.48115
+    },
+    {
+      "case": 3,
+      "width": 131,
+      "height": 67,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 0.430052,
+      "fusedMs": 0.388177,
+      "renderMs": 7.22479,
+      "cachedMs": 7.2925
+    },
+    {
+      "case": 4,
+      "width": 131,
+      "height": 67,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 0.421719,
+      "fusedMs": 0.377136,
+      "renderMs": 7.97734,
+      "cachedMs": 8.88656
+    },
+    {
+      "case": 5,
+      "width": 518,
+      "height": 294,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 2.5199,
+      "fusedMs": 2.52219,
+      "renderMs": 8.36651,
+      "cachedMs": 8.28115
+    },
+    {
+      "case": 6,
+      "width": 392,
+      "height": 224,
+      "fieldMaxErrorPx": 0,
+      "cachedMaxChannelError": 0,
+      "cachedChangedChannels": 0,
+      "combinedMaxChannelError": 0,
+      "fieldMs": 1.80281,
+      "fusedMs": 1.99208,
+      "renderMs": 9.13417,
+      "cachedMs": 8.80469
+    }
+  ]
+}

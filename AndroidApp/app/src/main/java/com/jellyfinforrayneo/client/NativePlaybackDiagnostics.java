@@ -70,8 +70,9 @@ final class NativePlaybackDiagnostics
             if (kind.matches("none|unknown|eof|timeout|dns|connect|socket|tls|io|parser|illegal_state|illegal_argument|bounds|invalid_request")) row.put("errorKind", kind);
             String component = source.optString("errorComponent");
             if (component.matches("none|unknown|ssa|subtitle|matroska|datasource|codec")) row.put("errorComponent", component);
-            copyNumbers(source, row, "position", "pairedPosition", "playerMinusPairedMs", "duration", "buffered", "width", "height", "frameRate",
+            copyNumbers(source, row, "position", "pairedPosition", "duration", "buffered", "width", "height", "frameRate",
                     "droppedFrames", "decodedFrames", "skippedDecoderFrames", "maxConsecutiveDroppedFrames", "errorCode", "httpStatus", "audioChannels", "audioSampleRate");
+            signedTime(source, "playerMinusPairedMs", row, 86_400_000);
             copyBooleans(source, row, "firstFrame", "seekable", "hls", "subtitleError");
             String decoder = source.optString("decoder");
             if (decoder.matches("(?:c2|OMX)\\.[a-zA-Z0-9._-]{1,80}")) row.put("decoder", decoder);
@@ -95,13 +96,26 @@ final class NativePlaybackDiagnostics
                 }
                 JSONObject scheduling = depth.optJSONObject("scheduling");
                 if (scheduling != null) timings(scheduling, row, "queueWaitMs", "captureToWorkerMs", "workerServiceMs");
+                copyBooleans(depth, row, "gpuPollOffMain");
+                JSONObject poll = depth.optJSONObject("pollScheduling");
+                if (poll != null) timings(poll, row, "pollWakeMs", "pollGlQueueMs", "pollServiceMs");
                 JSONObject readback = depth.optJSONObject("readback");
                 if (readback != null) timings(readback, row, "submitMs", "fenceObservedMs", "mapCopyMs");
                 JSONObject render = depth.optJSONObject("render");
                 if (render != null)
                 {
                     copyBooleans(render, row, "valid", "stereo", "debug", "gpuStabilization", "gpuPreprocess", "pinnedDepthOutput", "asyncCapturePoll", "alignedLiquid");
-                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames", "pairedFrames", "cachedPairDraws", "pairRenderUpdates", "pairedVideoLagUs", "pairedPtsUs", "liquidStrength", "liquidFeatherPx", "liquidAmount");
+                    copyNumbers(render, row, "uploads", "ageMs", "eyeTargetWidth", "depthWidth", "depthHeight", "captureSlots", "depthTargetHz", "videoDraws", "supersededVideoFrames", "pairedFrames", "cachedPairDraws", "pairRenderUpdates", "pairedVideoLagUs", "liquidStrength", "liquidFeatherPx", "liquidAmount");
+                    Object ptsValue = render.opt("pairedPtsUs");
+                    if (ptsValue instanceof Number && ((Number) ptsValue).longValue() >= 0
+                            && ((Number) ptsValue).doubleValue() <= 86_400_000_000L
+                            && Double.isFinite(((Number) ptsValue).doubleValue()))
+                        row.put("pairedPtsUs", ((Number) ptsValue).longValue());
+                    JSONObject admission = render.optJSONObject("captureAdmission");
+                    if (admission != null)
+                        for (String key : new String[]{"candidates", "cadenceSkips", "fenceSkips", "slotSkips",
+                                "submitted", "retryAttempts", "retrySubmitted"})
+                            number(admission, key, row, "capture" + Character.toUpperCase(key.charAt(0)) + key.substring(1));
                     JSONObject mapping = render.optJSONObject("frameMapping");
                     if (mapping != null)
                     {
@@ -123,6 +137,9 @@ final class NativePlaybackDiagnostics
                                 row.put("depthPtsLag" + Character.toUpperCase(metric.charAt(0)) + metric.substring(1), value);
                         }
                     }
+                    copyBooleans(render, row, "captureBeforeLiquid", "liquidFusedRounds", "liquidCacheSamples");
+                    JSONObject pairDraw = render.optJSONObject("pairDrawTimings");
+                    if (pairDraw != null) timings(pairDraw, row, "pairReadyToDrawMs", "pairCaptureToDrawMs", "pairDrawSubmitMs");
                     JSONObject timing = render.optJSONObject("timings");
                     if (timing != null) timings(timing, row, "captureToUploadMs", "uploadMs", "drawSubmitMs");
                     JSONObject gpu = render.optJSONObject("gpuRender");
@@ -193,6 +210,7 @@ final class NativePlaybackDiagnostics
                 .append("nativePlaybackGpuStabilization=when true, worker stabilizeMs measures raw-depth handoff; GPU completion includes submit and GL scheduling\n")
                 .append("nativePlaybackGpuPreprocess=when true, worker preprocessMs measures host tensor wrapping; GPU preparation and readback are in capture timings; pinned output is host memory\n");
         out.append("nativePlaybackPts=signed video PTS minus applied depth source PTS at GL draw; exact metadata matches only; not optical presentation latency\n");
+        out.append("nativePlaybackCapture=captureSubmitted includes retrySubmitted; skip counters count initial fresh-frame attempts; counters are cumulative, not fps\n");
         out.append("nativePlaybackMinutes=last 60 minute snapshots; cumulative counters and recent rolling windows; not full-minute averages\n");
         out.append("dailySbsProfile=").append(BuildConfig.DAILY_SBS).append('\n');
         for (JSONObject row : minutes) out.append("playbackMinute=").append(row).append('\n');
@@ -255,6 +273,14 @@ final class NativePlaybackDiagnostics
     private static void copyNumbers(JSONObject source, JSONObject out, String... keys) throws Exception
     {
         for (String key : keys) number(source, key, out, key);
+    }
+
+    private static void signedTime(JSONObject source, String key, JSONObject out, long limit) throws Exception
+    {
+        Object value = source.opt(key);
+        if (!(value instanceof Number)) return;
+        double number = ((Number) value).doubleValue();
+        if (Double.isFinite(number) && Math.abs(number) <= limit) out.put(key, number);
     }
 
     private static void number(JSONObject source, String key, JSONObject out, String name) throws Exception

@@ -7,6 +7,66 @@ import static org.junit.Assert.*;
 public class NativePlaybackDiagnosticsTests
 {
     @Test
+    public void exportsPairDrawAdmissionWithoutArbitraryPayload() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject render = new JSONObject().put("captureBeforeLiquid", true)
+                .put("liquidFusedRounds", true).put("liquidCacheSamples", true)
+                .put("pairDrawTimings", new JSONObject().put("pairCaptureToDrawMs",
+                        new JSONObject().put("mean", 82.1).put("p95", "private")));
+        log.record(new JSONObject().put("status", "playing").put("depth",
+                new JSONObject().put("render", render)), 0);
+        assertTrue(log.export().contains("\"pairCaptureToDrawMsMean\":82.1"));
+        assertTrue(log.export().contains("\"captureBeforeLiquid\":true"));
+        assertTrue(log.export().contains("\"liquidFusedRounds\":true"));
+        assertTrue(log.export().contains("\"liquidCacheSamples\":true"));
+        assertFalse(log.export().contains("private"));
+    }
+
+    @Test
+    public void exportsOnlyBoundedPollSchedulingMeasurements() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject poll = new JSONObject().put("pollWakeMs", new JSONObject().put("mean", 2.4).put("p95", 4.0))
+                .put("pollGlQueueMs", new JSONObject().put("mean", -1).put("p95", "private"))
+                .put("url", "private");
+        log.record(new JSONObject().put("status", "playing").put("depth", new JSONObject()
+                .put("gpuPollOffMain", true).put("pollScheduling", poll)), 0);
+        String report = log.export();
+        assertTrue(report.contains("\"pollWakeMsMean\":2.4"));
+        assertTrue(report.contains("\"gpuPollOffMain\":true"));
+        assertFalse(report.contains("pollGlQueueMs"));
+        assertFalse(report.contains("private"));
+    }
+
+    @Test
+    public void exportsBoundedCaptureCountersAndLongMoviePtsWithoutIdentity() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject admission = new JSONObject().put("retrySubmitted", 42).put("slotSkips", 5)
+                .put("candidates", -1).put("submitted", "secret-value").put("url", "private-address");
+        JSONObject render = new JSONObject().put("captureAdmission", admission)
+                .put("pairedPtsUs", 3_600_000_000L);
+        JSONObject state = new JSONObject().put("status", "playing").put("playerMinusPairedMs", -31.5)
+                .put("depth", new JSONObject().put("state", "ready").put("render", render));
+        log.record(state, 0);
+        String report = log.export();
+        assertTrue(report.contains("\"captureRetrySubmitted\":42"));
+        assertTrue(report.contains("\"captureSlotSkips\":5"));
+        assertTrue(report.contains("\"pairedPtsUs\":3600000000"));
+        assertTrue(report.contains("\"playerMinusPairedMs\":-31.5"));
+        assertFalse(report.contains("private-address"));
+        assertFalse(report.contains("secret-value"));
+        assertFalse(report.contains("\"captureCandidates\""));
+        NativePlaybackDiagnostics invalid = new NativePlaybackDiagnostics();
+        render.put("pairedPtsUs", Long.MIN_VALUE);
+        state.put("playerMinusPairedMs", 86_400_001);
+        invalid.record(state, 0);
+        assertFalse(invalid.export().contains("\"pairedPtsUs\""));
+        assertFalse(invalid.export().contains("\"playerMinusPairedMs\""));
+    }
+
+    @Test
     public void alignedPairAndLiquidMeasurementsSurviveReportExport() throws Exception
     {
         NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();

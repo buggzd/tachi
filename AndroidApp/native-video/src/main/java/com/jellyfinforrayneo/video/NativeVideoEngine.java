@@ -428,6 +428,8 @@ public final class NativeVideoEngine implements AutoCloseable
             {
                 depthMetrics = new org.json.JSONObject(depthTimingsJson());
                 depthMetrics.put("readback", new org.json.JSONObject(view.readbackTimingsJson()));
+                depthMetrics.put("pollScheduling", new org.json.JSONObject(view.pollTimingsJson()));
+                depthMetrics.put("gpuPollOffMain", BuildConfig.GPU_POLL_OFF_MAIN);
                 metricsAt = now;
             }
             state.put("depth", depthMetrics);

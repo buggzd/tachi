@@ -1,0 +1,30 @@
+{
+  "scope": "Desktop WebGL float passes of native shader arithmetic; not GLES compute driver or phone performance",
+  "results": [
+    {
+      "case": "constant",
+      "maxDisplacementErrorPx": 8.940696716308594e-7,
+      "meanDisplacementErrorPx": 8.940696716308594e-7
+    },
+    {
+      "case": "edge",
+      "maxDisplacementErrorPx": 0.000003548339009284973,
+      "meanDisplacementErrorPx": 9.239551307665564e-7
+    },
+    {
+      "case": "missing-row",
+      "maxDisplacementErrorPx": 0.000003548339009284973,
+      "meanDisplacementErrorPx": 9.202227311354638e-7
+    },
+    {
+      "case": "noise",
+      "maxDisplacementErrorPx": 0.000005811452865600586,
+      "meanDisplacementErrorPx": 0.000001162485070328855
+    },
+    {
+      "case": "motion579",
+      "maxDisplacementErrorPx": 0.000006705522537231445,
+      "meanDisplacementErrorPx": 9.571247761699648e-7
+    }
+  ]
+}
