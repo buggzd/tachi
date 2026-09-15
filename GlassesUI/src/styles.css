@@ -2158,6 +2158,8 @@ kbd {
 .episode-card {
   position: relative;
   flex: 0 0 clamp(280px, 21vw, 410px);
+  /* Long release filenames must not override the rail's fixed card width. */
+  min-width: 0;
   padding: 0;
   border-radius: 12px;
   text-align: left;

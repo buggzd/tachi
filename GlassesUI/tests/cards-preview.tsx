@@ -31,4 +31,15 @@ createRoot(document.getElementById('root')!).render(<main style={{ padding: 40 }
       </div>
     </section>
   })}
+  <section data-group="episodes">
+    <h2>Episode title sizing</h2>
+    <div className="episode-rail">
+      {['8.幕间', '9.INTERMISION + BRAIN DRAIN i', '10.[ReleaseGroup] The Ghost in the Shell - 10 [WebRip 1080p HEVC-10bit AAC Subtitle Collection]', '11.' + 'LongUnbrokenFilename'.repeat(20)].map((title, index) => (
+        <button key={title} className="episode-card" data-focusable="true">
+          <div className="art-frame art-frame--wide" style={{ aspectRatio: 16 / 9 }}><span className="episode-card__number">{index + 8}</span></div>
+          <span className="episode-card__copy"><strong title={title}>{title}</strong><small>24 分钟</small></span>
+        </button>
+      ))}
+    </div>
+  </section>
 </main>)
