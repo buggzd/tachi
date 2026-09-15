@@ -1,3 +1,4 @@
+import { usesWideBrowseGrid } from './browseLayout'
 import { describeJellyfinFailure } from './jellyfin'
 import { hasNativePlayback, NativePlayback, type PlaybackSurface } from './nativePlayback'
 import { useNativeSbs } from './useNativeSbs'
@@ -925,9 +926,7 @@ function BrowsePage({
   const visibleItems = shownItems.slice(0, visibleCount)
   const hasMore = visibleItems.length < shownItems.length
   const showsLibraries = mode === 'library' && path.length === 0
-  const usesWideCard = (item: MediaItem) => mode === 'library'
-    && (showsLibraries || (item.sourceType !== 'Movie' && item.sourceType !== 'Series'))
-  const showsWideGrid = mode === 'library' && baseItems.every(usesWideCard)
+  const showsWideGrid = usesWideBrowseGrid(mode === 'library', path.map(entry => entry.item), baseItems)
   const title = mode === 'favorites' ? t("我的收藏") : path.at(-1)?.item.title ?? t("媒体库")
   const eyebrow = mode === 'favorites' ? 'SAVED MOMENTS' : path.length ? 'FOLDER VIEW' : 'ALL LIBRARIES'
 
@@ -1047,7 +1046,7 @@ function BrowsePage({
               <MediaCard
                 key={item.id}
                 item={item}
-                wide={usesWideCard(item)}
+                wide={showsWideGrid}
                 library={showsLibraries}
                 onOpen={openItem}
                 onPreview={onPreview}
