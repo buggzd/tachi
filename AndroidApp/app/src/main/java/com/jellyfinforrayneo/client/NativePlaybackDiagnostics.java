@@ -137,6 +137,9 @@ final class NativePlaybackDiagnostics
                                 row.put("depthPtsLag" + Character.toUpperCase(metric.charAt(0)) + metric.substring(1), value);
                         }
                     }
+                    copyBooleans(render, row, "captureBeforeLiquid");
+                    JSONObject pairDraw = render.optJSONObject("pairDrawTimings");
+                    if (pairDraw != null) timings(pairDraw, row, "pairReadyToDrawMs", "pairCaptureToDrawMs", "pairDrawSubmitMs");
                     JSONObject timing = render.optJSONObject("timings");
                     if (timing != null) timings(timing, row, "captureToUploadMs", "uploadMs", "drawSubmitMs");
                     JSONObject gpu = render.optJSONObject("gpuRender");

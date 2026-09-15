@@ -1,0 +1,113 @@
+{
+  "scope": "1 Hz software snapshots; paused forward seek +10 s, resume and pause. Not per-frame visual recovery or full lifecycle validation.",
+  "samples": [
+    {
+      "elapsedMs": 260925,
+      "status": "playing",
+      "position": 240.294,
+      "pairedPtsUs": 240240011,
+      "valid": true,
+      "pairedFrames": 4131,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 261041,
+      "status": "paused",
+      "position": 240.417,
+      "pairedPtsUs": 240240011,
+      "valid": true,
+      "pairedFrames": 4131,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 262138,
+      "status": "paused",
+      "position": 240.42,
+      "pairedPtsUs": 240448544,
+      "valid": true,
+      "pairedFrames": 4136,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 406268,
+      "status": "buffering",
+      "position": 250.42,
+      "pairedPtsUs": 240448544,
+      "valid": true,
+      "pairedFrames": 4136,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 406537,
+      "status": "paused",
+      "position": 250.42,
+      "pairedPtsUs": 250458544,
+      "valid": true,
+      "pairedFrames": 4137,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 409999,
+      "status": "playing",
+      "position": 250.42,
+      "pairedPtsUs": 250458544,
+      "valid": true,
+      "pairedFrames": 4137,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 452057,
+      "status": "paused",
+      "position": 292.354,
+      "pairedPtsUs": 291499544,
+      "valid": true,
+      "pairedFrames": 5096,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 453065,
+      "status": "paused",
+      "position": 292.363,
+      "pairedPtsUs": 292375422,
+      "valid": true,
+      "pairedFrames": 5117,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    },
+    {
+      "elapsedMs": 597661,
+      "status": "paused",
+      "position": 292.363,
+      "pairedPtsUs": 292375422,
+      "valid": true,
+      "pairedFrames": 5117,
+      "ptsMissing": 0,
+      "depthPtsUnknown": 0,
+      "depthPtsFuture": 0,
+      "captureBeforeLiquid": true
+    }
+  ]
+}

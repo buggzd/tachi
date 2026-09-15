@@ -1,0 +1,235 @@
+{
+  "samples": 170,
+  "seconds": 171.396,
+  "firstElapsedMs": 89063,
+  "lastElapsedMs": 260459,
+  "firstMediaSeconds": 67.981,
+  "lastMediaSeconds": 239.373,
+  "pairedHz": 22.684310018903595,
+  "counterDeltas": {
+    "pairedFrames": 3888,
+    "decodedFrames": 4109,
+    "droppedFrames": 0,
+    "supersededVideoFrames": 4,
+    "ptsMissing": 0,
+    "depthPtsUnknown": 0,
+    "depthPtsFuture": 0,
+    "captureCandidates": 4105,
+    "captureCadenceSkips": 0,
+    "captureFenceSkips": 448,
+    "captureSlotSkips": 1558,
+    "captureSubmitted": 3888,
+    "captureRetryAttempts": 2585,
+    "captureRetrySubmitted": 1789,
+    "cachedPairDraws": 6357,
+    "pairRenderUpdates": 3888
+  },
+  "sampledRollingStatistics": {
+    "inferenceMsMean": {
+      "count": 170,
+      "mean": 32.03825882352941,
+      "median": 32.032,
+      "p95": 32.269,
+      "min": 31.751,
+      "max": 32.671
+    },
+    "inferenceMsP95": {
+      "count": 170,
+      "mean": 33.977252941176474,
+      "median": 33.954499999999996,
+      "p95": 34.836,
+      "min": 33.386,
+      "max": 35.053
+    },
+    "queueWaitMsMean": {
+      "count": 170,
+      "mean": 5.9027529411764705,
+      "median": 5.876,
+      "p95": 6.479,
+      "min": 5.215,
+      "max": 6.769
+    },
+    "captureToWorkerMsMean": {
+      "count": 170,
+      "mean": 26.905376470588234,
+      "median": 26.7225,
+      "p95": 30.935,
+      "min": 22.453,
+      "max": 31.221
+    },
+    "pollWakeMsMean": {
+      "count": 170,
+      "mean": 2.2425529411764704,
+      "median": 2.2344999999999997,
+      "p95": 2.324,
+      "min": 2.136,
+      "max": 2.468
+    },
+    "pollGlQueueMsMean": {
+      "count": 170,
+      "mean": 4.193441176470588,
+      "median": 4.205500000000001,
+      "p95": 4.683,
+      "min": 3.407,
+      "max": 4.792
+    },
+    "pollServiceMsMean": {
+      "count": 170,
+      "mean": 1.2171,
+      "median": 1.0855000000000001,
+      "p95": 2.31,
+      "min": 0.507,
+      "max": 3.099
+    },
+    "submitMsMean": {
+      "count": 170,
+      "mean": 0.39958823529411763,
+      "median": 0.393,
+      "p95": 0.512,
+      "min": 0.327,
+      "max": 0.528
+    },
+    "fenceObservedMsMean": {
+      "count": 170,
+      "mean": 20.406770588235293,
+      "median": 20.211,
+      "p95": 24.455,
+      "min": 15.814,
+      "max": 24.981
+    },
+    "mapCopyMsMean": {
+      "count": 170,
+      "mean": 0.1580764705882353,
+      "median": 0.16,
+      "p95": 0.179,
+      "min": 0.13,
+      "max": 0.183
+    },
+    "pairReadyToDrawMsMean": {
+      "count": 170,
+      "mean": 0.47304117647058824,
+      "median": 0.4695,
+      "p95": 0.615,
+      "min": 0.38,
+      "max": 0.637
+    },
+    "pairCaptureToDrawMsMean": {
+      "count": 170,
+      "mean": 85.6156,
+      "median": 85.8005,
+      "p95": 89.723,
+      "min": 80.877,
+      "max": 90.538
+    },
+    "pairDrawSubmitMsMean": {
+      "count": 170,
+      "mean": 0.11062941176470588,
+      "median": 0.108,
+      "p95": 0.138,
+      "min": 0.09,
+      "max": 0.142
+    },
+    "captureToUploadMsMean": {
+      "count": 170,
+      "mean": 85.14768823529411,
+      "median": 85.3295,
+      "p95": 89.195,
+      "min": 80.502,
+      "max": 89.906
+    },
+    "captureToUploadMsP95": {
+      "count": 170,
+      "mean": 102.4784,
+      "median": 102.571,
+      "p95": 104.547,
+      "min": 100.028,
+      "max": 105.918
+    },
+    "gpuMeanMs": {
+      "count": 170,
+      "mean": 14.227494117647058,
+      "median": 14.18,
+      "p95": 15.05,
+      "min": 13.292,
+      "max": 15.28
+    },
+    "gpuP95Ms": {
+      "count": 170,
+      "mean": 27.936870588235294,
+      "median": 27.9175,
+      "p95": 28.291,
+      "min": 27.648,
+      "max": 28.317
+    },
+    "liquidsubmitMsMean": {
+      "count": 170,
+      "mean": 4.160217647058824,
+      "median": 4.0615,
+      "p95": 5.744,
+      "min": 2.799,
+      "max": 6.283
+    },
+    "liquidfenceObservedMsMean": {
+      "count": 170,
+      "mean": 19.18589411764706,
+      "median": 18.738,
+      "p95": 24.687,
+      "min": 12.549,
+      "max": 25.046
+    },
+    "ageMs": {
+      "count": 170,
+      "mean": 106.42941176470588,
+      "median": 105.0,
+      "p95": 139,
+      "min": 64,
+      "max": 164
+    },
+    "playerMinusPairedMs": {
+      "count": 170,
+      "mean": 62.481894117648295,
+      "median": 59.28399999999965,
+      "p95": 105.91200000001118,
+      "min": 15.577999999994063,
+      "max": 141.24499999999534
+    }
+  },
+  "sampledVideoLagMs": {
+    "count": 170,
+    "mean": 92.49435882352941,
+    "median": 83.422,
+    "p95": 125.133,
+    "min": 41.7,
+    "max": 166.833
+  },
+  "sampledBufferAheadSeconds": {
+    "count": 170,
+    "mean": 52.6045705882353,
+    "median": 52.604000000000006,
+    "p95": 55.30600000000001,
+    "min": 49.12100000000001,
+    "max": 55.809
+  },
+  "subtitleErrorSamples": 0,
+  "pairedPtsAbove1000SecondsSamples": 0,
+  "scope": "Same-source sequential test, media 67\u2013240 seconds; rolling-stage statistics are not per-frame distributions. No physical pair/audio timing validation.",
+  "configuration": {
+    "width": 1920,
+    "height": 1036,
+    "frameRate": 23.976,
+    "hls": true,
+    "decoder": "c2.qti.avc.decoder",
+    "videoCodec": "video/avc",
+    "audioCodec": "audio/mp4a-latm",
+    "subtitle": "ass",
+    "gpuPollOffMain": false,
+    "captureBeforeLiquid": false,
+    "depthWidth": 392,
+    "depthHeight": 224,
+    "captureSlots": 2,
+    "depthTargetHz": 24,
+    "liquidStrength": 0.85,
+    "liquidFeatherPx": 96,
+    "liquidAmount": 0.65
+  }
+}

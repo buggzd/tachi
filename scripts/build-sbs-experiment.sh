@@ -10,6 +10,7 @@ case "${PROFILE}" in
 esac
 cd "${ROOT}"
 AndroidApp/gradlew -p AndroidApp -PdailySbs="${PROFILE}" -PrealtimeSbs=true \
+    -PcaptureBeforeLiquid="$([[ ${PROFILE} == liquid ]] && echo true || echo false)" \
     -PalignedLiquid="$([[ ${PROFILE} == liquid ]] && echo true || echo false)" -PdepthResolution="${resolution}" -PdepthHz="${hz}" -PcaptureSlots=2 \
     -PgpuDepthStabilization=true -PgpuPreprocess=true -PpinnedDepthOutput=true -PasyncCapturePoll=true \
     :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :native-video:testDebugUnitTest :native-video:lintDebug

@@ -7,6 +7,20 @@ import static org.junit.Assert.*;
 public class NativePlaybackDiagnosticsTests
 {
     @Test
+    public void exportsPairDrawAdmissionWithoutArbitraryPayload() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject render = new JSONObject().put("captureBeforeLiquid", true)
+                .put("pairDrawTimings", new JSONObject().put("pairCaptureToDrawMs",
+                        new JSONObject().put("mean", 82.1).put("p95", "private")));
+        log.record(new JSONObject().put("status", "playing").put("depth",
+                new JSONObject().put("render", render)), 0);
+        assertTrue(log.export().contains("\"pairCaptureToDrawMsMean\":82.1"));
+        assertTrue(log.export().contains("\"captureBeforeLiquid\":true"));
+        assertFalse(log.export().contains("private"));
+    }
+
+    @Test
     public void exportsOnlyBoundedPollSchedulingMeasurements() throws Exception
     {
         NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();

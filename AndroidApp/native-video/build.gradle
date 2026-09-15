@@ -4,6 +4,7 @@ android {
     compileSdk 35
     defaultConfig {
         minSdk 26
+        buildConfigField "boolean", "CAPTURE_BEFORE_LIQUID", providers.gradleProperty("captureBeforeLiquid").getOrElse("false")
         buildConfigField "boolean", "GPU_POLL_OFF_MAIN", providers.gradleProperty("gpuPollOffMain").getOrElse("false")
         buildConfigField "int", "DEPTH_SAMPLE_WIDTH", "${rootProject.depthProfile.width}"
         buildConfigField "int", "DEPTH_SAMPLE_HEIGHT", "${rootProject.depthProfile.height}"

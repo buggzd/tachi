@@ -113,6 +113,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile long pairedPtsUs = FrameTimeline.UNKNOWN;
     private volatile long pairedVideoLagUs = -1;
     private volatile long pairedFrames;
+    private long liquidComputedPair = -1;
+    private long pairedReadyNs;
+    private long lastMeasuredPair = -1;
+    private final ReadbackTimings pairDrawTimings = new ReadbackTimings("pairReadyToDraw", "pairCaptureToDraw", "pairDrawSubmit");
     private int copyFbo;
     private long cachedPair = -1;
     private int cachedGeometry;
@@ -249,6 +253,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"liquidStrength\":0.85,\"liquidFeatherPx\":96,\"liquidAmount\":0.65"
                 + ",\"pairedFrames\":" + pairedFrames + ",\"pairedVideoLagUs\":" + pairedVideoLagUs
                 + ",\"cachedPairDraws\":" + cachedPairDraws + ",\"pairRenderUpdates\":" + pairRenderUpdates
+                + ",\"captureBeforeLiquid\":" + BuildConfig.CAPTURE_BEFORE_LIQUID
+                + ",\"pairDrawTimings\":" + pairDrawTimings.json()
                 + ",\"pairedPtsUs\":" + pairedPtsUs
                 + ",\"gpuLiquidCompletion\":" + (liquid == null ? "null" : liquid.completionJson())
                 + ",\"gpuLiquid\":" + (liquid == null ? "null" : liquid.timingsJson())
@@ -565,12 +571,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 else if (pendingDrawCount < pendingDrawVideoPts.length) pendingDrawVideoPts[pendingDrawCount++] = videoPtsUs;
                 else ptsMetrics.record(videoPtsUs, FrameTimeline.UNKNOWN);
             }
+            // Capture has already inserted its input fence. Queue the current pair's
+            // liquid field afterwards, allowing input completion before this compute.
+            submitPairLiquid();
             long drawStart = System.nanoTime();
             gpuTimer.begin();
             int geometry = java.util.Objects.hash(stereoPreview, depthEnabled, debugDepth,
                     screenScale, screenDisparity, videoAspect, width, height);
             boolean reusable = BuildConfig.ALIGNED_LIQUID && render1080 && stereoPreview && depthEnabled
                     && pairedGeneration == slot.generation() && cachedPair == pairedFrames && cachedGeometry == geometry;
+            boolean firstPairDraw = BuildConfig.ALIGNED_LIQUID && pairedGeneration == slot.generation()
+                    && stereoPreview && depthEnabled && lastMeasuredPair != pairedFrames;
             if (render1080)
             {
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, stereoFbo);
@@ -626,6 +637,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
             }
             gpuTimer.end();
+            if (firstPairDraw)
+            {
+                pairDrawTimings.record(drawStart - pairedReadyNs, drawStart - depthCapturedNs,
+                        System.nanoTime() - drawStart);
+                lastMeasuredPair = pairedFrames;
+            }
             if (activeRawDepth != null && gpuDrawSubmitCost == 0)
                 gpuDrawSubmitCost = System.nanoTime() - drawStart;
             if (uploadCost > 0) presentationTimings.record(captureAge, uploadCost, System.nanoTime() - drawStart);
@@ -807,10 +824,12 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                         pairedVideo = pairedCaptures[index];
                         pairedCaptures[index] = previousDisplay;
                         copyTexture(gpuStabilizer.texture(), depthTexture, SAMPLE_WIDTH, SAMPLE_HEIGHT);
-                        liquid.compute(depthTexture);
+                        if (!BuildConfig.CAPTURE_BEFORE_LIQUID) liquid.compute(depthTexture);
                         pairedPtsUs = packet.ptsUs;
                         pairedGeneration = packet.generation;
                         pairedFrames++;
+                        pairedReadyNs = System.nanoTime();
+                        if (!BuildConfig.CAPTURE_BEFORE_LIQUID) liquidComputedPair = pairedFrames;
                         requestRender();
                     }
                     depthCapturedNs = packet.capturedNs;
@@ -851,6 +870,15 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         scheduleGpuPoll();
     }
 
+    private void submitPairLiquid()
+    {
+        if (!BuildConfig.ALIGNED_LIQUID || pairedGeneration != slot.generation()
+                || liquidComputedPair == pairedFrames) return;
+        liquid.compute(depthTexture);
+        liquidComputedPair = pairedFrames;
+        scheduleGpuPoll();
+    }
+
     /** Poll a tiny control fence without repeating a full SBS draw or waiting for the next vsync. */
     private void scheduleGpuPoll()
     {
@@ -879,6 +907,9 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     // Retry only after a depth job completed and released its lease. The OES
                     // image is still latched; skip if a newer decoder frame awaits consumption.
                     if (gpuCompletedCost > 0) captureCurrentFrame(false);
+                    // Capture's fence, when a retry succeeds, now precedes the field.
+                    // Do not add a separate wait for the next draw to submit current output.
+                    submitPairLiquid();
                     if (gpuCompletedCost > 0)
                     {
                         presentationTimings.record(gpuCompletedAge, gpuCompletedCost, completedDrawCost);

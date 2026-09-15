@@ -8,7 +8,7 @@
 ./scripts/build-sbs-experiment.sh liquid
 ```
 
-必须显式传 `liquid`；脚本省略参数仍选择旧 `quality`。本地需备齐运行库和 `AndroidApp/realtime-sbs-runtime.json` 中 `experimentalModels.392` 对应模型。脚本启用 392×224、24 Hz 调度目标、GPU 预处理/深度处理/液化、两个捕获槽、固定主机输出和异步捕获观察，执行 JVM 测试、lint、组装及资源校验。
+必须显式传 `liquid`；脚本省略参数仍选择旧 `quality`。本地需备齐运行库和 `AndroidApp/realtime-sbs-runtime.json` 中 `experimentalModels.392` 对应模型。脚本启用 392×224、24 Hz 调度目标、GPU 预处理/深度处理/液化、两个捕获槽、固定主机输出和异步捕获观察，并启用补采后提交液化的 `captureBeforeLiquid` 顺序优化，执行 JVM 测试、lint、组装及资源校验。
 
 输出 `AndroidApp/app/build/distributions/tachi-sbs-liquid-392.apk`，沿用开发应用 ID `com.jellyfinforrayneo.client.debug` 与本机 Debug 签名，关闭 debuggable。可覆盖同签名开发版并保留设置，不覆盖正式版。旧 `quality`（518/12 Hz）和 `motion`（392/24 Hz 非配对）仅供回归对照，不再优先推荐。
 
@@ -17,6 +17,8 @@
 处理完成后交换同源 RGB/深度整对；繁忙时重复上一对及其合成缓存，不把旧深度套到最新视频，不自动压平深度或回退 CPU。seek、换源、关闭和 Surface 重建必须清除旧代配对及缓存。字幕优先采用配对位置，音频没有固定延迟补偿；同帧不等于零播放延迟。
 
 液化后续优化采用工作组共享邻域、已知媒体 PTS 采样、同帧受阻补采和配对就绪才重绘，参数与双槽上限不变；[手机顺序短测](performance/2026-09-15-liquid-24hz/README.md)最终到 23.48 Hz，但未保证全帧 24 Hz。
+
+[端到端顺序优化短测](performance/2026-09-15-capture-order/README.md)在同一 HLS/ASS 片段由 22.68 到 23.62 Hz，捕获到绘制开始 85.80 到 82.06 ms；不等于物理显示延迟测量或稳定 24 Hz。主路线脚本采用补采后立即提交液化的 v2，原排队可用 Gradle `-PcaptureBeforeLiquid=false` 回归。新增 `pairCaptureToDrawMs`、`pairReadyToDrawMs`、`pairDrawSubmitMs` 记录每对首次绘制的主机时间，重复缓存不重复计时。
 
 ## 实测与下一步验收
 

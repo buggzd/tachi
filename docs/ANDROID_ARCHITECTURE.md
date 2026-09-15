@@ -658,6 +658,14 @@ cancels callbacks and quits the timer. Exported poll wake (including the request
 2 ms), GL queue and service durations measure host scheduling, not GPU execution.
 The switch defaults off: sequential three-minute A/B/A runs showed only a small
 uncontrolled difference; see [short comparison](performance/2026-09-15-gpu-poll-short/README.md).
+Liquid daily builds enable `captureBeforeLiquid`: after accepting the matching
+RGB/depth and releasing its lease, attempt the existing bounded capture retry, then
+submit the pair's liquid field immediately on the GL queue. Draw callbacks likewise
+capture before submitting any pending field. A pair serial prevents duplicate field
+submission; generation checks reject stale work, and rendering follows its field.
+The exported first-pair-draw timings distinguish capture-to-draw-start from depth
+acceptance. They do not include GPU completion or physical presentation.
+See [capture-order short comparison](performance/2026-09-15-capture-order/README.md).
 Target sampling is 24 Hz, not a guaranteed
 presentation rate. The latest product long-run evidence and remaining recovery/compatibility checks are
 listed in the current guide.

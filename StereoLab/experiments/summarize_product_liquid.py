@@ -52,6 +52,7 @@ def summarize(rows):
     metrics = ['inferenceMsMean', 'inferenceMsP95', 'queueWaitMsMean', 'captureToWorkerMsMean',
                'pollWakeMsMean', 'pollGlQueueMsMean', 'pollServiceMsMean',
                'submitMsMean', 'fenceObservedMsMean', 'mapCopyMsMean',
+               'pairReadyToDrawMsMean', 'pairCaptureToDrawMsMean', 'pairDrawSubmitMsMean',
                'captureToUploadMsMean', 'captureToUploadMsP95', 'gpuMeanMs', 'gpuP95Ms',
                'liquidsubmitMsMean', 'liquidfenceObservedMsMean', 'ageMs', 'playerMinusPairedMs']
     return {'samples': len(rows), 'seconds': seconds, 'firstElapsedMs': a['elapsedMs'],
