@@ -653,7 +653,7 @@ generation and no pending newer decoder frame. Successful capture consumes the r
 new frames/generations supersede it. This adds no buffer slots. Normalization submission
 alone does not request a paired redraw; accepted pairs still do.
 Target sampling is 24 Hz, not a guaranteed
-presentation rate. The latest short retest and remaining recovery/long-run checks are
+presentation rate. The latest product long-run evidence and remaining recovery/compatibility checks are
 listed in the current guide.
 
 Native commands are limited to 16 KiB and URLs to 12 KiB, matching the active session's

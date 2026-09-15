@@ -1,0 +1,318 @@
+{
+  "scope": "Sampling phases differ in interval/temperature parser. Early mixed cached/current HAL arrays are excluded. SurfaceFlinger windows cannot prove complete physical presentation or optical latency; 2-second polling has gaps. Memory and telemetry start after the playback window began.",
+  "presentationPhases": {
+    "presentation.jsonl": {
+      "samples": 305,
+      "errors": 0,
+      "collectionElapsedSeconds": 663.564,
+      "uniquePresentTimestamps": 38210,
+      "timestampSpanSeconds": 665.632563235,
+      "observedPresentIntervalMs": {
+        "count": 38209,
+        "min": 16.600833,
+        "max": 2739.686457,
+        "mean": 17.420831825878718,
+        "p95": 16.604791
+      },
+      "pollGapSeconds": {
+        "count": 304,
+        "min": 2.046999999999997,
+        "max": 4.939999999999998,
+        "mean": 2.1827763157894737,
+        "p95": 2.4700000000000273
+      }
+    },
+    "presentation-dense.jsonl": {
+      "samples": 271,
+      "errors": 0,
+      "collectionElapsedSeconds": 307.545,
+      "uniquePresentTimestamps": 18504,
+      "timestampSpanSeconds": 309.720096028,
+      "observedPresentIntervalMs": {
+        "count": 18503,
+        "min": 16.600104,
+        "max": 49.816562,
+        "mean": 16.738912394098254,
+        "p95": 16.605313
+      },
+      "pollGapSeconds": {
+        "count": 270,
+        "min": 1.058999999999969,
+        "max": 2.031000000000006,
+        "mean": 1.1390555555555557,
+        "p95": 1.282000000000039
+      }
+    },
+    "presentation-current-hal.jsonl": {
+      "samples": 214,
+      "errors": 0,
+      "collectionElapsedSeconds": 245.318,
+      "uniquePresentTimestamps": 14795,
+      "timestampSpanSeconds": 247.40835027,
+      "observedPresentIntervalMs": {
+        "count": 14794,
+        "min": 16.603543,
+        "max": 49.816874,
+        "mean": 16.723560245369743,
+        "p95": 16.606614
+      },
+      "pollGapSeconds": {
+        "count": 213,
+        "min": 1.0609999999999928,
+        "max": 1.7930000000000064,
+        "mean": 1.1517276995305166,
+        "p95": 1.3410000000000082
+      }
+    }
+  },
+  "batteryTemperatureC": {
+    "count": 42,
+    "min": 33.6,
+    "max": 36.2,
+    "mean": 35.27142857142857,
+    "p95": 36.1
+  },
+  "thermalStatus": {
+    "count": 42,
+    "min": 0,
+    "max": 0,
+    "mean": 0,
+    "p95": 0
+  },
+  "currentHalTemperatureC": {
+    "nsp7": {
+      "count": 9,
+      "min": 48.4,
+      "max": 49.6,
+      "mean": 48.93333333333333,
+      "p95": 49.6
+    },
+    "nsp6": {
+      "count": 9,
+      "min": 48.8,
+      "max": 49.2,
+      "mean": 49.022222222222226,
+      "p95": 49.2
+    },
+    "nsp5": {
+      "count": 9,
+      "min": 48.4,
+      "max": 49.6,
+      "mean": 49.24444444444445,
+      "p95": 49.6
+    },
+    "nsp4": {
+      "count": 9,
+      "min": 48.0,
+      "max": 48.8,
+      "mean": 48.48888888888889,
+      "p95": 48.8
+    },
+    "nsp2": {
+      "count": 9,
+      "min": 48.4,
+      "max": 49.2,
+      "mean": 48.71111111111111,
+      "p95": 49.2
+    },
+    "nsp0": {
+      "count": 9,
+      "min": 48.4,
+      "max": 49.2,
+      "mean": 48.75555555555555,
+      "p95": 49.2
+    },
+    "GPU10": {
+      "count": 9,
+      "min": 50.4,
+      "max": 51.2,
+      "mean": 50.888888888888886,
+      "p95": 51.2
+    },
+    "GPU9": {
+      "count": 9,
+      "min": 50.4,
+      "max": 51.5,
+      "mean": 50.833333333333336,
+      "p95": 51.5
+    },
+    "GPU8": {
+      "count": 9,
+      "min": 50.4,
+      "max": 51.2,
+      "mean": 50.75555555555555,
+      "p95": 51.2
+    },
+    "GPU7": {
+      "count": 9,
+      "min": 50.0,
+      "max": 51.2,
+      "mean": 50.800000000000004,
+      "p95": 51.2
+    },
+    "GPU6": {
+      "count": 9,
+      "min": 50.4,
+      "max": 51.5,
+      "mean": 51.077777777777776,
+      "p95": 51.5
+    },
+    "GPU5": {
+      "count": 9,
+      "min": 50.8,
+      "max": 51.5,
+      "mean": 51.17777777777778,
+      "p95": 51.5
+    },
+    "GPU4": {
+      "count": 9,
+      "min": 51.2,
+      "max": 52.3,
+      "mean": 51.74444444444445,
+      "p95": 52.3
+    },
+    "CPU4": {
+      "count": 9,
+      "min": 49.8,
+      "max": 53.2,
+      "mean": 50.7,
+      "p95": 53.2
+    },
+    "GPU1": {
+      "count": 9,
+      "min": 50.4,
+      "max": 51.9,
+      "mean": 51.333333333333336,
+      "p95": 51.9
+    },
+    "GPU2": {
+      "count": 9,
+      "min": 50.8,
+      "max": 51.9,
+      "mean": 51.36666666666667,
+      "p95": 51.9
+    },
+    "CPU7": {
+      "count": 9,
+      "min": 48.0,
+      "max": 50.0,
+      "mean": 48.577777777777776,
+      "p95": 50.0
+    },
+    "GPU3": {
+      "count": 9,
+      "min": 50.8,
+      "max": 51.9,
+      "mean": 51.37777777777778,
+      "p95": 51.9
+    },
+    "CPU5": {
+      "count": 9,
+      "min": 49.8,
+      "max": 54.8,
+      "mean": 50.922222222222224,
+      "p95": 54.8
+    },
+    "GPU0": {
+      "count": 9,
+      "min": 50.0,
+      "max": 51.5,
+      "mean": 50.833333333333336,
+      "p95": 51.5
+    },
+    "CPU6": {
+      "count": 9,
+      "min": 48.8,
+      "max": 50.8,
+      "mean": 49.46666666666667,
+      "p95": 50.8
+    },
+    "CPU3": {
+      "count": 9,
+      "min": 49.8,
+      "max": 54.0,
+      "mean": 50.86666666666667,
+      "p95": 54.0
+    },
+    "CPU2": {
+      "count": 9,
+      "min": 49.4,
+      "max": 52.9,
+      "mean": 50.6,
+      "p95": 52.9
+    },
+    "battery": {
+      "count": 9,
+      "min": 36.7,
+      "max": 37.0,
+      "mean": 36.855555555555554,
+      "p95": 37.0
+    },
+    "nsp3": {
+      "count": 9,
+      "min": 48.0,
+      "max": 48.8,
+      "mean": 48.48888888888889,
+      "p95": 48.8
+    },
+    "CPU1": {
+      "count": 9,
+      "min": 49.4,
+      "max": 53.6,
+      "mean": 50.7,
+      "p95": 53.6
+    },
+    "skin": {
+      "count": 9,
+      "min": 36.70532,
+      "max": 36.91204,
+      "mean": 36.82219111111111,
+      "p95": 36.91204
+    },
+    "nsp1": {
+      "count": 9,
+      "min": 48.0,
+      "max": 48.8,
+      "mean": 48.48888888888889,
+      "p95": 48.8
+    },
+    "CPU0": {
+      "count": 9,
+      "min": 49.4,
+      "max": 53.2,
+      "mean": 50.5,
+      "p95": 53.2
+    }
+  },
+  "memoryKb": {
+    "totalPssKb": {
+      "count": 38,
+      "min": 952043,
+      "max": 982090,
+      "mean": 960860.947368421,
+      "p95": 974572
+    },
+    "totalRssKb": {
+      "count": 38,
+      "min": 986712,
+      "max": 1168520,
+      "mean": 1108090.5263157894,
+      "p95": 1162056
+    },
+    "nativeHeapPssKb": {
+      "count": 38,
+      "min": 325196,
+      "max": 477780,
+      "mean": 434281.8947368421,
+      "p95": 473008
+    },
+    "graphicsPssKb": {
+      "count": 38,
+      "min": 198664,
+      "max": 202240,
+      "mean": 199969.57894736843,
+      "p95": 202236
+    }
+  },
+  "memorySamples": 38
+}

@@ -20,13 +20,17 @@
 
 ## 实测与下一步验收
 
+[新版实际 Jellyfin 播放](performance/2026-09-15-native-liquid-product/README.md)已完成 HEVC/VTT、外接 SBS、充电环境下连续 21 分 24.6 秒有效液化，平均 22.54 Hz；无解码丢帧，GL 跨帧 31 次，软件视频落后均值 93.63 ms。未承诺稳定 24 Hz或完成全部兼容/同步验收。
+
+以下为此前修订阶段的证据与剩余边界：
+
 [修订版复测](performance/2026-09-15-native-liquid-retest/README.md)为部分通过：兼容本地素材连续有效 119.604 秒、成对更新 21.38 Hz，缓存路径有使用证据；不能宣布稳定 24 Hz。末次滚动捕获到上传均值 70.569 ms，末次视频落后量 125.125 ms，不能相加为完整端到端延迟。旧版 18.9 Hz 的素材和时长不同，不构成提升比例。
 
 主观观感已获用户认可，剩余工程验收仍需完成：
 
 - 正式 Jellyfin 恢复出现黑色视频与准备提示；从该状态做有界诊断。
 - 高动态原片为设备不支持的 10-bit H.264；准备同内容兼容编码并记录 PTS 映射后，再核对 347/579 帧。
-- 显示生命周期、ASS/WebVTT 与独立音画同步、跨 seek/代际/几何缓存失效，以及有效连续 20–30 分钟和温控。
+- 显示生命周期、ASS/WebVTT 与独立音画同步、跨 seek/代际/几何缓存失效，以及非充电热态与不同片源长测；本轮 HEVC/VTT 充电长测已完成。
 
 分享诊断日志保留 `pairedPtsUs`、`playerMinusPairedMs`、`pairedVideoLagUs`、队列等待、捕获到上传、`pairedFrames`、`cachedPairDraws`、`pairRenderUpdates`。区分新成对帧、重复绘制、解码丢帧和物理呈现；GPU query、提交时间、fence 完成观察不能互相替代，近零 liquid query 不是液化零成本。
 
