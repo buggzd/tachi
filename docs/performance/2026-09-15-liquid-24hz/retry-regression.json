@@ -1,0 +1,98 @@
+[
+  {
+    "label": "after-seek",
+    "state": "playing",
+    "positionMs": 40425,
+    "pairedPtsUs": 40334541,
+    "pairedFrames": 3380,
+    "stereo": true,
+    "depthPts": {
+      "count": 8622,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    }
+  },
+  {
+    "label": "paused-settled",
+    "state": "paused",
+    "positionMs": 41346,
+    "pairedPtsUs": 41377250,
+    "pairedFrames": 3405,
+    "stereo": true,
+    "depthPts": {
+      "count": 8679,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    }
+  },
+  {
+    "label": "paused-stable",
+    "state": "paused",
+    "positionMs": 41346,
+    "pairedPtsUs": 41377250,
+    "pairedFrames": 3405,
+    "stereo": true,
+    "depthPts": {
+      "count": 8679,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    }
+  },
+  {
+    "label": "resumed",
+    "state": "playing",
+    "positionMs": 45576,
+    "pairedPtsUs": 45506375,
+    "pairedFrames": 3495,
+    "stereo": true,
+    "depthPts": {
+      "count": 8920,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    }
+  },
+  {
+    "label": "2d",
+    "state": "playing",
+    "positionMs": 48609,
+    "pairedPtsUs": 48509375,
+    "pairedFrames": 3562,
+    "stereo": false,
+    "depthPts": {
+      "count": 8932,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    }
+  },
+  {
+    "label": "sbs-restored",
+    "state": "playing",
+    "positionMs": 52677,
+    "pairedPtsUs": 52596791,
+    "pairedFrames": 3651,
+    "stereo": true,
+    "depthPts": {
+      "count": 9126,
+      "unknown": 0,
+      "future": 0,
+      "meanMs": 0.0,
+      "p95Ms": 0.0,
+      "maxMs": 0.0
+    }
+  }
+]

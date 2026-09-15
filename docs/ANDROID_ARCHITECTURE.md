@@ -648,6 +648,10 @@ AV synchronization or zero display latency. Known source PTS drives liquid sampl
 backward media time; capture/worker durations retain a monotonic wall clock. Unknown
 PTS uses the legacy wall-clock cadence. GPU liquid diffusion reuses an FP32 shared
 neighborhood tile without changing iteration count or arithmetic.
+A blocked liquid capture can retry only the still-latched frame with the same PTS and
+generation and no pending newer decoder frame. Successful capture consumes the retry;
+new frames/generations supersede it. This adds no buffer slots. Normalization submission
+alone does not request a paired redraw; accepted pairs still do.
 Target sampling is 24 Hz, not a guaranteed
 presentation rate. The latest short retest and remaining recovery/long-run checks are
 listed in the current guide.

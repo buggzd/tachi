@@ -78,6 +78,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile boolean depthEnabled = true;
     private volatile boolean sampling;
     private volatile boolean samplingSuspended;
+    private long deferredCaptureGeneration = -1;
+    private long deferredCapturePts = FrameTimeline.UNKNOWN;
+    private volatile long captureRetries;
+    private volatile long captureRetrySubmissions;
     private volatile long captureCandidates;
     private volatile long captureCadenceSkips;
     private volatile long captureFenceSkips;
@@ -224,7 +228,9 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"cadenceSkips\":" + captureCadenceSkips
                 + ",\"fenceSkips\":" + captureFenceSkips
                 + ",\"slotSkips\":" + captureSlotSkips
-                + ",\"submitted\":" + captureSubmissions + "}"
+                + ",\"submitted\":" + captureSubmissions
+                + ",\"retryAttempts\":" + captureRetries
+                + ",\"retrySubmitted\":" + captureRetrySubmissions + "}"
                 + ",\"depthTargetHz\":" + BuildConfig.DEPTH_HZ
                 + ",\"asyncCapturePoll\":" + BuildConfig.ASYNC_CAPTURE_POLL
                 + ",\"gpuPreprocess\":" + BuildConfig.GPU_PREPROCESS
@@ -616,8 +622,13 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private void captureCurrentFrame(boolean fresh)
     {
         long now = System.nanoTime();
-        if (!fresh || !sampling || samplingSuspended) return;
-        captureCandidates++;
+        if (!sampling || samplingSuspended) return;
+        if (!fresh && (!BuildConfig.ALIGNED_LIQUID || framePending.get()
+                || deferredCaptureGeneration != slot.generation()
+                || deferredCapturePts != videoPtsUs || videoPtsUs == FrameTimeline.UNKNOWN)) return;
+        deferredCaptureGeneration = -1;
+        if (fresh) captureCandidates++;
+        else captureRetries++;
         boolean mediaCadence = BuildConfig.ALIGNED_LIQUID && videoPtsUs != FrameTimeline.UNKNOWN;
         if (!(mediaCadence ? pairedCadence.due(videoPtsUs, slot.generation()) : cadence.due(now)))
         {
@@ -626,16 +637,19 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         }
         if (fence != 0)
         {
-            captureFenceSkips++;
+            if (fresh) captureFenceSkips++;
+            deferCurrentCapture();
             return;
         }
         long lease = slot.acquire();
         if (lease == 0)
         {
-            captureSlotSkips++;
+            if (fresh) captureSlotSkips++;
+            deferCurrentCapture();
             return;
         }
         captureSubmissions++;
+        if (!fresh) captureRetrySubmissions++;
         pendingLease = lease;
         pendingGeneration = slot.generationOf(lease);
         pendingTimestamp = texture.getTimestamp();
@@ -673,6 +687,13 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         GLES30.glFlush();
         pendingSubmitNs = System.nanoTime();
         pendingSubmitCostNs = pendingSubmitNs - submitStart;
+    }
+
+    private void deferCurrentCapture()
+    {
+        if (!BuildConfig.ALIGNED_LIQUID || videoPtsUs == FrameTimeline.UNKNOWN) return;
+        deferredCaptureGeneration = slot.generation();
+        deferredCapturePts = videoPtsUs;
     }
 
     private void pollSample()
@@ -828,6 +849,9 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                     long submission = gpuSubmissionSerial;
                     long completedDrawCost = gpuDrawSubmitCost;
                     processGpuDepth();
+                    // Retry only after a depth job completed and released its lease. The OES
+                    // image is still latched; skip if a newer decoder frame awaits consumption.
+                    if (gpuCompletedCost > 0) captureCurrentFrame(false);
                     if (gpuCompletedCost > 0)
                     {
                         presentationTimings.record(gpuCompletedAge, gpuCompletedCost, completedDrawCost);
@@ -837,7 +861,9 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                         // The first accepted map needs a draw to turn on depth/debug rendering.
                         if (!wasValid) requestRender();
                     }
-                    if (gpuSubmissionSerial != submission) requestRender();
+                    // Paired output requests a draw only on acceptance above. Submitting its
+                    // normalization job has no new visible pair and needs no cached SBS blit.
+                    if (!BuildConfig.ALIGNED_LIQUID && gpuSubmissionSerial != submission) requestRender();
                     scheduleGpuPoll();
                 }
                 catch (RuntimeException error)

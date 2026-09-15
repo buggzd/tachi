@@ -10,6 +10,8 @@
     "desktop tile arithmetic parity",
     "PairedSampleCadence tests: 23.976 fps, 30 fps, seek/new generation/unknown PTS"
   ],
-  "devicePerformance": "Three valid short phone fixture windows collected; 24 Hz and long-run/external-display acceptance not achieved",
-  "ptsCandidateApkSha256": "ac4d490177a9da385355297cc67f0a6ec0bf69017b937d357267e246ed534e46"
+  "devicePerformance": "Final retry/no-extra-draw candidate: 23.479 Hz in 89.145 s phone fixture window; seek, pause/resume, renderer SBS/2D toggles checked; no 24 Hz guarantee or external hardware/long-run acceptance",
+  "ptsCandidateApkSha256": "ac4d490177a9da385355297cc67f0a6ec0bf69017b937d357267e246ed534e46",
+  "retryCandidateApkSha256": "64b92882b726e93547aca75f3fca475d9cec29586077af0579e6bc0d6414d607",
+  "retryNoExtraDrawApkSha256": "0385c51e489e9367ff5c8847e336d99c77367b115091a157fd0fa67e714b99c4"
 }

@@ -1,0 +1,313 @@
+{
+  "baselineCommit": "e74904f",
+  "scope": "Sequential phone fixture runs, media range 20\u2013110 s, no controlled thermal A/B/A, unchanged two slots/392/liquid parameters",
+  "results": {
+    "pts": {
+      "samples": 89,
+      "seconds": 89.168,
+      "pairedHz": 21.207159519109993,
+      "firstPositionMs": 20611,
+      "lastPositionMs": 109775,
+      "captureAdmissionDelta": {
+        "candidates": 2131,
+        "cadenceSkips": 0,
+        "fenceSkips": 2,
+        "slotSkips": 238,
+        "submitted": 1891
+      },
+      "lastRolling": {
+        "worker": {
+          "count": 2353,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.0561,
+            "p95": 0.0959
+          },
+          "inferenceMs": {
+            "mean": 31.2529,
+            "p95": 32.5159
+          },
+          "stabilizeMs": {
+            "mean": 0.27,
+            "p95": 0.5773
+          }
+        },
+        "scheduling": {
+          "count": 2353,
+          "window": 512,
+          "queueWaitMs": {
+            "mean": 3.2521,
+            "p95": 22.226
+          },
+          "captureToWorkerMs": {
+            "mean": 21.4938,
+            "p95": 41.7576
+          },
+          "workerServiceMs": {
+            "mean": 31.6237,
+            "p95": 33.0582
+          }
+        },
+        "render": {
+          "count": 4299,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 14.7331,
+          "p95Ms": 32.0572
+        },
+        "liquid": {
+          "count": 2353,
+          "window": 512,
+          "submitMs": {
+            "mean": 4.2889,
+            "p95": 15.43
+          },
+          "fenceObservedMs": {
+            "mean": 12.9717,
+            "p95": 46.3061
+          },
+          "pollMs": {
+            "mean": 0.0159,
+            "p95": 0.0282
+          }
+        },
+        "timings": {
+          "count": 2353,
+          "window": 512,
+          "captureToUploadMs": {
+            "mean": 74.1826,
+            "p95": 98.1119
+          },
+          "uploadMs": {
+            "mean": 1.2461,
+            "p95": 4.9001
+          },
+          "drawSubmitMs": {
+            "mean": 0.0452,
+            "p95": 0.0989
+          }
+        }
+      },
+      "lastDepthPts": {
+        "count": 6539,
+        "unknown": 0,
+        "future": 0,
+        "meanMs": 0.0,
+        "p95Ms": 0.0,
+        "maxMs": 0.0
+      },
+      "lastPairedVideoLagUs": 83417,
+      "sampledVideoLagMs": {
+        "mean": 76.85578651685394,
+        "p95": 125.125,
+        "scope": "1 Hz sampled software decoded-video minus paired-video PTS; not optical/audio latency"
+      }
+    },
+    "opportunity": {
+      "samples": 88,
+      "seconds": 88.243,
+      "pairedHz": 23.117981029656743,
+      "firstPositionMs": 20828,
+      "lastPositionMs": 109066,
+      "captureAdmissionDelta": {
+        "candidates": 2102,
+        "cadenceSkips": 0,
+        "fenceSkips": 146,
+        "slotSkips": 519,
+        "submitted": 2041,
+        "retryAttempts": 846,
+        "retrySubmitted": 604
+      },
+      "lastRolling": {
+        "worker": {
+          "count": 2392,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.0538,
+            "p95": 0.1285
+          },
+          "inferenceMs": {
+            "mean": 31.4579,
+            "p95": 33.3566
+          },
+          "stabilizeMs": {
+            "mean": 0.2963,
+            "p95": 0.5577
+          }
+        },
+        "scheduling": {
+          "count": 2392,
+          "window": 512,
+          "queueWaitMs": {
+            "mean": 6.4168,
+            "p95": 27.1649
+          },
+          "captureToWorkerMs": {
+            "mean": 28.4464,
+            "p95": 48.0677
+          },
+          "workerServiceMs": {
+            "mean": 31.8572,
+            "p95": 33.8414
+          }
+        },
+        "render": {
+          "count": 4156,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 15.952,
+          "p95Ms": 32.1248
+        },
+        "liquid": {
+          "count": 2391,
+          "window": 512,
+          "submitMs": {
+            "mean": 3.3855,
+            "p95": 14.4366
+          },
+          "fenceObservedMs": {
+            "mean": 19.7264,
+            "p95": 49.1269
+          },
+          "pollMs": {
+            "mean": 0.0145,
+            "p95": 0.0274
+          }
+        },
+        "timings": {
+          "count": 2392,
+          "window": 512,
+          "captureToUploadMs": {
+            "mean": 85.9041,
+            "p95": 103.93
+          },
+          "uploadMs": {
+            "mean": 1.9569,
+            "p95": 9.4916
+          },
+          "drawSubmitMs": {
+            "mean": 0.0683,
+            "p95": 0.145
+          }
+        }
+      },
+      "lastDepthPts": {
+        "count": 6172,
+        "unknown": 0,
+        "future": 0,
+        "meanMs": 0.0,
+        "p95Ms": 0.0,
+        "maxMs": 0.0
+      },
+      "lastPairedVideoLagUs": 83416,
+      "sampledVideoLagMs": {
+        "mean": 81.7764659090909,
+        "p95": 125.125,
+        "scope": "1 Hz sampled software decoded-video minus paired-video PTS; not optical/audio latency"
+      }
+    },
+    "no-extra": {
+      "samples": 89,
+      "seconds": 89.145,
+      "pairedHz": 23.478602277188852,
+      "firstPositionMs": 20052,
+      "lastPositionMs": 109196,
+      "captureAdmissionDelta": {
+        "candidates": 2125,
+        "cadenceSkips": 0,
+        "fenceSkips": 79,
+        "slotSkips": 353,
+        "submitted": 2095,
+        "retryAttempts": 523,
+        "retrySubmitted": 402
+      },
+      "lastRolling": {
+        "worker": {
+          "count": 2469,
+          "window": 512,
+          "preprocessMs": {
+            "mean": 0.0448,
+            "p95": 0.0961
+          },
+          "inferenceMs": {
+            "mean": 31.1558,
+            "p95": 32.7592
+          },
+          "stabilizeMs": {
+            "mean": 0.331,
+            "p95": 0.7163
+          }
+        },
+        "scheduling": {
+          "count": 2469,
+          "window": 512,
+          "queueWaitMs": {
+            "mean": 5.5575,
+            "p95": 25.5301
+          },
+          "captureToWorkerMs": {
+            "mean": 24.2493,
+            "p95": 44.9939
+          },
+          "workerServiceMs": {
+            "mean": 31.5747,
+            "p95": 33.2234
+          }
+        },
+        "render": {
+          "count": 4082,
+          "window": 512,
+          "disjoint": 0,
+          "meanMs": 16.0637,
+          "p95Ms": 33.6079
+        },
+        "liquid": {
+          "count": 2469,
+          "window": 512,
+          "submitMs": {
+            "mean": 3.7067,
+            "p95": 13.9143
+          },
+          "fenceObservedMs": {
+            "mean": 15.6216,
+            "p95": 47.1147
+          },
+          "pollMs": {
+            "mean": 0.012,
+            "p95": 0.0237
+          }
+        },
+        "timings": {
+          "count": 2469,
+          "window": 512,
+          "captureToUploadMs": {
+            "mean": 81.0841,
+            "p95": 101.5379
+          },
+          "uploadMs": {
+            "mean": 1.8394,
+            "p95": 8.3972
+          },
+          "drawSubmitMs": {
+            "mean": 0.0531,
+            "p95": 0.117
+          }
+        }
+      },
+      "lastDepthPts": {
+        "count": 6250,
+        "unknown": 0,
+        "future": 0,
+        "meanMs": 0.0,
+        "p95Ms": 0.0,
+        "maxMs": 0.0
+      },
+      "lastPairedVideoLagUs": 83416,
+      "sampledVideoLagMs": {
+        "mean": 70.29495505617977,
+        "p95": 125.125,
+        "scope": "1 Hz sampled software decoded-video minus paired-video PTS; not optical/audio latency"
+      }
+    }
+  }
+}
