@@ -329,3 +329,8 @@ Debug 包开启 WebView 调试。日志只应筛选通用 Activity、WebView、�
 ### 播放进度交互回归
 
 `node CompanionUI/scripts/verify-seek.mjs` 启动两端真实 React 界面的无服务器浏览器回归，使用模拟原生播放事件，覆盖两种主题、唯一焦点、短滑十秒、拖动预览及反向修正、完整进度条、取消／多指／切集／过期，以及松手仅提交一次并保留播放／暂停状态。浏览器预览入口为 GlassesUI 的 `/tests/player-preview.html`，需测试脚本提供模拟原生桥接。此检查不替代真机 Direct/HLS、2D/SBS 的手感和播放恢复验证。
+
+
+### 海报比例回归
+
+`node CompanionUI/scripts/verify-covers.mjs` 使用真实卡片组件验证两种主题下的竖版合集、横版、方形、横幅与缺失元数据条目的统一比例。无服务器预览入口为 GlassesUI 的 `/tests/cards-preview.html`。布局共用 `getCardShape`，数据来自 `PrimaryImageAspectRatio`；自动比例使用 Jellyfin Web 的中位数和标准比例归一规则，不能以视频分辨率或 Folder／BoxSet 类型替代。

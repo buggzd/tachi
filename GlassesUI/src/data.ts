@@ -37,6 +37,7 @@ export type MediaItem = {
   runtimeTicks?: number
   lastPlayedDate?: string
   playbackPositionTicks?: number
+  primaryImageAspectRatio?: number
   imageUrl?: string
   coverUrl?: string
   backdropUrl?: string

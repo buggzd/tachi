@@ -97,6 +97,7 @@ export type JellyfinItemDto = {
   Taglines?: string[]
   Genres?: string[]
   Path?: string
+  PrimaryImageAspectRatio?: number
   ImageTags?: Record<string, string>
   BackdropImageTags?: string[]
   SeriesPrimaryImageTag?: string
@@ -238,6 +239,7 @@ const itemFields = [
 ].join(',')
 
 const seriesIndexFields = [
+  'PrimaryImageAspectRatio',
   'ChildCount',
   'DateCreated',
   'Genres',
@@ -907,6 +909,9 @@ export class JellyfinClient {
       parentIndexNumber: source.ParentIndexNumber,
       runtimeTicks: source.RunTimeTicks ?? mediaSource?.RunTimeTicks,
       playbackPositionTicks: source.UserData?.PlaybackPositionTicks,
+      primaryImageAspectRatio: typeof source.PrimaryImageAspectRatio === 'number'
+        && Number.isFinite(source.PrimaryImageAspectRatio) && source.PrimaryImageAspectRatio > 0
+        ? source.PrimaryImageAspectRatio : undefined,
       imageUrl: primaryOwner && primaryTag
         ? this.imageUrl(primaryOwner, 'Primary', primaryTag)
         : undefined,

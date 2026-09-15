@@ -55,3 +55,14 @@ test('virtual collection views resolve by parent without a type filter that retu
   assert.deepEqual((await client.loadFolder(contents[2])).map(item => item.id), ['another-movie'])
   assert.ok(requests.every(query => query.get('Recursive') === 'false'))
 })
+
+test('primary image aspect ratio survives DTO mapping without using video dimensions', () => {
+  const client = new JellyfinClient({ serverUrl: 'https://media.example.invalid', accessToken: 'fixture', userId: 'user', deviceId: 'test' })
+  const item = client.mapItem({ Id: 'collection', Type: 'BoxSet', PrimaryImageAspectRatio: 2 / 3,
+    MediaSources: [{ MediaStreams: [{ Type: 'Video', Width: 1920, Height: 1080 }] }] })
+  assert.equal(item.primaryImageAspectRatio, 2 / 3)
+  assert.equal(item.folder, true)
+  for (const ratio of [undefined, 0, -1, Infinity, NaN, '0.667']) {
+    assert.equal(client.mapItem({ Id: 'partial', PrimaryImageAspectRatio: ratio }).primaryImageAspectRatio, undefined)
+  }
+})

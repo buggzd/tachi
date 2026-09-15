@@ -1,4 +1,4 @@
-import { usesWideBrowseGrid } from './browseLayout'
+import { getCardShape, cardAspectRatios, type CardShape } from './browseLayout'
 import { describeJellyfinFailure } from './jellyfin'
 import { hasNativePlayback, NativePlayback, type PlaybackSurface } from './nativePlayback'
 import { useNativeSbs } from './useNativeSbs'
@@ -552,16 +552,19 @@ function AmbientBackground({
 
 function ArtFrame({
   item,
-  wide = false,
+  shape = 'portrait',
+  primaryImage = false,
   className,
   children,
 }: {
   item: MediaItem
-  wide?: boolean
+  shape?: CardShape
+  primaryImage?: boolean
   className?: string
   children?: ReactNode
 }) {
-  const imageUrl = wide ? item.imageUrl : item.coverUrl ?? item.imageUrl
+  const imageUrl = primaryImage ? item.imageUrl : item.coverUrl ?? item.imageUrl
+  const frameShape = shape
   const [loadedUrl, setLoadedUrl] = useState('')
   const [failedUrl, setFailedUrl] = useState('')
   const imageReady = Boolean(imageUrl && loadedUrl === imageUrl)
@@ -576,7 +579,7 @@ function ArtFrame({
     backgroundImage: `url(${fallbackImage})`,
   } as CSSProperties
   return (
-    <div className={cx('art-frame', imageReady && 'art-frame--real', wide ? 'art-frame--wide' : 'art-frame--poster', className)}>
+    <div className={cx('art-frame', imageReady && 'art-frame--real', frameShape === 'portrait' ? 'art-frame--poster' : 'art-frame--wide', className)} style={{ aspectRatio: cardAspectRatios[frameShape] }}>
       <div className="art-frame__image" style={style} />
       {imageUrl && failedUrl !== imageUrl && (
         <img className={cx('art-frame__poster-image', imageReady && 'is-ready')} src={imageUrl}
@@ -680,17 +683,15 @@ function MetaRow({ item }: { item: MediaItem }) {
   )
 }
 
-const MediaCard = memo(function MediaCard({
+export const MediaCard = memo(function MediaCard({
   item,
-  wide = false,
-  library = false,
+  shape,
   onOpen,
   onPreview,
   autoFocusTarget = false,
 }: {
   item: MediaItem
-  wide?: boolean
-  library?: boolean
+  shape: CardShape
   onOpen: (item: MediaItem) => void
   onPreview: (item: MediaItem) => void
   autoFocusTarget?: boolean
@@ -701,12 +702,12 @@ const MediaCard = memo(function MediaCard({
       data-focusable="true"
       data-autofocus={autoFocusTarget ? 'true' : undefined}
       data-ui-sound="open"
-      className={cx('media-card', wide && 'media-card--wide', library && 'media-card--library')}
+      className={cx('media-card', (shape === 'backdrop' || shape === 'banner') && 'media-card--wide')}
       onClick={() => onOpen(item)}
       onFocus={() => onPreview(item)}
     >
       <span className="media-card__glow" />
-      <ArtFrame item={item} wide={wide || library}><MediaIndicators item={item} /></ArtFrame>
+      <ArtFrame item={item} shape={shape} primaryImage><MediaIndicators item={item} /></ArtFrame>
       <span className="media-card__badges">
         {item.folder && <span><Folder size={14} /> {item.sourceType === 'BoxSet' ? t('合集') : item.collectionType === 'boxsets' ? t("合集组") : t('文件夹')}</span>}
         {!item.folder && <span>{t(item.kind)}</span>}
@@ -799,26 +800,29 @@ function HomePage({
       </section>
 
       <div className="shelves">
-        {shelves.map((shelf, shelfIndex) => (
-          <section className="shelf" key={shelf.id}>
-            <header className="shelf__header">
-              <div><small>{shelf.eyebrow}</small><h2>{t(shelf.title)}<span className="section-count" aria-label={t("{0} 项", { 0: shelf.items.length })}>{shelf.items.length}</span></h2></div>
-              <FocusButton variant="ghost" trailing={<ChevronRight size={18} />} onClick={() => onNavigate('browse')}>{t("查看全部")}</FocusButton>
-            </header>
-            <div className="shelf__rail">
-              {shelf.items.map((item, cardIndex) => (
-                <MediaCard
-                  key={`${shelf.id}-${item.id}`}
-                  item={item}
-                  library={Boolean(shelf.library)}
-                  onOpen={onOpen}
-                  onPreview={onPreview}
-                  autoFocusTarget={shelfIndex === 0 && cardIndex === 0}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
+        {shelves.map((shelf, shelfIndex) => {
+          const shape = getCardShape(shelf.items, shelf.library ? 'libraries' : shelf.id === 'resume' ? 'resume' : shelf.id === 'next-up' ? 'next-up' : 'auto')
+          return (
+            <section className="shelf" key={shelf.id}>
+              <header className="shelf__header">
+                <div><small>{shelf.eyebrow}</small><h2>{t(shelf.title)}<span className="section-count" aria-label={t("{0} 项", { 0: shelf.items.length })}>{shelf.items.length}</span></h2></div>
+                <FocusButton variant="ghost" trailing={<ChevronRight size={18} />} onClick={() => onNavigate('browse')}>{t("查看全部")}</FocusButton>
+              </header>
+              <div className="shelf__rail">
+                {shelf.items.map((item, cardIndex) => (
+                  <MediaCard
+                    key={`${shelf.id}-${item.id}`}
+                    item={item}
+                    shape={shape}
+                    onOpen={onOpen}
+                    onPreview={onPreview}
+                    autoFocusTarget={shelfIndex === 0 && cardIndex === 0}
+                  />
+                ))}
+              </div>
+            </section>
+          )
+        })}
       </div>
       <RemoteHint />
     </div>
@@ -926,7 +930,8 @@ function BrowsePage({
   const visibleItems = shownItems.slice(0, visibleCount)
   const hasMore = visibleItems.length < shownItems.length
   const showsLibraries = mode === 'library' && path.length === 0
-  const showsWideGrid = usesWideBrowseGrid(mode === 'library', path.map(entry => entry.item), baseItems)
+  const cardShape = getCardShape(baseItems, showsLibraries ? 'libraries' : 'auto')
+  const showsWideGrid = cardShape === 'backdrop' || cardShape === 'banner'
   const title = mode === 'favorites' ? t("我的收藏") : path.at(-1)?.item.title ?? t("媒体库")
   const eyebrow = mode === 'favorites' ? 'SAVED MOMENTS' : path.length ? 'FOLDER VIEW' : 'ALL LIBRARIES'
 
@@ -1003,7 +1008,7 @@ function BrowsePage({
 
         <header className="browse-title-row">
           <div><small>{eyebrow}</small><h1>{title}</h1><p>{folderLoading ? t("正在读取内容…") : folderError ? t("内容尚未载入") : t("{0} 个项目", { 0: baseItems.length })} · Jellyfin / {serverName}</p></div>
-          <div className="layout-indicator"><Grid3X3 size={18} /><span>{showsWideGrid ? t("横向缩略图") : t("海报网格")}</span></div>
+          <div className="layout-indicator"><Grid3X3 size={18} /><span>{showsWideGrid ? t("横向缩略图") : cardShape === 'square' ? t("方形封面网格") : t("海报网格")}</span></div>
         </header>
 
         <section className="browse-toolbar glass-panel">
@@ -1046,8 +1051,7 @@ function BrowsePage({
               <MediaCard
                 key={item.id}
                 item={item}
-                wide={showsWideGrid}
-                library={showsLibraries}
+                shape={cardShape}
                 onOpen={openItem}
                 onPreview={onPreview}
                 autoFocusTarget={index === 0 && filter !== 'all'}
@@ -1194,6 +1198,7 @@ function SearchPage({
     : indexStatus === 'error'
       ? t("完整索引暂不可用 · 当前可搜索 {0} 部", { 0: entries.length })
       : t("已索引 {0} 部剧集", { 0: entries.length })
+  const resultShape = getCardShape(results.map(result => result.item))
   const phoneKeyboardCopy = phoneKeyboardState === 'visible'
     ? t("手机键盘已就绪 · 输入实时同步")
     : phoneKeyboardState === 'hidden'
@@ -1331,7 +1336,7 @@ function SearchPage({
                       onClick={() => onOpen(item, { season: parsedQuery.seasonHint, episode: parsedQuery.episodeHint })}
                       onFocus={() => { onResultFocus(item.id); onPreview(item) }}
                     >
-                      <ArtFrame item={item} className="series-search-result__art"><MediaIndicators item={item} /></ArtFrame>
+                      <ArtFrame item={item} shape={resultShape} primaryImage className="series-search-result__art"><MediaIndicators item={item} /></ArtFrame>
                       <span className="series-search-result__title">{item.title}</span>
                     </button>
                   )
@@ -1395,6 +1400,9 @@ function DetailPage({
   const resolvedItem = detailItem.sourceType === 'Episode' && recentEpisode ? recentEpisode : detailItem
   const similar = detail?.similar ?? []
   const extras = detail?.extras ?? []
+  const similarShape = getCardShape(similar)
+  const extrasShape = getCardShape(extras)
+  const episodeShape = getCardShape(episodes, 'episodes')
   const [favorite, setFavorite] = useState(Boolean(resolvedItem.favorite))
   const [watched, setWatched] = useState(Boolean(resolvedItem.watched))
   const [actionBusy, setActionBusy] = useState<'favorite' | 'watched' | null>(null)
@@ -1567,7 +1575,7 @@ function DetailPage({
                   const episodeTitle = `${episodeNumber}.${episode.original || episode.title}`
                   return (
                     <button key={episode.id} type="button" data-focusable="true" data-autofocus={initialEpisodeNumber === episode.indexNumber ? 'true' : undefined} data-episode-number={episode.indexNumber} data-episode-entry={entryEpisode?.id === episode.id ? 'true' : undefined} className="episode-card" onClick={() => onPlay(episode)} onFocus={() => onPreview(episode)}>
-                      <ArtFrame item={episode} wide>
+                      <ArtFrame item={episode} shape={episodeShape} primaryImage>
                         <span className="episode-card__number">{String(episodeNumber).padStart(2, '0')}</span>
                         <span className="episode-card__play"><Play size={19} fill="currentColor" /></span>
                         <MediaIndicators item={episode} />
@@ -1585,7 +1593,7 @@ function DetailPage({
             <section className="similar-section detail-tab-panel">
               <header className="section-heading"><div><small>SIMILAR FREQUENCIES</small><h2>{t("更多类似内容")}<span className="section-count">{similar.length}</span></h2></div></header>
               <div className="shelf__rail">
-                {similar.map((related) => <MediaCard key={related.id} item={related} wide onOpen={onOpen} onPreview={onPreview} />)}
+                {similar.map((related) => <MediaCard key={related.id} item={related} shape={similarShape} onOpen={onOpen} onPreview={onPreview} />)}
               </div>
             </section>
           )}
@@ -1594,7 +1602,7 @@ function DetailPage({
             <section className="similar-section detail-tab-panel">
               <header className="section-heading"><div><small>EXTRAS</small><h2>{t("额外片段")}<span className="section-count">{extras.length}</span></h2></div></header>
               <div className="shelf__rail">
-                {extras.map((clip) => <MediaCard key={clip.id} item={clip} wide onOpen={(selectedClip) => onPlay(selectedClip, true)} onPreview={onPreview} />)}
+                {extras.map((clip) => <MediaCard key={clip.id} item={clip} shape={extrasShape} onOpen={(selectedClip) => onPlay(selectedClip, true)} onPreview={onPreview} />)}
               </div>
             </section>
           )}
