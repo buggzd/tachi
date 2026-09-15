@@ -1,0 +1,108 @@
+{
+  "baseline": {
+    "samples": 89,
+    "elapsedSeconds": 99.086,
+    "errors": 0,
+    "observedPresentGapMs": {
+      "count": 6035,
+      "min": 16.59875,
+      "max": 49.804427,
+      "mean": 16.806836166362885,
+      "p95": 16.601406
+    },
+    "pollGapSeconds": {
+      "count": 88,
+      "min": 1.0470000000000002,
+      "max": 1.4009999999999998,
+      "mean": 1.1259772727272728,
+      "p95": 1.223000000000006
+    },
+    "batteryC": {
+      "count": 4,
+      "min": 30.2,
+      "max": 31.2,
+      "mean": 30.75,
+      "p95": 31.2
+    },
+    "thermalStatus": {
+      "count": 4,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "p95": 0
+    },
+    "batteryStartC": 30.2,
+    "batteryEndC": 31.4
+  },
+  "fused": {
+    "samples": 87,
+    "elapsedSeconds": 98.963,
+    "errors": 0,
+    "observedPresentGapMs": {
+      "count": 6017,
+      "min": 16.598751,
+      "max": 49.806093,
+      "mean": 16.805263552434766,
+      "p95": 16.602031
+    },
+    "pollGapSeconds": {
+      "count": 86,
+      "min": 1.0579999999999927,
+      "max": 1.6910000000000025,
+      "mean": 1.150732558139535,
+      "p95": 1.303999999999995
+    },
+    "batteryC": {
+      "count": 4,
+      "min": 31.1,
+      "max": 32.0,
+      "mean": 31.5,
+      "p95": 32.0
+    },
+    "thermalStatus": {
+      "count": 4,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "p95": 0
+    },
+    "batteryStartC": 31.7,
+    "batteryEndC": 32.2
+  },
+  "cached": {
+    "samples": 88,
+    "elapsedSeconds": 99.36,
+    "errors": 0,
+    "observedPresentGapMs": {
+      "count": 6035,
+      "min": 16.600001,
+      "max": 66.409791,
+      "mean": 16.78932173653687,
+      "p95": 16.603177
+    },
+    "pollGapSeconds": {
+      "count": 87,
+      "min": 1.0649999999999977,
+      "max": 1.4279999999999973,
+      "mean": 1.1420689655172414,
+      "p95": 1.3149999999999977
+    },
+    "batteryC": {
+      "count": 4,
+      "min": 31.4,
+      "max": 32.0,
+      "mean": 31.7,
+      "p95": 32.0
+    },
+    "thermalStatus": {
+      "count": 4,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "p95": 0
+    },
+    "batteryStartC": 31.4,
+    "batteryEndC": 32.6
+  },
+  "scope": "100-second subwindows within each run, sampled at 1 second. Presents include repeated cached pairs; not conversion FPS or optical latency. Sequential charging runs, not thermally controlled. No physical AV validation."
+}

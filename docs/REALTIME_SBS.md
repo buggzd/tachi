@@ -20,6 +20,8 @@
 
 [端到端顺序优化短测](performance/2026-09-15-capture-order/README.md)在同一 HLS/ASS 片段由 22.68 到 23.62 Hz，捕获到绘制开始 85.80 到 82.06 ms；不等于物理显示延迟测量或稳定 24 Hz。主路线脚本采用补采后立即提交液化的 v2，原排队可用 Gradle `-PcaptureBeforeLiquid=false` 回归。新增 `pairCaptureToDrawMs`、`pairReadyToDrawMs`、`pairDrawSubmitMs` 记录每对首次绘制的主机时间，重复缓存不重复计时。
 
+扩散融合与最终重建终点采样复用保留为独立实验开关 `-PliquidFusedRounds=true`、`-PliquidCacheSamples=true`，默认均关闭，liquid 脚本也不自动启用。实际 GLES 等价验证通过，完整 tachi 短测未显示明确端到端提帧；见[shader 对照](performance/2026-09-16-liquid-shaders/README.md)。
+
 ## 实测与下一步验收
 
 [新版实际 Jellyfin 播放](performance/2026-09-15-native-liquid-product/README.md)已完成 HEVC/VTT、外接 SBS、充电环境下连续 21 分 24.6 秒有效液化，平均 22.54 Hz；无解码丢帧，GL 跨帧 31 次，软件视频落后均值 93.63 ms。未承诺稳定 24 Hz或完成全部兼容/同步验收。

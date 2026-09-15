@@ -11,12 +11,15 @@ public class NativePlaybackDiagnosticsTests
     {
         NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
         JSONObject render = new JSONObject().put("captureBeforeLiquid", true)
+                .put("liquidFusedRounds", true).put("liquidCacheSamples", true)
                 .put("pairDrawTimings", new JSONObject().put("pairCaptureToDrawMs",
                         new JSONObject().put("mean", 82.1).put("p95", "private")));
         log.record(new JSONObject().put("status", "playing").put("depth",
                 new JSONObject().put("render", render)), 0);
         assertTrue(log.export().contains("\"pairCaptureToDrawMsMean\":82.1"));
         assertTrue(log.export().contains("\"captureBeforeLiquid\":true"));
+        assertTrue(log.export().contains("\"liquidFusedRounds\":true"));
+        assertTrue(log.export().contains("\"liquidCacheSamples\":true"));
         assertFalse(log.export().contains("private"));
     }
 

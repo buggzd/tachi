@@ -24,7 +24,7 @@ final class GpuLiquid implements AutoCloseable
     {
         this.width = width;
         this.height = height;
-        try (InputStream input = context.getAssets().open("gpu-liquid/field.comp"))
+        try (InputStream input = context.getAssets().open(BuildConfig.LIQUID_FUSED_ROUNDS ? "gpu-liquid/field-fused.comp" : "gpu-liquid/field.comp"))
         {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             byte[] chunk = new byte[4096];
@@ -66,18 +66,21 @@ final class GpuLiquid implements AutoCloseable
         GLES31.glUseProgram(program);
         GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, depthTexture);
-        for (int phase = 0; phase <= 8; phase++)
+        int step = BuildConfig.LIQUID_FUSED_ROUNDS ? 2 : 1;
+        int previous = textures[0];
+        for (int phase = 0; phase <= 8; phase += step)
         {
-            int destination = phase == 0 ? textures[0] : textures[1 + (phase - 1) % 2];
+            int destination = phase == 0 ? textures[0] : textures[1 + (phase / step - 1) % 2];
             GLES31.glActiveTexture(GLES31.GL_TEXTURE1);
             GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, phase == 0 ? depthTexture : textures[0]);
             GLES31.glActiveTexture(GLES31.GL_TEXTURE2);
-            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, phase == 0 ? depthTexture : phase == 1 ? textures[0] : textures[1 + (phase - 2) % 2]);
+            GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, phase == 0 ? depthTexture : previous);
             GLES31.glBindImageTexture(0, destination, 0, false, 0, GLES31.GL_WRITE_ONLY, GLES31.GL_RGBA32F);
             GLES31.glUniform1i(phaseLocation, phase);
             GLES31.glDispatchCompute((width + 7) / 8, (height + 7) / 8, 1);
             GLES31.glMemoryBarrier(GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GLES31.GL_TEXTURE_FETCH_BARRIER_BIT);
             output = destination;
+            previous = destination;
         }
         timer.end();
         if (measure)

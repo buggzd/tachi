@@ -253,6 +253,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"liquidStrength\":0.85,\"liquidFeatherPx\":96,\"liquidAmount\":0.65"
                 + ",\"pairedFrames\":" + pairedFrames + ",\"pairedVideoLagUs\":" + pairedVideoLagUs
                 + ",\"cachedPairDraws\":" + cachedPairDraws + ",\"pairRenderUpdates\":" + pairRenderUpdates
+                + ",\"liquidFusedRounds\":" + BuildConfig.LIQUID_FUSED_ROUNDS
+                + ",\"liquidCacheSamples\":" + BuildConfig.LIQUID_CACHE_SAMPLES
                 + ",\"captureBeforeLiquid\":" + BuildConfig.CAPTURE_BEFORE_LIQUID
                 + ",\"pairDrawTimings\":" + pairDrawTimings.json()
                 + ",\"pairedPtsUs\":" + pairedPtsUs
@@ -983,7 +985,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private int liquidProgram() throws Exception
     {
         String fragment;
-        try (java.io.InputStream input = getContext().getAssets().open("gpu-liquid/render.frag"))
+        try (java.io.InputStream input = getContext().getAssets().open(BuildConfig.LIQUID_CACHE_SAMPLES ? "gpu-liquid/render-cached.frag" : "gpu-liquid/render.frag"))
         {
             java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
             byte[] chunk = new byte[4096];

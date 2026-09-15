@@ -4,6 +4,8 @@ android {
     compileSdk 35
     defaultConfig {
         minSdk 26
+        buildConfigField "boolean", "LIQUID_FUSED_ROUNDS", providers.gradleProperty("liquidFusedRounds").getOrElse("false")
+        buildConfigField "boolean", "LIQUID_CACHE_SAMPLES", providers.gradleProperty("liquidCacheSamples").getOrElse("false")
         buildConfigField "boolean", "CAPTURE_BEFORE_LIQUID", providers.gradleProperty("captureBeforeLiquid").getOrElse("false")
         buildConfigField "boolean", "GPU_POLL_OFF_MAIN", providers.gradleProperty("gpuPollOffMain").getOrElse("false")
         buildConfigField "int", "DEPTH_SAMPLE_WIDTH", "${rootProject.depthProfile.width}"
