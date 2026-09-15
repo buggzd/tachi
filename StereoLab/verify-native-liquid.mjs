@@ -9,11 +9,19 @@ const fragment=native.replace('#version 310 es','#version 300 es')
  .replaceAll(/layout\(binding=\d\) /g,'')
  .replace('layout(rgba32f,binding=0) writeonly uniform highp image2D resultMap;','')
  .replace('ivec2(gl_GlobalInvocationID.xy)','ivec2(gl_FragCoord.xy)')
+ // Fragment emulation loads a complete private tile; arithmetic and tile indices stay identical.
+ // This checks halo addressing, not device workgroup synchronization or performance.
+ .replaceAll('shared ', '')
+ .replace('ivec2(gl_WorkGroupID.xy)', '(ivec2(gl_FragCoord.xy)/8)')
+ .replace('int(gl_LocalInvocationIndex)', '0').replace('i+=64', 'i++')
+ .replaceAll('gl_LocalInvocationID.y', '(int(gl_FragCoord.y)%8)')
+ .replaceAll('gl_LocalInvocationID.x', '(int(gl_FragCoord.x)%8)')
+ .replace('barrier();', '')
  .replace('imageStore(resultMap,p,vec4(value,0.,1.));','resultColor=vec4(value,0.,1.);');
 const render=fs.readFileSync('AndroidApp/native-video/src/main/assets/gpu-liquid/render.frag','utf8');
 const cases=[];
 for(const type of ['constant','edge','missing-row','noise']){
- const w=128,h=64,b=new Uint8Array(w*h);
+ const w=131,h=67,b=new Uint8Array(w*h);
  for(let y=0;y<h;y++)for(let x=0;x<w;x++)b[y*w+x]=type==='constant'?180:type==='noise'?(x*17+y*31)%256:(x>64&&!(type==='missing-row'&&y===32)?230:20);
  cases.push({name:type,w,h,bytes:[...b]});
 }
@@ -22,7 +30,7 @@ const raw=fs.readFileSync(base+'clip-0-p4.bin'),n=392*224;
 cases.push({name:'motion579',w:392,h:224,bytes:[...raw.subarray(579*n,580*n)]});
 const browser=await chromium.launch({channel:'chrome',headless:true});
 try{
- const page=await browser.newPage();await page.goto('http://127.0.0.1:4190/mesh-trials.html');
+ const page=await browser.newPage();await page.goto('about:blank');
  const results=[];
  for(const c of cases){
   const gpu=await page.evaluate(({c,fragment,render})=>{
@@ -32,6 +40,7 @@ try{
    const program=(frag)=>{const p=g.createProgram();for(const [t,s]of[[g.VERTEX_SHADER,vertex],[g.FRAGMENT_SHADER,frag]]){const sh=g.createShader(t);g.shaderSource(sh,s);g.compileShader(sh);if(!g.getShaderParameter(sh,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(sh));g.attachShader(p,sh);}g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS))throw Error(g.getProgramInfoLog(p));return p;};
    program(render);const p=program(fragment);g.useProgram(p);
    const texture=(format,data)=>{const t=g.createTexture();g.bindTexture(g.TEXTURE_2D,t);g.texImage2D(g.TEXTURE_2D,0,format,c.w,c.h,0,format===g.R8?g.RED:g.RGBA,format===g.R8?g.UNSIGNED_BYTE:g.FLOAT,data);for(const param of[g.TEXTURE_MIN_FILTER,g.TEXTURE_MAG_FILTER])g.texParameteri(g.TEXTURE_2D,param,g.NEAREST);return t;};
+   g.pixelStorei(g.UNPACK_ALIGNMENT,1);
    const depth=texture(g.R8,new Uint8Array(c.bytes)),maps=[texture(g.RGBA32F,null),texture(g.RGBA32F,null),texture(g.RGBA32F,null)];
    const f=g.createFramebuffer();g.bindFramebuffer(g.FRAMEBUFFER,f);g.viewport(0,0,c.w,c.h);
    for(let phase=0;phase<=8;phase++){

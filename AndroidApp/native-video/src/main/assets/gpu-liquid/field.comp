@@ -7,9 +7,22 @@ layout(binding=1) uniform highp sampler2D seedMap;
 layout(binding=2) uniform highp sampler2D previousMap;
 layout(rgba32f,binding=0) writeonly uniform highp image2D resultMap;
 uniform int phase;
+// An 8x8 output tile plus a one-pixel halo. Keep FP32 and arithmetic order.
+shared float tileDepth[100];
+shared vec2 tilePrevious[100];
 float d(ivec2 p){return texelFetch(depthMap,p,0).r;}
 void main(){
  ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=textureSize(depthMap,0);
+ if(phase!=0){
+  ivec2 origin=ivec2(gl_WorkGroupID.xy)*8-ivec2(1);
+  for(int i=int(gl_LocalInvocationIndex);i<100;i+=64){
+   ivec2 q=clamp(origin+ivec2(i%10,i/10),ivec2(0),size-ivec2(1));
+   tileDepth[i]=d(q);
+   tilePrevious[i]=texelFetch(previousMap,q,0).rg;
+  }
+  // Out-of-image lanes must also participate before returning.
+  barrier();
+ }
  if(any(greaterThanEqual(p,size)))return;
  float depth=d(p);vec2 value=vec2(0.);
  if(phase==0){
@@ -23,8 +36,9 @@ void main(){
   value=texelFetch(seedMap,p,0).rg*.35;float total=.35;
   for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
    ivec2 q=p+ivec2(x,y);if(any(lessThan(q,ivec2(0)))||any(greaterThanEqual(q,size)))continue;
-   float w=(1.-smoothstep(.015,.07,abs(depth-d(q))))*float(x==0?2:1)*float(y==0?1:2);
-   value+=texelFetch(previousMap,q,0).rg*w;total+=w;
+   int index=(int(gl_LocalInvocationID.y)+1+y)*10+int(gl_LocalInvocationID.x)+1+x;
+   float w=(1.-smoothstep(.015,.07,abs(depth-tileDepth[index])))*float(x==0?2:1)*float(y==0?1:2);
+   value+=tilePrevious[index]*w;total+=w;
   }
   value=min(vec2(1.-depth),value/total);
  }

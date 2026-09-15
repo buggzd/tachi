@@ -44,6 +44,7 @@
 | [2026-09-13 GPU 深度稳定](performance/2026-09-13-gpu-stabilization/README.md) | 精确分位数与历史融合的 compute 实现、颜色快照配对、CPU/GPU 数值检查及实机并发对照 |
 | [2026-09-13 日常双档与完整模型共享缓冲](performance/2026-09-13-daily-sbs/README.md) | 518 的 20 分 39 秒产品连续窗口、392 顺序对照、PTS/呈现/缓冲边界与完整模型 GPU/HTP 共享验证 |
 | [2026-09-13 GPU 输入与双捕获流水线](performance/2026-09-13-gpu-input-pipeline/README.md) | CHW 数值对照、12/24 Hz 实测、原生 QNN 与 GPU 共享缓冲最小图验证 |
+| [2026-09-15 24 Hz 优化](performance/2026-09-15-liquid-24hz/README.md) | 采样受阻计数、GPU 液化邻域共享；数值验证通过，实机收益待测 |
 | [2026-09-15 液化修订版复测](performance/2026-09-15-native-liquid-retest/README.md) | 短测 21.38 Hz，原片解码及正式播放器恢复阻塞，未完成长时/同步验收 |
 | [2026-09-14 液化实机后续修订](performance/2026-09-14-native-liquid-followup/README.md) | 显示暂停修订、合成缓存、完成计时、字幕时钟与本地测试入口；复测部分通过 |
 | [2026-09-14 原生同帧 GPU 液化](performance/2026-09-14-native-liquid/README.md) | 392 / 0.85 / 96 px / 65% 原生实验、成对视频缓冲和桌面 shader 数值验证；见 [实机报告](performance/2026-09-14-native-liquid-device/README.md) |

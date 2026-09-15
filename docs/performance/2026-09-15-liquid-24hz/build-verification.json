@@ -1,0 +1,13 @@
+{
+  "baselineApkSha256": "0ce74fd9e1eb9e450d74bbf510fee8d43d77a2cff3b8d2f0760cf4fade71ca92",
+  "candidateApkSha256": "40abc6784ef105e09aa4dc57c6b8da59ff6eef065bd71c71093f2ec05dbb95bf",
+  "checks": [
+    "app/native-video JVM tests",
+    "app/native-video lint",
+    "assembleDebug",
+    "verify-android.sh",
+    "glslang compute compile",
+    "desktop tile arithmetic parity"
+  ],
+  "devicePerformance": "pending: no valid playing window"
+}

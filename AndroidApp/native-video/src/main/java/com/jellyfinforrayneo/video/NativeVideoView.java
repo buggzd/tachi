@@ -78,6 +78,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile boolean depthEnabled = true;
     private volatile boolean sampling;
     private volatile boolean samplingSuspended;
+    private volatile long captureCandidates;
+    private volatile long captureCadenceSkips;
+    private volatile long captureFenceSkips;
+    private volatile long captureSlotSkips;
+    private volatile long captureSubmissions;
     private final SampleCadence cadence = new SampleCadence(BuildConfig.DEPTH_HZ);
     private final ReadbackTimings timings = new ReadbackTimings();
     private long pendingSubmitNs;
@@ -214,6 +219,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 + ",\"videoDraws\":" + uniqueVideoDraws + ",\"supersededVideoFrames\":" + supersededVideoFrames
                 + ",\"frameMapping\":" + timeline.json() + ",\"depthPts\":" + ptsMetrics.json()
                 + ",\"gpuRender\":" + gpuTimer.json()
+                + ",\"captureAdmission\":{\"candidates\":" + captureCandidates
+                + ",\"cadenceSkips\":" + captureCadenceSkips
+                + ",\"fenceSkips\":" + captureFenceSkips
+                + ",\"slotSkips\":" + captureSlotSkips
+                + ",\"submitted\":" + captureSubmissions + "}"
                 + ",\"depthTargetHz\":" + BuildConfig.DEPTH_HZ
                 + ",\"asyncCapturePoll\":" + BuildConfig.ASYNC_CAPTURE_POLL
                 + ",\"gpuPreprocess\":" + BuildConfig.GPU_PREPROCESS
@@ -605,49 +615,61 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private void captureCurrentFrame(boolean fresh)
     {
         long now = System.nanoTime();
-        if (fresh && sampling && !samplingSuspended && fence == 0 && cadence.due(now))
+        if (!fresh || !sampling || samplingSuspended) return;
+        captureCandidates++;
+        if (!cadence.due(now))
         {
-            long lease = slot.acquire();
-            if (lease != 0)
-            {
-                pendingLease = lease;
-                pendingGeneration = slot.generationOf(lease);
-                pendingTimestamp = texture.getTimestamp();
-                pendingPtsUs = videoPtsUs;
-                pendingCapturedNs = now;
-                cadence.submitted(now);
-                long submitStart = System.nanoTime();
-                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
-                sampleTexture = captureTextures[slot.indexOf(lease)];
-                GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
-                        GLES30.GL_TEXTURE_2D, sampleTexture, 0);
-                if (BuildConfig.ALIGNED_LIQUID)
-                {
-                    GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
-                            GLES30.GL_TEXTURE_2D, pairedCaptures[slot.indexOf(lease)], 0);
-                    GLES30.glViewport(0, 0, 1920, 1080);
-                    draw(false, 0, false);
-                    GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
-                            GLES30.GL_TEXTURE_2D, sampleTexture, 0);
-                }
-                GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
-                draw(true, 0, false); // Always sample the original image, never the warped output.
-                if (preprocessor != null) preprocessor.submit(sampleTexture);
-                else
-                {
-                    GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
-                    GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
-                            GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
-                    GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
-                }
-                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-                fence = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-                if (fence == 0) throw new IllegalStateException();
-                GLES30.glFlush();
-                pendingSubmitNs = System.nanoTime();
-                pendingSubmitCostNs = pendingSubmitNs - submitStart;
-            }
+            captureCadenceSkips++;
+            return;
         }
+        if (fence != 0)
+        {
+            captureFenceSkips++;
+            return;
+        }
+        long lease = slot.acquire();
+        if (lease == 0)
+        {
+            captureSlotSkips++;
+            return;
+        }
+        captureSubmissions++;
+        pendingLease = lease;
+        pendingGeneration = slot.generationOf(lease);
+        pendingTimestamp = texture.getTimestamp();
+        pendingPtsUs = videoPtsUs;
+        pendingCapturedNs = now;
+        cadence.submitted(now);
+        long submitStart = System.nanoTime();
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
+        sampleTexture = captureTextures[slot.indexOf(lease)];
+        GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                GLES30.GL_TEXTURE_2D, sampleTexture, 0);
+        if (BuildConfig.ALIGNED_LIQUID)
+        {
+            GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                    GLES30.GL_TEXTURE_2D, pairedCaptures[slot.indexOf(lease)], 0);
+            GLES30.glViewport(0, 0, 1920, 1080);
+            draw(false, 0, false);
+            GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0,
+                    GLES30.GL_TEXTURE_2D, sampleTexture, 0);
+        }
+        GLES30.glViewport(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
+        draw(true, 0, false); // Always sample the original image, never the warped output.
+        if (preprocessor != null) preprocessor.submit(sampleTexture);
+        else
+        {
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pbo);
+            GLES30.glReadPixels(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT,
+                    GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0);
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0);
+        }
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
+        fence = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        if (fence == 0) throw new IllegalStateException();
+        GLES30.glFlush();
+        pendingSubmitNs = System.nanoTime();
+        pendingSubmitCostNs = pendingSubmitNs - submitStart;
     }
 
     private void pollSample()

@@ -13,6 +13,7 @@ final class GpuLiquid implements AutoCloseable
     private final int height;
     private int program;
     private int output;
+    private int phaseLocation;
     private final GpuTimer timer = new GpuTimer();
     private final ReadbackTimings completion = new ReadbackTimings("submit", "fenceObserved", "poll");
     private long fence;
@@ -41,6 +42,7 @@ final class GpuLiquid implements AutoCloseable
             GLES31.glDeleteShader(shader);
             GLES31.glGetProgramiv(program, GLES31.GL_LINK_STATUS, status, 0);
             if (status[0] == 0) throw new IllegalStateException("liquid program");
+            phaseLocation = GLES31.glGetUniformLocation(program, "phase");
         }
         GLES31.glGenTextures(3, textures, 0);
         for (int texture : textures)
@@ -72,7 +74,7 @@ final class GpuLiquid implements AutoCloseable
             GLES31.glActiveTexture(GLES31.GL_TEXTURE2);
             GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, phase == 0 ? depthTexture : phase == 1 ? textures[0] : textures[1 + (phase - 2) % 2]);
             GLES31.glBindImageTexture(0, destination, 0, false, 0, GLES31.GL_WRITE_ONLY, GLES31.GL_RGBA32F);
-            GLES31.glUniform1i(GLES31.glGetUniformLocation(program, "phase"), phase);
+            GLES31.glUniform1i(phaseLocation, phase);
             GLES31.glDispatchCompute((width + 7) / 8, (height + 7) / 8, 1);
             GLES31.glMemoryBarrier(GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GLES31.GL_TEXTURE_FETCH_BARRIER_BIT);
             output = destination;
