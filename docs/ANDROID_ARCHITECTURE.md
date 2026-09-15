@@ -644,7 +644,11 @@ full-model shared memory is independently benchmarked, not yet the product backe
 Controls/subtitles remain outside the warped layer. ASS/WebVTT prefer the paired
 presentation position when valid; media reporting retains the Media3 clock. Audio has
 no additional fixed delay compensation. Pair PTS agreement alone does not establish
-AV synchronization or zero display latency. Target sampling is 24 Hz, not a guaranteed
+AV synchronization or zero display latency. Known source PTS drives liquid sampling admission, resetting on generation changes or
+backward media time; capture/worker durations retain a monotonic wall clock. Unknown
+PTS uses the legacy wall-clock cadence. GPU liquid diffusion reuses an FP32 shared
+neighborhood tile without changing iteration count or arithmetic.
+Target sampling is 24 Hz, not a guaranteed
 presentation rate. The latest short retest and remaining recovery/long-run checks are
 listed in the current guide.
 

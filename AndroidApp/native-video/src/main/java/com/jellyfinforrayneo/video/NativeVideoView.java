@@ -83,6 +83,7 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     private volatile long captureFenceSkips;
     private volatile long captureSlotSkips;
     private volatile long captureSubmissions;
+    private final PairedSampleCadence pairedCadence = new PairedSampleCadence(BuildConfig.DEPTH_HZ);
     private final SampleCadence cadence = new SampleCadence(BuildConfig.DEPTH_HZ);
     private final ReadbackTimings timings = new ReadbackTimings();
     private long pendingSubmitNs;
@@ -617,7 +618,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         long now = System.nanoTime();
         if (!fresh || !sampling || samplingSuspended) return;
         captureCandidates++;
-        if (!cadence.due(now))
+        boolean mediaCadence = BuildConfig.ALIGNED_LIQUID && videoPtsUs != FrameTimeline.UNKNOWN;
+        if (!(mediaCadence ? pairedCadence.due(videoPtsUs, slot.generation()) : cadence.due(now)))
         {
             captureCadenceSkips++;
             return;
@@ -639,7 +641,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         pendingTimestamp = texture.getTimestamp();
         pendingPtsUs = videoPtsUs;
         pendingCapturedNs = now;
-        cadence.submitted(now);
+        if (mediaCadence) pairedCadence.submitted(videoPtsUs);
+        else cadence.submitted(now);
         long submitStart = System.nanoTime();
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo);
         sampleTexture = captureTextures[slot.indexOf(lease)];
