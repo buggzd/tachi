@@ -171,7 +171,7 @@ npm --prefix CompanionUI run build
 ./scripts/dev-dual-ui.sh
 ```
 
-脚本会启动两套 Vite 开发服务器和 `http://127.0.0.1:4177/` 联调页，并自动在浏览器中打开。左侧是具有可选 CSS 视口尺寸的 CompanionUI，右侧是按 1920 × 1080 渲染后等比缩放的 GlassesUI。两个 iframe 均保留自己的真实响应式布局与热更新，不是截图或重新实现的测试 UI。
+脚本会启动两套 Vite 开发服务器和 `http://127.0.0.1:4177/` 联调页，并自动在浏览器中打开。每次启动都会强制重新建立 Vite 依赖预构建缓存，并给联调页及两个 iframe 加入新的刷新标识，避免复用上一次运行的页面。左侧是具有可选 CSS 视口尺寸的 CompanionUI，右侧是按 1920 × 1080 渲染后等比缩放的 GlassesUI。两个 iframe 均保留自己的真实响应式布局与热更新，不是截图或重新实现的测试 UI。
 
 联调桥只在 Vite DEV、指定 iframe 角色和本机父页面来源同时满足时安装。它模拟 Android 层的有限职责：
 

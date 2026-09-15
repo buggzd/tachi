@@ -946,6 +946,11 @@ function loadFrames(reload = '') {
   setActivity('正在重载手机端与眼镜端页面…', 'busy')
 }
 
+const initialReload = (() => {
+  const value = new URLSearchParams(window.location.search || '').get('reload') || ''
+  return value.length <= 64 ? value : ''
+})()
+
 function updateFrameScale(canvas, scaler, width, height) {
   const inset = 28
   const availableWidth = Math.max(1, canvas.clientWidth - inset * 2)
@@ -983,6 +988,6 @@ resizeObserver.observe(phoneCanvas)
 resizeObserver.observe(glassesCanvas)
 window.addEventListener('resize', updateViewportLayout)
 
-loadFrames()
+loadFrames(initialReload)
 updateViewportLayout()
 void restoreDevelopmentSession()

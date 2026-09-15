@@ -6,6 +6,8 @@ readonly PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly COMPANION_URL="http://127.0.0.1:4176/"
 readonly GLASSES_URL="http://127.0.0.1:4175/"
 readonly HARNESS_URL="http://127.0.0.1:4177/"
+readonly RUN_ID="$(date +%s)-$$"
+readonly HARNESS_OPEN_URL="${HARNESS_URL}?reload=${RUN_ID}"
 
 declare -a child_pids=()
 development_config_path=""
@@ -104,14 +106,14 @@ fi
 
 (
     cd GlassesUI
-    exec ./node_modules/.bin/vite --host 127.0.0.1 --port 4175 --strictPort
+    exec ./node_modules/.bin/vite --host 127.0.0.1 --port 4175 --strictPort --force
 ) &
 child_pids+=("$!")
 readonly GLASSES_PID="${child_pids[0]}"
 
 (
     cd CompanionUI
-    exec ./node_modules/.bin/vite --host 127.0.0.1 --port 4176 --strictPort
+    exec ./node_modules/.bin/vite --host 127.0.0.1 --port 4176 --strictPort --force
 ) &
 child_pids+=("$!")
 readonly COMPANION_PID="${child_pids[1]}"
@@ -125,14 +127,14 @@ wait_for_service "${COMPANION_URL}" "${COMPANION_PID}" "手机端 Vite"
 wait_for_service "${HARNESS_URL}health" "${HARNESS_PID}" "双端联调页"
 
 echo
-echo "双端联调已就绪：${HARNESS_URL}"
+echo "双端联调已就绪：${HARNESS_OPEN_URL}"
 echo "左侧为 CompanionUI，右侧为 GlassesUI；按 Ctrl-C 同时停止三个服务。"
 
 if [[ "${RAYNEO_DUAL_UI_NO_OPEN:-0}" != "1" ]]; then
     if command -v open >/dev/null 2>&1; then
-        open "${HARNESS_URL}"
+        open "${HARNESS_OPEN_URL}"
     elif command -v xdg-open >/dev/null 2>&1; then
-        xdg-open "${HARNESS_URL}" >/dev/null 2>&1 || true
+        xdg-open "${HARNESS_OPEN_URL}" >/dev/null 2>&1 || true
     fi
 fi
 

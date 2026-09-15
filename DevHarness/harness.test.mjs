@@ -8,7 +8,7 @@ import test from 'node:test'
 const source = (await readFile(new URL('./harness.js', import.meta.url), 'utf8')).replace(/^import .*seekCommand.*\n/, '')
 const settle = () => new Promise(resolve => setImmediate(resolve))
 
-async function harness(storedTheme = null, storedBackground = null, storedTransparency = null, storedSubtitleSize = null) {
+async function harness(storedTheme = null, storedBackground = null, storedTransparency = null, storedSubtitleSize = null, search = '') {
   const storage = new Map([
     ['jellyfin-rayneo-preview-theme', storedTheme],
     ['jellyfin-rayneo-preview-touchpad-background', storedBackground],
@@ -20,16 +20,16 @@ async function harness(storedTheme = null, storedBackground = null, storedTransp
   const element = selector => {
     if (!elements.has(selector)) elements.set(selector, {
       value: '393x852', clientWidth: 600, clientHeight: 900, lastChild: {},
-      style: { setProperty() {} }, addEventListener() {},
+      style: { setProperty() {} }, addEventListener() {}, src: '',
       contentWindow: { postMessage(message) { messages.push(JSON.parse(JSON.stringify(message))) } },
     })
     return elements.get(selector)
   }
   const context = vm.createContext({
-    parseSeekCommand, URL, Blob, crypto: { randomUUID },
+    parseSeekCommand, URL, URLSearchParams, Blob, crypto: { randomUUID },
     document: { querySelector: element },
     window: {
-      location: { hostname: '127.0.0.1', origin: 'http://127.0.0.1:4177' },
+      location: { hostname: '127.0.0.1', origin: 'http://127.0.0.1:4177', search },
       localStorage: { getItem(key) { return storage.get(key) ?? null }, setItem(key, value) { storage.set(key, value) } },
       addEventListener() {}, setTimeout() {}, clearTimeout() {},
     },
@@ -49,6 +49,7 @@ async function harness(storedTheme = null, storedBackground = null, storedTransp
     state: () => messages.filter(message => message.target === 'companion' && message.type === 'state').at(-1).payload,
     generation: () => messages.filter(message => message.type === 'bootstrap').at(-1).payload.catalogGeneration,
     bootstrap: () => messages.filter(message => message.type === 'bootstrap').at(-1).payload,
+    frameUrls: () => [elements.get('#companion-frame').src, elements.get('#glasses-ui-frame').src],
     savedTheme: () => storage.get('jellyfin-rayneo-preview-theme'),
     savedBackground: () => storage.get('jellyfin-rayneo-preview-touchpad-background'),
     savedTransparency: () => storage.get('jellyfin-rayneo-preview-glass-transparency'),
@@ -59,6 +60,15 @@ async function harness(storedTheme = null, storedBackground = null, storedTransp
 const account = (serverUrl = 'https://home.example.test', userId = 'first-user') => ({
   serverUrl, serverName: 'Demo library', serverVersion: '10.10', serverId: serverUrl,
   accessToken: 'test-token-do-not-publish-to-phone', userId, userName: userId, deviceId: 'demo-device',
+})
+
+test('startup reload marker is forwarded to both UI frames', async () => {
+  const app = await harness(null, null, null, null, '?reload=run-123')
+  const [companion, glasses] = app.frameUrls().map((value) => new URL(value))
+  assert.equal(companion.searchParams.get('rayneo-dev-role'), 'companion')
+  assert.equal(glasses.searchParams.get('rayneo-dev-role'), 'glasses')
+  assert.equal(companion.searchParams.get('reload'), 'run-123')
+  assert.equal(glasses.searchParams.get('reload'), 'run-123')
 })
 
 test('glasses and phone appearance edits share persistent values without restarting playback', async () => {
