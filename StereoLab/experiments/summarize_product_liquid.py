@@ -50,6 +50,8 @@ def summarize(rows):
                 'captureRetryAttempts', 'captureRetrySubmitted', 'cachedPairDraws', 'pairRenderUpdates']
     delta = {k: b[k] - a[k] for k in counters if k in a and k in b}
     metrics = ['inferenceMsMean', 'inferenceMsP95', 'queueWaitMsMean', 'captureToWorkerMsMean',
+               'pollWakeMsMean', 'pollGlQueueMsMean', 'pollServiceMsMean',
+               'submitMsMean', 'fenceObservedMsMean', 'mapCopyMsMean',
                'captureToUploadMsMean', 'captureToUploadMsP95', 'gpuMeanMs', 'gpuP95Ms',
                'liquidsubmitMsMean', 'liquidfenceObservedMsMean', 'ageMs', 'playerMinusPairedMs']
     return {'samples': len(rows), 'seconds': seconds, 'firstElapsedMs': a['elapsedMs'],

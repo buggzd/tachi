@@ -96,6 +96,9 @@ final class NativePlaybackDiagnostics
                 }
                 JSONObject scheduling = depth.optJSONObject("scheduling");
                 if (scheduling != null) timings(scheduling, row, "queueWaitMs", "captureToWorkerMs", "workerServiceMs");
+                copyBooleans(depth, row, "gpuPollOffMain");
+                JSONObject poll = depth.optJSONObject("pollScheduling");
+                if (poll != null) timings(poll, row, "pollWakeMs", "pollGlQueueMs", "pollServiceMs");
                 JSONObject readback = depth.optJSONObject("readback");
                 if (readback != null) timings(readback, row, "submitMs", "fenceObservedMs", "mapCopyMs");
                 JSONObject render = depth.optJSONObject("render");

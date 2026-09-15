@@ -2,6 +2,8 @@ package com.jellyfinforrayneo.video;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
@@ -31,6 +33,10 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
         void depthFailure(long generation);
     }
 
+    // Timer only: all GLES work stays on the owning GLSurfaceView thread.
+    private final HandlerThread pollThread;
+    private final Handler pollHandler;
+    private final ReadbackTimings pollTimings = new ReadbackTimings("pollWake", "pollGlQueue", "pollService");
     private final Host host;
     private final FrameSlot slot;
     private final FrameTimeline timeline = new FrameTimeline();
@@ -262,6 +268,11 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     }
 
     /** Numerical diagnostics only; no source addresses or image content. */
+    public String pollTimingsJson()
+    {
+        return pollTimings.json();
+    }
+
     public String readbackTimingsJson()
     {
         return timings.json();
@@ -271,6 +282,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     {
         super(context);
         this.host = host;
+        if (BuildConfig.GPU_POLL_OFF_MAIN)
+        {
+            pollThread = new HandlerThread("tachi-gpu-poll");
+            pollThread.start();
+            pollHandler = new Handler(pollThread.getLooper());
+        }
+        else
+        {
+            pollThread = null;
+            pollHandler = new Handler(android.os.Looper.getMainLooper());
+        }
         this.slot = slot;
         for (int i = 0; i < captureBytes.length; i++)
             captureBytes[i] = ByteBuffer.allocateDirect(SAMPLE_BYTES * (BuildConfig.GPU_PREPROCESS ? 3 : 1));
@@ -333,6 +355,8 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
     void close()
     {
         closed = true;
+        pollHandler.removeCallbacksAndMessages(null);
+        if (pollThread != null) pollThread.quitSafely();
         sampling = false;
         slot.invalidate();
         pendingDepth.set(null);
@@ -834,14 +858,17 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 && (liquid == null || !liquid.pending()))) return;
         gpuPollScheduled = true;
         long observer = gpuObserverSerial;
-        postDelayed(() ->
+        long scheduledNs = System.nanoTime();
+        pollHandler.postDelayed(() ->
         {
             if (closed) return;
+            long wakeNs = System.nanoTime();
             queueEvent(() ->
             {
                 if (observer != gpuObserverSerial) return;
                 gpuPollScheduled = false;
                 if (closed || failed) return;
+                long enteredNs = System.nanoTime();
                 try
                 {
                     if (BuildConfig.ASYNC_CAPTURE_POLL) pollSample();
@@ -869,6 +896,13 @@ public final class NativeVideoView extends GLSurfaceView implements GLSurfaceVie
                 catch (RuntimeException error)
                 {
                     fail();
+                }
+                finally
+                {
+                    // Wake includes the requested 2 ms. Queue measures Java scheduling,
+                    // not GPU execution or an exact hardware completion timestamp.
+                    pollTimings.record(wakeNs - scheduledNs, enteredNs - wakeNs,
+                            System.nanoTime() - enteredNs);
                 }
             });
         }, 2);

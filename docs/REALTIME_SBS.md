@@ -34,6 +34,22 @@
 
 分享诊断日志保留 `pairedPtsUs`、`playerMinusPairedMs`、`pairedVideoLagUs`、队列等待、捕获到上传、`pairedFrames`、`cachedPairDraws`、`pairRenderUpdates`。区分新成对帧、重复绘制、解码丢帧和物理呈现；GPU query、提交时间、fence 完成观察不能互相替代，近零 liquid query 不是液化零成本。
 
+## GPU 完成观察短测
+
+新增诊断 `pollWakeMsMean/P95`、`pollGlQueueMsMean/P95`、`pollServiceMsMean/P95`，
+分别记录安排轮询到定时回调（包含请求的 2 ms）、回调到进入 GL 队列、轮询处理耗时。
+这些是主机调度时间，不是 GPU 纯计算或精确完成时刻；处理耗时可能包含读回、提交和补采。
+`gpuPollOffMain` 标记候选是否启用独立定时线程。
+
+Gradle 属性 `-PgpuPollOffMain=true` 可将轮询定时器移到专用 HandlerThread，
+GLES、fence 检查和配对仍在原 GL 线程执行，每个观察代际最多安排一个轮询。
+关闭播放器取消回调并退出定时线程；旧 Surface 代际回调失效。默认关闭，尚未取得实机收益证据。
+其余 liquid 构建属性必须保持与上面脚本一致；该属性不能单独启用模型或液化。
+
+本轮性能比较每版使用同素材、同起点 **3 分钟**，记录新配对 Hz、软件 PTS 落后、
+解码丢帧、GL 跨帧和上述等待，辅以温度及显示输出状态。暂停/恢复、seek 和退出重开
+另做简短生命周期检查。长时间观影由用户反馈；短测不能代替持续温控与完整设备矩阵。
+
 ## 数据交换边界
 
 GPU 已承担 CHW/归一化、深度范围处理和局部液化；ORT QNN 产品路径仍需主机输入读回和输出交接，不是零拷贝。完整模型注册共享缓冲仅有[独立 benchmark 证据](performance/2026-09-13-daily-sbs/README.md#完整模型共享缓冲)，后续在保持严格配对、有界槽位和失效语义的前提下接入产品。

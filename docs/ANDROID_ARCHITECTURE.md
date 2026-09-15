@@ -652,6 +652,11 @@ A blocked liquid capture can retry only the still-latched frame with the same PT
 generation and no pending newer decoder frame. Successful capture consumes the retry;
 new frames/generations supersede it. This adds no buffer slots. Normalization submission
 alone does not request a paired redraw; accepted pairs still do.
+An opt-in `gpuPollOffMain` timer uses a dedicated HandlerThread; GL operations remain
+on the GLSurfaceView queue with the same bounded, generation-checked observer. Close
+cancels callbacks and quits the timer. Exported poll wake (including the requested
+2 ms), GL queue and service durations measure host scheduling, not GPU execution.
+The switch defaults off pending a three-minute device comparison.
 Target sampling is 24 Hz, not a guaranteed
 presentation rate. The latest product long-run evidence and remaining recovery/compatibility checks are
 listed in the current guide.

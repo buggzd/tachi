@@ -7,6 +7,22 @@ import static org.junit.Assert.*;
 public class NativePlaybackDiagnosticsTests
 {
     @Test
+    public void exportsOnlyBoundedPollSchedulingMeasurements() throws Exception
+    {
+        NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
+        JSONObject poll = new JSONObject().put("pollWakeMs", new JSONObject().put("mean", 2.4).put("p95", 4.0))
+                .put("pollGlQueueMs", new JSONObject().put("mean", -1).put("p95", "private"))
+                .put("url", "private");
+        log.record(new JSONObject().put("status", "playing").put("depth", new JSONObject()
+                .put("gpuPollOffMain", true).put("pollScheduling", poll)), 0);
+        String report = log.export();
+        assertTrue(report.contains("\"pollWakeMsMean\":2.4"));
+        assertTrue(report.contains("\"gpuPollOffMain\":true"));
+        assertFalse(report.contains("pollGlQueueMs"));
+        assertFalse(report.contains("private"));
+    }
+
+    @Test
     public void exportsBoundedCaptureCountersAndLongMoviePtsWithoutIdentity() throws Exception
     {
         NativePlaybackDiagnostics log = new NativePlaybackDiagnostics();
