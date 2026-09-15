@@ -16,10 +16,12 @@
 | 原生播放迁移与独立解码调试入口 | [原生视频](NATIVE_VIDEO.md) |
 | 已采用的性能措施、采样方法和证据范围 | [性能维护](PERFORMANCE.md) |
 | 已实现范围、待开发功能和待复核问题 | [功能路线图](JELLYFIN_FEATURE_ROADMAP.md) |
-| 已尝试与待探索的深度、时序、补洞、网格和 GPU/NPU 路线 | [SBS 技术路线总览](SBS_TECHNICAL_ROUTES.md) |
-| 实时 3D 开发构建与统一实机调试 | [实时 SBS](REALTIME_SBS.md) |
+| 已确定的 392 同帧 GPU 局部液化、参数与后续顺序 | [SBS 技术路线总览](SBS_TECHNICAL_ROUTES.md) |
+| 主路线构建、发布配置边界与剩余设备验收 | [实时 SBS](REALTIME_SBS.md) |
 | 版本号与 Git 标签约束 | [版本规则](VERSIONING.md) |
 | 签名、发布和失败恢复 | [发布手册](RELEASE.md) |
+
+主技术路线已由用户确认；文档决策不等于修改发布默认值或补齐设备验收。旧路线比较与旧构建说明已转入[归档索引](archive/README.md)，有日期的实测数据保持原路径。
 
 ## 历史与实测资料
 
@@ -28,7 +30,7 @@
 | [开发历史索引](archive/README.md) | Jellyfin Web 调研、SBS 早期设计、性能审阅和 UI 修改记录 |
 | [2026-09-06 真机基准](performance/2026-09-06/README.md) | 主题、动画、播放与 Full-SBS 的初始对照 |
 | [2026-09-07 真机复测](performance/2026-09-07/README.md) | 优化后的资源、帧轨迹、播放与恢复检查 |
-| [实时 SBS 算法实验](../StereoLab/README.md) | 独立桌面和手机 Chrome 深度估计与双眼合成验证；手机 P0/P1 性能基线已记录，尚未接入 Android 产品 |
+| [实时 SBS 算法实验](../StereoLab/README.md) | 独立桌面和手机 Chrome 深度估计与双眼合成验证；手机 P0/P1 性能基线已记录，历史基线，当前产品路径见实时 SBS |
 | [2026-09-09 SBS 桌面验证](performance/2026-09-09-stereo-lab/README.md) | 三段真实片源、两种推理尺寸的功能断言和匿名性能数据 |
 | [2026-09-10 官方 QAIRT 实机验证](performance/2026-09-09-stereo-lab/qairt-device.md) | SM8850/V81 的纯 NPU 深度推理、输出校验与 SBS 并发测量边界 |
 | [2026-09-10 QPM 与取帧实验](performance/2026-09-10-stereo-lab/frame-capture-and-qpm.md) | QPM 真实登录门槛，以及共享模型读回派生运动缩略图的前后对照 |
@@ -43,7 +45,7 @@
 | [2026-09-13 日常双档与完整模型共享缓冲](performance/2026-09-13-daily-sbs/README.md) | 518 的 20 分 39 秒产品连续窗口、392 顺序对照、PTS/呈现/缓冲边界与完整模型 GPU/HTP 共享验证 |
 | [2026-09-13 GPU 输入与双捕获流水线](performance/2026-09-13-gpu-input-pipeline/README.md) | CHW 数值对照、12/24 Hz 实测、原生 QNN 与 GPU 共享缓冲最小图验证 |
 | [2026-09-15 液化修订版复测](performance/2026-09-15-native-liquid-retest/README.md) | 短测 21.38 Hz，原片解码及正式播放器恢复阻塞，未完成长时/同步验收 |
-| [2026-09-14 液化实机后续修订](performance/2026-09-14-native-liquid-followup/README.md) | 显示暂停修订、合成缓存、完成计时、字幕时钟与本地测试入口；待复测 |
+| [2026-09-14 液化实机后续修订](performance/2026-09-14-native-liquid-followup/README.md) | 显示暂停修订、合成缓存、完成计时、字幕时钟与本地测试入口；复测部分通过 |
 | [2026-09-14 原生同帧 GPU 液化](performance/2026-09-14-native-liquid/README.md) | 392 / 0.85 / 96 px / 65% 原生实验、成对视频缓冲和桌面 shader 数值验证；见 [实机报告](performance/2026-09-14-native-liquid-device/README.md) |
 | [2026-09-14 完整 Quality 与时序补洞](performance/2026-09-14-quality-temporal/README.md) | 隔离复用完整参考渲染核心、前后帧背景实验与网页同帧对照；非手机性能测量 |
 | [SBS 伪影量化与首轮优化](performance/2026-09-12-artifact-evaluation/README.md) | 论文指标、真实 Java 消融、真值合成/真实片段代理量与已知退化；未实机验收 |

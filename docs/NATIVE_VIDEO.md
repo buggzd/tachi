@@ -5,6 +5,8 @@ SBS 虚拟银幕和实时深度 SBS 共用一个原生播放器。WebView 保留
 字幕与 Jellyfin 播放上报；Android 播放页不创建 HTML video。独立浏览器开发预览仍用 HTML/HLS。
 本分支已完成产品接入；本轮实机覆盖与尚待用户回传的项目见 [验收记录](performance/2026-09-12-native-product/README.md)。
 
+后续实时 3D 采用[392 同帧 GPU 局部液化](SBS_TECHNICAL_ROUTES.md)。用户认可观感；[修订版复测](performance/2026-09-15-native-liquid-retest/README.md)仍有恢复播放与同步等未验收项，不能沿用早期产品通过结论。
+
 ## 播放与显示
 
 ```text
@@ -13,10 +15,10 @@ GlassesUI 播放计划 / 遥控 / 唯一进度上报
 NativePlaybackController → Media3（网络、解复用、音轨、音画时钟）
                  ↓
 MediaCodec → SurfaceTexture/OES → GLES 单眼或双眼输出
-                 ↓ 可选 12 Hz 小图采样
-GPU RGBA8 → PBO/fence → CPU CHW → QNN HTP → CPU 时序稳定
+                 ↓ liquid 主路线：同源 RGB / PTS 捕获
+GPU CHW → 主机输入 → QNN HTP → 主机输出 → GPU P2/P98
                                                ↓
-                              R8 深度纹理 → GPU 双眼 gather
+                      GPU 背景局部液化 → 配对 RGB/深度 → SBS 缓存
 ```
 
 视频 Surface 与透明 WebView 是外接 Presentation 下的兄弟视图。原生视频直接绘制每眼，
@@ -42,7 +44,7 @@ Activity 退后台释放解码器和 QNN；返回时恢复同一播放位置并�
   直放运行失败可使用已准备的 HLS 端点，禁止并行双播放。当前 GLES 输出是 SDR RGBA8，
   已知 HDR 内容请求服务端 SDR 转码，不宣称 HDR 透传或客户端 tone mapping。
 - ASS/SSA 保留原文与 libass 的样式、定位、动画、卡拉 OK、字体和矢量裁剪。现有字体
-  限额、内置思源黑体和错误提示保持。渲染使用原生时钟的 100 ms 状态与短时插值，
+  限额、内置思源黑体和错误提示保持。liquid 模式优先使用配对位置，其他模式使用原生媒体时钟；状态以 100 ms 更新并短时插值，
   rAF 驱动字幕，不需要隐藏 HTML video；暂停、seek、换源重新同步。尚非精确显示 PTS 锁定。
 - 其他文字字幕仍以 WebVTT 显示，沿用四档字号；位图字幕由服务器烧录。
   本地字幕与实时深度可以同时启用；不再要求关字幕才能转换。原片已经烧入的文字也会参与视频形变。
@@ -60,11 +62,11 @@ scripts/verify-android.sh
 
 详见 [QNN 依赖与操作](REALTIME_SBS.md)。`QnnDepthProcessor` 为产品和 lab 共享实现，
 首次开启实时 3D 才初始化。模型/SDK 校验 `realtime-sbs-runtime.json`，厂商库不 strip；
-禁止 CPU EP fallback。正常慢帧、暂停、低信息量结果和推理错误沿用已有有效深度；
+禁止 CPU EP fallback。liquid 主路线的慢帧及推理延迟重复已有有效 RGB/深度整对，不将旧深度套到最新视频；
 seek、换源、Surface 重建和显式关闭清除旧图。关闭后重新开启可显式重试失败后端。
 
-当前仍有 CPU 张量准备、时序稳定与 GPU 读回，不能称为零拷贝。12 Hz 是采样目标，
-不是原视频帧率或模型最大吞吐。深度调试小窗由 GPU 从实际 R8 深度纹理绘制到两眼。
+主路线使用 392×224、24 Hz 调度目标与 GPU 预处理/深度处理/局部液化；
+产品仍有主机缓冲交换，不能称为零拷贝。实际更新率不等于调度目标或屏幕刷新率。深度调试小窗由 GPU 从实际 R8 深度纹理绘制到两眼。
 
 ## 用户测试与报告
 

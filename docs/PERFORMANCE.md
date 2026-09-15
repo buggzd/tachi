@@ -43,3 +43,9 @@ npm --prefix GlassesUI run benchmark
 CPU、整机 GPU 忙碌率、HWUI 绘制、视频丢帧和实际呈现时间分别解释；不把任一指标直接换算成电池续航或触控到光子的延迟。静态采样不加入持续 rAF 探针。保留所有有效样本和未覆盖范围。
 
 性能优化仍需 [构建检查](DEVELOPMENT.md#验证) 与 [设备回归](ANDROID_ARCHITECTURE.md#device-regression-matrix)。字幕交付异常、renderer 崩溃后的停止上报等历史发现单独列在路线图的待复核项中，不能用资源指标改善代替正确性验收。
+
+## 实时 3D 当前基线
+
+后续围绕[392 严格同帧 GPU 局部液化](SBS_TECHNICAL_ROUTES.md)优化。GPU 已承担输入预处理、逐帧范围归一化与液化；产品主机输入读回和输出交接仍存在。合成缓存减少重复配对帧的绘制成本，不能把缓存刷新计为新视频帧。
+
+[修订版短测](performance/2026-09-15-native-liquid-retest/README.md)为 119.604 秒、21.38 Hz，未完成长时及同步验收；与旧 18.9 Hz 测试不同素材/热态，不计算提升比例。接下来先解决恢复与同步、完成 20–30 分钟同配置测量，再评估注册共享缓冲的端到端收益。

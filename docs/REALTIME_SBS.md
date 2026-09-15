@@ -1,7 +1,36 @@
-# 实时 SBS 开发构建
+# 实时 SBS：主路线与构建
 
-正式播放已接入原生 Media3 → OES/GLES → QNN 深度 → 双眼输出，见 [原生播放](NATIVE_VIDEO.md)。
-本页维护可选本地依赖；旧 HTML 帧桥设计保存在 [历史记录](archive/2026-09-10-webview-realtime-sbs.md)。
+2026-09-15 起，后续开发采用 **392 严格同帧 + GPU 背景局部液化**。用户已确认当前 3D 观感满意；算法参数和取舍见[主技术路线](SBS_TECHNICAL_ROUTES.md)。这次确定开发方向，不修改 Gradle、APK 或 GitHub 发布默认值；当前仍通过 `liquid` 实验配置启用。
+
+## 主路线构建与使用
+
+```bash
+./scripts/build-sbs-experiment.sh liquid
+```
+
+必须显式传 `liquid`；脚本省略参数仍选择旧 `quality`。本地需备齐运行库和 `AndroidApp/realtime-sbs-runtime.json` 中 `experimentalModels.392` 对应模型。脚本启用 392×224、24 Hz 调度目标、GPU 预处理/深度处理/液化、两个捕获槽、固定主机输出和异步捕获观察，执行 JVM 测试、lint、组装及资源校验。
+
+输出 `AndroidApp/app/build/distributions/tachi-sbs-liquid-392.apk`，沿用开发应用 ID `com.jellyfinforrayneo.client.debug` 与本机 Debug 签名，关闭 debuggable。可覆盖同签名开发版并保留设置，不覆盖正式版。旧 `quality`（518/12 Hz）和 `motion`（392/24 Hz 非配对）仅供回归对照，不再优先推荐。
+
+先在手机选择 SBS 虚拟银幕，确认系统允许外接输出，再播放并开启「实时 3D」。视频信息显示实际深度预览。固定参数为位移强度 **0.85**、羽化 **96 px（每眼 1920 源宽基准）**、拉伸 **65%**。深度使用逐帧精确 P2/P98，无范围 EMA 和像素历史融合。
+
+处理完成后交换同源 RGB/深度整对；繁忙时重复上一对及其合成缓存，不把旧深度套到最新视频，不自动压平深度或回退 CPU。seek、换源、关闭和 Surface 重建必须清除旧代配对及缓存。字幕优先采用配对位置，音频没有固定延迟补偿；同帧不等于零播放延迟。
+
+## 实测与下一步验收
+
+[修订版复测](performance/2026-09-15-native-liquid-retest/README.md)为部分通过：兼容本地素材连续有效 119.604 秒、成对更新 21.38 Hz，缓存路径有使用证据；不能宣布稳定 24 Hz。末次滚动捕获到上传均值 70.569 ms，末次视频落后量 125.125 ms，不能相加为完整端到端延迟。旧版 18.9 Hz 的素材和时长不同，不构成提升比例。
+
+主观观感已获用户认可，剩余工程验收仍需完成：
+
+- 正式 Jellyfin 恢复出现黑色视频与准备提示；从该状态做有界诊断。
+- 高动态原片为设备不支持的 10-bit H.264；准备同内容兼容编码并记录 PTS 映射后，再核对 347/579 帧。
+- 显示生命周期、ASS/WebVTT 与独立音画同步、跨 seek/代际/几何缓存失效，以及有效连续 20–30 分钟和温控。
+
+分享诊断日志保留 `pairedPtsUs`、`playerMinusPairedMs`、`pairedVideoLagUs`、队列等待、捕获到上传、`pairedFrames`、`cachedPairDraws`、`pairRenderUpdates`。区分新成对帧、重复绘制、解码丢帧和物理呈现；GPU query、提交时间、fence 完成观察不能互相替代，近零 liquid query 不是液化零成本。
+
+## 数据交换边界
+
+GPU 已承担 CHW/归一化、深度范围处理和局部液化；ORT QNN 产品路径仍需主机输入读回和输出交接，不是零拷贝。完整模型注册共享缓冲仅有[独立 benchmark 证据](performance/2026-09-13-daily-sbs/README.md#完整模型共享缓冲)，后续在保持严格配对、有界槽位和失效语义的前提下接入产品。
 
 ## 本地依赖
 
@@ -42,110 +71,5 @@ AndroidApp/gradlew -p AndroidApp -PrealtimeSbs=true :app:assembleDebug
 `tachi-<version>-lite-arm64-v8a.apk` 和 `tachi-<version>-full-arm64-v8a.apk` 与校验文件，
 CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
 
-## 画质盲测与高分辨率试验
 
-[画质对照页与测试说明](performance/2026-09-12-quality-trials/README.md)提供三段实际片源的匿名评分，
-可看单眼、SBS 和实际深度，导出评分 JSON。该页面用离线深度隔离算法效果，不表示手机实时性能。
-
-另有可选 392×224 固定形状开发构建：
-
-```bash
-./scripts/build-android.sh debug full 392
-```
-
-需按 `realtime-sbs-runtime.json` 的 `experimentalModels.392` 准备额外模型，生成方法见测试说明。
-取帧、QNN 输入输出、稳定器与上传纹理使用同一尺寸；正常构建和 GitHub Lite/Full 仍默认 266×154。
-392 已在 SM8850 的共享原生 lab 跑通 QNN 与 SBS；更高尺寸及构建模式的耗时见
-[9 月 13 日实机分辨率扫描](performance/2026-09-13-resolution-sweep/README.md)。
-这不等于正式播放器/外接眼镜完整验收，默认发布仍为 266。两种 APK 同 ID，可覆盖安装保留设置。
-
-322、518、644 和失败的 770 模型记录在实验清单中；518 另提供下述日常实验包，其余用于直接 Gradle lab 扫描复现。
-常规打包脚本仍只接受 266 / 392。lab 可用 `-PlabPerformanceBuild=true` 关闭 Debug
-调试标志，再通过 Android `cmd package compile -m speed -f` 实验 ART 预编译。
-该开关只作用于独立 lab，不改变主应用；必须核实系统实际报告 `speed`，
-不能把命令返回 Success 或 Debug 包的 `verify` 当作预编译生效。
-诊断新增 `realtimeDepthResolution` 与 `depthWidth/depthHeight`，避免混淆模型尺寸。
-
-## 日常试看实验包
-
-完整本地模型/运行库就绪后，可生成两档独立文件：
-
-```bash
-./scripts/build-sbs-experiment.sh quality
-./scripts/build-sbs-experiment.sh motion
-```
-
-- `quality`：518×294、12 Hz 目标，优先轮廓清晰度。
-- `motion`：392×224、24 Hz 调度目标，约 20 Hz 是既有 lab 测量，产品更新率以诊断为准。
-
-输出位于 `AndroidApp/app/build/distributions/`，文件名分别为
-`tachi-sbs-quality-518.apk`、`tachi-sbs-motion-392.apk`。均包含对应模型，开启 GPU
-稳定、精确查表 CHW 输入、两个捕获槽、固定主机输出和异步捕获观察。
-脚本运行两模块 JVM 测试、lint、APK 构建及资源校验。
-
-两包沿用开发版 `com.jellyfinforrayneo.client.debug` 和本机 Debug 签名，关闭
-`debuggable`（也关闭 WebView 远程调试），可以互相覆盖并保留已有开发版账号设置。
-它们不覆盖正式版，也不改变 GitHub Lite/Full 的发布默认配置；不同开发电脑签名可能不兼容。
-优先安装 quality，先在手机完成眼镜 3D 显示，再在播放器开启「实时 3D」。
-切换档位需要安装另一 APK；深度慢时保持有效图，不自动变平或回退 CPU。
-
-诊断增加以下测量：
-
-- `depthPtsLagMeanMs/P95Ms/MaxMs`：GL 绘制视频 PTS 减去所用深度的源帧 PTS，保留负值。
-  使用精确解码元数据匹配，最多容忍释放时间微秒截断；`ptsMissing` 与
-  `depthPtsUnknown` 单独报告，不猜测最近帧。历史融合后的深度不代表单一真实曝光时刻。
-- `queueWaitMs`：捕获就绪后到串行工作线程开始的等待。
-- `droppedFrames`：Media3 解码输出丢帧；`supersededVideoFrames`：已匹配解码序列中
-  被 SurfaceTexture 消费跨过的帧。两者均不是物理屏幕呈现丢帧。
-- `playbackMinute`：最近 60 个分钟快照；计数器累计、耗时为近期滚动窗口，不是整分钟平均。
-  实验包还以 `TachiPlaybackTrial` 输出相同的脱敏快照，便于连续采集而不丢失前半程。
-
-PTS 统计包含持有同一视频帧时的深度更新绘制，不是只按新视频帧加权，也不包含显示器光学延迟。
-系统呈现应另用 SurfaceFlinger 图层统计或时间戳验证，不能把 24 fps 视频在 60 Hz
-显示器上的重复刷新当作丢帧。离线汇总可用
-`StereoLab/experiments/summarize_daily_trial.py`，按源编号拆分并排除中断/seek 后的跨段统计。
-[日常包实测](performance/2026-09-13-daily-sbs/README.md)记录 518 的 20 分 39 秒连续窗口、
-392 的顺序对照，以及后续 HLS 缓冲、PTS 长尾和呈现统计边界。
-
-## 输入与流水线实验
-
-可组合 `-PgpuPreprocess=true -PcaptureSlots=2 -PpinnedDepthOutput=true
--PasyncCapturePoll=true -PdepthHz=24`（命令中写在同一行）。GPU 输入要求同时开启
-QNN 与 GPU 稳定；captureSlots 只支持 1/2，depthHz 只支持 12/24。全部保持原发布默认值。
-392 的 24 Hz 是目标而非已保证的更新率；518 的推理耗时仍高于 24 Hz 单帧预算。
-产品的 GPU CHW 输入仍需主机读回，固定输出缓冲也不是 QNN 注册内存。
-独立 benchmark 新增 `fullshared` 阶段，可导出完整 518 图并验证 AHardwareBuffer / HTP
-注册输入输出与 GPU 读写；这条共享路径尚未替换产品 ORT Java 后端，见
-[完整模型验证](performance/2026-09-13-daily-sbs/README.md#完整模型共享缓冲)。
-诊断包括输入路径、槽数、目标频率，以及 queueWait/captureToWorker/workerService 的均值和 P95。
-实测结果、构建命令和共享内存边界见 [GPU 输入与流水线验证](performance/2026-09-13-gpu-input-pipeline/README.md)。
-
-## 操作与边界
-
-GPU 稳定实验：额外传 `-PgpuDepthStabilization=true` 可将精确分位范围、切镜/颜色差、
-归一化及历史融合放到 GPU，输出纹理直接用于 SBS。默认关闭，保留 CPU 对照；
-要求 GLES 3.1 和至少 256 个工作组线程。QNN 仍通过主机缓冲交换输入/输出。
-实机证据及实验构建命令见 [GPU 稳定验证](performance/2026-09-13-gpu-stabilization/README.md)。
-诊断的 `gpuStabilization` 为 true 时，CPU `stabilizeMs` 只记录原始深度交接，
-实际 GPU 完成观察耗时见 `gpuStabilizeCompletionMeanMs/P95Ms`，不能将两者混为一项。
-
-先在手机选择 SBS 虚拟银幕并确认系统允许外接输出，再播放视频，在眼镜控制栏开启
-「实时 3D」。首次准备模型后开始更新，目标约 12 Hz；字幕无需关闭。
-「视频信息」同时打开两眼的实际深度小窗，白色表示较近。
-正常深度延迟保持最后有效图；关闭后重新开启可手动重试，错误不启动 CPU 回退。
-seek、换源和 Surface 重建清除旧代图，避免使用另一时间或媒体的深度。
-深度稳定器对颜色变化采用连续历史权重，大幅深度变化仍拒绝旧历史；该开发改动只完成
-[离线伪影量化](performance/2026-09-12-artifact-evaluation/README.md)，部分低对比快移边缘有退化，
-仍需实机 A/B。当前已能测量视频/深度源帧的 PTS 差，但没有运动重投影或延迟视频以强制时间配对。
-
-复现异常后使用手机设置的「分享诊断日志」。本轮覆盖与未测清单见
-[产品接入验收](performance/2026-09-12-native-product/README.md)。此前 lab 的
-[全链路性能数据](performance/2026-09-12-native-qnn-sbs/README.md) 不应直接等同于产品性能。
-
-## 392 同帧背景液化实验包
-
-运行 `scripts/build-sbs-experiment.sh liquid` 构建用户网页偏好参数：392、0.85 位移、96 px 羽化、65% 拉伸。深度逐帧 P2/P98 无历史，局部液化在 GPU compute；两捕获槽保存对应全尺寸视频，处理完成后交换整对画面，忙时重复已匹配画面。普通发布默认与原日常双档不变。
-
-本轮完成开发和桌面/构建验证，尚未 ADB 实测。严格配对可能降低显示更新率并增加音画延迟，音频/字幕未额外补偿；检查诊断 `pairedVideoLagUs` 与 `gpuLiquid`，不要只看配对 PTS 为零。实现、检查结果和实机清单见 [原生液化实验](performance/2026-09-14-native-liquid/README.md)。
-
-实机反馈后的修订增加稳定模式暂停保留、SBS 缓存、液化完成 fence、字幕配对时间与同 APK 本地测试入口；复测操作和证据限制见 [修订说明](performance/2026-09-14-native-liquid-followup/README.md)。音频暂不做固定延迟补偿。
+以上通用 Full 命令仍对应旧 266 默认值，不等于 liquid 主路线包。将主路线纳入发布配置是后续独立变更。旧双档、CPU 稳定、实验开关和测量说明已收录于[历史构建快照](archive/2026-09-14-realtime-sbs-builds.md)，原始性能报告继续保留。

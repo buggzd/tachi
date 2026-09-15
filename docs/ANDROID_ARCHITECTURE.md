@@ -625,12 +625,28 @@ The isolated browser preview continues to report WebView limitations.
 
 ## Realtime native depth conversion
 
-See [realtime SBS build and operation](REALTIME_SBS.md). Depth uses the same shared QNN
-backend as the native lab, initialized only on request. GLES samples original OES video,
-PBO/fence delivers a small RGBA frame, QNN HTP predicts depth, CPU stabilizes it and GLES
-uploads one shared R8 map. No browser frame capture or base64 image bridge is used.
-The WebView controls/subtitles remain outside the warped layer. Normal delays and failed
-inference hold valid depth; explicit source/seek/close or Surface recreation invalidate it.
+The selected development route is **392×224 strictly paired RGB/depth with GPU local
+background liquid warp**, strength 0.85, feather 96 px at a per-eye source width of
+1920, amount 65%. See [route decision](SBS_TECHNICAL_ROUTES.md) and
+[build and acceptance status](REALTIME_SBS.md). This decision does not change release
+build defaults. User approval of visual quality is separate from device acceptance.
+
+The liquid configuration runs GPU CHW preprocessing, QNN HTP inference and GPU
+per-frame P2/P98 normalization without range EMA or pixel history. Two bounded
+capture leases preserve the exact source RGB and PTS until the matching depth is
+ready. Submit the pair together; when busy, repeat the valid pair and reuse its SBS
+render cache. Never combine stale depth with newer RGB in this configuration.
+Seek/source/Surface generation changes invalidate pairs and render caches. GPU liquid
+stretches background texture locally; it does not recover unseen scene content.
+Host input readback and QNN output handoff remain: this is not zero-copy. Registered
+full-model shared memory is independently benchmarked, not yet the product backend.
+
+Controls/subtitles remain outside the warped layer. ASS/WebVTT prefer the paired
+presentation position when valid; media reporting retains the Media3 clock. Audio has
+no additional fixed delay compensation. Pair PTS agreement alone does not establish
+AV synchronization or zero display latency. Target sampling is 24 Hz, not a guaranteed
+presentation rate. The latest short retest and remaining recovery/long-run checks are
+listed in the current guide.
 
 Native commands are limited to 16 KiB and URLs to 12 KiB, matching the active session's
 scheme, host, port and Jellyfin `/Videos/` subpath. No arbitrary headers or local-file access.
@@ -639,26 +655,11 @@ Stop, logout and renderer loss release the engine; background releases codecs/ba
 then returning reopens at the stored position in a paused state. SessionRepository stays
 the only account owner. Native 401/403 events use the existing unauthorized generation check.
 
-An opt-in `-PgpuDepthStabilization=true` build moves depth percentiles, appearance/cut
-statistics, normalization, temporal history and 8-bit output to GLES 3.1 compute.
-The default remains the CPU reference. The capture lease transfers with the raw result
-until a GPU-only RGB snapshot has been queued; a later capture cannot change that
-inference's color reference. At most one GPU job and one pending raw handoff exist,
-with the existing one-slot capture backpressure. Generation changes still discard old
-results and reset history. Completion polling is nonblocking and does not repeatedly
-draw SBS. QNN input preparation and host-buffer transfers remain; this is not zero-copy.
-See [device comparison and numerical limits](performance/2026-09-13-gpu-stabilization/README.md).
-
-Further opt-in experiments use `gpuPreprocess`, `captureSlots=2`, `pinnedDepthOutput`,
-`asyncCapturePoll`, and `depthHz=24`. GPU preprocessing requires QNN/GPU stabilization
-and delivers normalized float CHW instead of RGBA to the worker. Each of at most two
-capture leases owns a separate RGB texture and direct buffer until its consumer is done;
-generation invalidation never reuses live worker memory. One readback fence and one
-serial inference worker remain. GPU raw handoff is bounded by the capture capacity.
-The observer may poll readback completion without a full SBS redraw. Default builds
-remain single-slot, CPU input, 12 Hz; pinned ORT host output is not registered QNN memory.
-See [input, pipeline and shared-memory device evidence](performance/2026-09-13-gpu-input-pipeline/README.md).
-
+Legacy CPU stabilization, temporal filtering, unpaired daily profiles and their opt-in
+flags remain available as regression references. Their historical configuration and
+measurements are [archived](archive/2026-09-14-realtime-sbs-builds.md); they do not
+define the selected liquid route. Generic release defaults remain unchanged until a
+separate product configuration change.
 
 The existing phone diagnostic share includes whitelisted native playback samples: latest
 120 entries, at most 1 Hz plus status/subtitle-error changes. Samples survive player teardown
