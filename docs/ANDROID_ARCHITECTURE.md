@@ -656,7 +656,8 @@ An opt-in `gpuPollOffMain` timer uses a dedicated HandlerThread; GL operations r
 on the GLSurfaceView queue with the same bounded, generation-checked observer. Close
 cancels callbacks and quits the timer. Exported poll wake (including the requested
 2 ms), GL queue and service durations measure host scheduling, not GPU execution.
-The switch defaults off pending a three-minute device comparison.
+The switch defaults off: sequential three-minute A/B/A runs showed only a small
+uncontrolled difference; see [short comparison](performance/2026-09-15-gpu-poll-short/README.md).
 Target sampling is 24 Hz, not a guaranteed
 presentation rate. The latest product long-run evidence and remaining recovery/compatibility checks are
 listed in the current guide.
