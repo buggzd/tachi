@@ -114,6 +114,7 @@ let sideNavigationReturnTarget: HTMLElement | null = null
 
 function visibleFocusables(rects?: Map<HTMLElement, DOMRect>) {
   return Array.from(document.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
+    if (element.closest('[inert], [aria-hidden="true"]')) return false
     const rect = element.getBoundingClientRect()
     rects?.set(element, rect)
     if (rect.width <= 2 || rect.height <= 2) return false
@@ -138,8 +139,11 @@ function currentSpatialFocus() {
   return marked?.matches(focusableSelector) ? marked : null
 }
 
-function focusSpatialElement(element?: HTMLElement | null, options: FocusOptions = { preventScroll: true }) {
-  if (!element) return false
+export function focusSpatialElement(element?: HTMLElement | null, options: FocusOptions = { preventScroll: true }) {
+  if (!element?.matches(focusableSelector) || element.closest('[inert], [aria-hidden="true"]')) return false
+  const rect = element.getBoundingClientRect()
+  const style = window.getComputedStyle(element)
+  if (rect.width <= 2 || rect.height <= 2 || style.visibility === 'hidden' || style.display === 'none') return false
   clearSpatialFocus(element)
   element.setAttribute('data-spatial-focus', 'true')
   element.focus(options)
@@ -158,7 +162,13 @@ function soundNavigation(direction: Direction, action: () => void, boundary = tr
   }
 }
 
-function moveFocus(direction: Direction) {
+export function initialSpatialFocus(nodes = visibleFocusables()) {
+  return nodes.find(node => node.dataset.autofocus === 'true')
+    ?? nodes.find(node => !node.closest('.side-navigation'))
+    ?? nodes[0]
+}
+
+export function moveFocus(direction: Direction) {
   // Geometry is valid only for this key event; scrolling and animated transforms
   // must be measured again on the next event.
   const rects = new Map<HTMLElement, DOMRect>()
@@ -167,8 +177,7 @@ function moveFocus(direction: Direction) {
 
   const current = currentSpatialFocus()
   if (!current || !nodes.includes(current)) {
-    const firstContent = nodes.find((node) => !node.closest('.side-navigation'))
-    focusSpatialElement(document.querySelector<HTMLElement>('[data-autofocus="true"]') ?? firstContent ?? nodes[0])
+    focusSpatialElement(initialSpatialFocus(nodes))
     return
   }
 
@@ -456,7 +465,7 @@ function FocusButton({
       type="button"
       data-focusable="true"
       data-ui-sound={sound}
-      data-autofocus={autoFocusTarget ? 'true' : undefined}
+      data-autofocus={autoFocusTarget && !disabled ? 'true' : undefined}
       aria-label={label}
       aria-pressed={active === undefined ? undefined : active}
       disabled={disabled && !busy}
@@ -1540,7 +1549,7 @@ function DetailPage({
             )}
             <div className="detail-actions">
               <FocusButton variant="primary" className={cx('detail-play-button', hasResume && 'has-progress')} progress={hasResume ? playProgress : undefined} autoFocusTarget={!initialEpisodeNumber} disabled={!playTarget || loading} icon={<Play size={23} fill="currentColor" />} trailing={<span className="key-hint">{t("单击")}</span>} onClick={() => playTarget && onPlay(playTarget)}>
-                <span className="detail-play-button__copy"><strong>{playTarget?.sourceType === 'Episode' && playTarget.indexNumber !== undefined ? t("{0}第 {1} 集", { 0: hasResume ? t("继续") : t("播放"), 1: playTarget.indexNumber }) : hasResume ? t("继续播放") : t("立即播放")}</strong>{hasResume && <small>{t("已看到")} {watchedTime(playTarget)}</small>}</span>
+                <span className="detail-play-button__copy"><strong>{!loading && !playTarget ? t("暂无可播放内容") : playTarget?.sourceType === 'Episode' && playTarget.indexNumber !== undefined ? t("{0}第 {1} 集", { 0: hasResume ? t("继续") : t("播放"), 1: playTarget.indexNumber }) : hasResume ? t("继续播放") : t("立即播放")}</strong>{hasResume && <small>{t("已看到")} {watchedTime(playTarget)}</small>}</span>
               </FocusButton>
               <FocusButton variant="glass" disabled={!playTarget || loading} icon={<RotateCcw size={20} />} onClick={() => playTarget && onPlay(playTarget, true)}>{t("从头播放")}</FocusButton>
               {extras[0] && <FocusButton variant="round" label={t("播放预告片")} onClick={() => onPlay(extras[0], true)}><MonitorPlay size={20} /></FocusButton>}
@@ -3177,7 +3186,8 @@ export default function App() {
       // An early gesture/click already chose a card; do not pull focus back to the hero.
       const active = document.activeElement
       if (!tutorialReturnTarget && active instanceof HTMLElement && active.matches(focusableSelector)) return
-      const target = tutorialReturnTarget ?? document.querySelector<HTMLElement>('[data-autofocus="true"]') ?? visibleFocusables()[0]
+      const nodes = visibleFocusables()
+      const target = tutorialReturnTarget && nodes.includes(tutorialReturnTarget) ? tutorialReturnTarget : initialSpatialFocus(nodes)
       focusSpatialElement(target)
     }, 180)
     return () => window.clearTimeout(timer)

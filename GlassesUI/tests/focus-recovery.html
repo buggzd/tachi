@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="UTF-8"></head><body>
+<nav class="side-navigation"><button data-focusable="true" id="home">Home</button></nav>
+<main class="detail-page">
+  <button id="back" data-focusable="true" style="left:150px;top:50px">Back</button>
+  <button id="play" data-focusable="true" data-autofocus="true" disabled style="left:150px;top:130px">Unavailable</button>
+  <button data-focusable="true" data-autofocus="true" hidden>Hidden</button>
+  <div inert><button data-focusable="true" data-autofocus="true">Inactive panel</button></div>
+  <button id="favorite" data-focusable="true" style="left:150px;top:230px">Favorite</button>
+  <button id="watched" data-focusable="true" style="left:350px;top:230px">Watched</button>
+  <button id="similar" data-focusable="true" style="left:150px;top:410px">Recommendation</button>
+</main>
+<style>button{position:absolute;width:140px;height:60px}body{background:#18232b;color:white}.side-navigation button{left:0;top:50px}</style>
+<script type="module">
+import { moveFocus, initialSpatialFocus, focusSpatialElement } from '../src/App.tsx'
+window.focusFixture={ moveFocus, initialSpatialFocus, focusSpatialElement }
+window.backCount=0
+document.querySelector('#back').onclick=()=>window.backCount++
+window.addEventListener('keydown',event=>{
+ const direction={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[event.key]
+ if(direction){event.preventDefault();moveFocus(direction)}
+ if(event.key==='Enter'){event.preventDefault();document.activeElement.click()}
+})
+</script></body></html>
