@@ -2191,14 +2191,6 @@ function TouchpadScreen({
         </aside>
       )}
 
-      {scrubEnabled && (
-        <div className="touchpad-seek-guide">
-          <span>←　　→</span>
-          <strong>{scrubTarget === null ? t("左右滑动调整进度") : t("目标 {0}", { 0: formatPlaybackTime(scrubTarget * 1e7) })}</strong>
-          <small>{t("短滑 10 秒 · 拖动预览 · 松手跳转")}<br />{t("单击播放／暂停 · 上下滑动切换焦点")}</small>
-        </div>
-      )}
-
       {showPlayback && !searchActive && (
         <aside
           className={`touchpad-playback is-${playbackState}`}

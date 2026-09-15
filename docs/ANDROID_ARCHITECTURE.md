@@ -219,6 +219,11 @@ no track panel, and no preparing/error/stopped state. Neither deltas nor preview
 transactions enter the reconnect queue. Commit requires a matching live start;
 duplicate, expired and cancelled commits have no effect.
 
+The remote enters immersive fullscreen, hides status/navigation bars, fills cutout
+regions with the black window surface, and restores bars on exit. Window-focus
+return reapplies the current surface policy; system edge swipes may reveal
+transient bars. Progress focus adds no phone-side gesture instruction overlay.
+
 The phone replaces the dial with horizontal distance-based preview: a stroke
 crossing 72 CSS px horizontally uses 0.5 seconds/px, with no velocity gain.
 Short swipes retain ten-second steps; vertical navigation and tap actions remain.
