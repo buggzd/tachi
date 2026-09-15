@@ -324,3 +324,8 @@ Debug 包开启 WebView 调试。日志只应筛选通用 Activity、WebView、�
 `npm --prefix CompanionUI run test:browser` 使用 Playwright 和本机 Chrome 启动独立 Vite
 测试服务，模拟空账号与已有账号的原生状态。覆盖两种主题、手动地址弹窗、状态更新、
 紧凑视口、提交和关闭，捕获 React 渲染错误，不访问真实服务器或设备。
+
+
+### 播放进度交互回归
+
+`node CompanionUI/scripts/verify-seek.mjs` 启动两端真实 React 界面的无服务器浏览器回归，使用模拟原生播放事件，覆盖两种主题、唯一焦点、短滑十秒、拖动预览及反向修正、完整进度条、取消／多指／切集／过期，以及松手仅提交一次并保留播放／暂停状态。浏览器预览入口为 GlassesUI 的 `/tests/player-preview.html`，需测试脚本提供模拟原生桥接。此检查不替代真机 Direct/HLS、2D/SBS 的手感和播放恢复验证。

@@ -115,4 +115,32 @@ public final class RemoteCommandRouterTests
         }
         return result.toString();
     }
+    @Test
+    public void previewTransactionsAreBoundedAndNeverReplayedAfterReconnect()
+    {
+        RemoteCommandRouter router = new RemoteCommandRouter();
+        java.util.ArrayList<String> delivered = new java.util.ArrayList<>();
+        router.setSink(command -> { delivered.add(command); return true; });
+        assertFalse(router.submit("scrub:start:abcd1234"));
+        assertEquals(0, router.pendingCount());
+        router.setReady(true);
+        for (String command : List.of("scrub:start:abcd1234", "scrub:preview:abcd1234:0",
+                "scrub:commit:abcd1234:999999", "scrub:cancel:abcd1234"))
+        {
+            assertTrue(router.submit(command));
+        }
+        for (String command : List.of("scrub:start:abcd1234:1", "scrub:commit:abcd1234",
+                "scrub:preview:abcd1234:-1", "scrub:preview:abcd1234:01",
+                "scrub:commit:abcd1234:1000000", "scrub:commit:abcd1234:1.5",
+                "scrub:commit:abcd1234:1;up", "scrub:start:123"))
+        {
+            assertFalse(router.submit(command));
+        }
+        router.setReady(false);
+        assertFalse(router.submit("scrub:commit:abcd1234:120"));
+        router.setReady(true);
+        assertEquals(4, delivered.size());
+        assertEquals(0, router.pendingCount());
+    }
+
 }

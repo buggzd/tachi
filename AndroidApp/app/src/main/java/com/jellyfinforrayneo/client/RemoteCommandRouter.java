@@ -39,9 +39,9 @@ final class RemoteCommandRouter
         {
             return false;
         }
-        if (normalized.startsWith("seek:"))
+        if (normalized.startsWith("seek:") || normalized.startsWith("scrub:"))
         {
-            // A dial update belongs to the current focus, never replay after reconnect.
+            // A seek transaction belongs to the current focus, never replay after reconnect.
             return ready && sink != null && sink.dispatch(normalized);
         }
         return submitNormalized(normalized);
@@ -117,8 +117,14 @@ final class RemoteCommandRouter
 
     private static String normalize(String value)
     {
+        if (value != null && value.length() > 32)
+        {
+            return null;
+        }
         String command = value == null ? "" : value.trim().toLowerCase(Locale.US);
-        if (command.matches("seek:-?(?:[1-9]|[1-5][0-9]|60)"))
+        if (command.matches("seek:-?(?:[1-9]|[1-5][0-9]|60)")
+                || command.matches("scrub:(?:start|cancel):[a-f0-9]{8}")
+                || command.matches("scrub:(?:preview|commit):[a-f0-9]{8}:(?:0|[1-9][0-9]{0,5})"))
         {
             return command;
         }

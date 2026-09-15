@@ -2583,23 +2583,27 @@ button:disabled {
 .account-dialog-actions button { min-height: 44px; margin: 0; border-radius: 13px; font-size: 13px; cursor: pointer; }
 .remove-account-confirm { border: 0; background: #ad4251; color: white; }
 
-.touchpad-seek-ring {
+.touchpad-seek-guide {
   position: absolute;
   top: 56%;
   left: 50%;
   display: flex;
   width: min(62vw, 260px);
-  aspect-ratio: 1;
+  min-height: 140px;
   transform: translate(-50%, -50%);
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 2px solid rgba(191, 225, 230, .5);
-  border-radius: 50%;
+  border-top: 1px solid rgba(191, 225, 230, .3);
+  border-bottom: 1px solid rgba(191, 225, 230, .3);
   color: #cfe5e8;
   pointer-events: none;
 }
-.touchpad-seek-ring > span { font-size: 25px; }
-.touchpad-seek-ring > strong { font-size: 14px; font-weight: 500; }
-.touchpad-seek-ring > small { font-size: 11px; line-height: 1.8; text-align: center; }
+.touchpad-seek-guide > span { font-size: 25px; }
+.touchpad-seek-guide > strong { font-size: 14px; font-weight: 500; }
+.touchpad-seek-guide > small { font-size: 11px; line-height: 1.8; text-align: center; }
+
+.touchpad-playback__slider { position: relative; z-index: 2; display: block; width: 100%; height: 44px; margin: 0; accent-color: #cfe5e8; pointer-events: auto; touch-action: none; }
+.touchpad-playback__slider:disabled { opacity: .4; }
+.touchpad-playback__slider:focus-visible { outline: 2px solid #cfe5e8; outline-offset: 2px; }

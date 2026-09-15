@@ -5,7 +5,7 @@ import { useRealtimeSbs, DepthPreview } from './useRealtimeSbs'
 import './realtimeSbs.css'
 import { useLanguage } from './useLanguage'
 import { getLocale, t } from '../../SharedUI/i18n.mjs'
-import { parseSeekCommand } from '../../SharedUI/seekCommand.mjs'
+import { parseSeekCommand, parseScrubCommand, SeekPreview, type SeekPreviewState } from '../../SharedUI/seekCommand.mjs'
 import { latestWatchedEpisode, resumeProgress, watchedTime } from './watchProgress'
 import AssSubtitles from './AssSubtitles'
 import {
@@ -1702,7 +1702,7 @@ const jellyfinTicksPerSecond = 10_000_000
 type PlayerStatus = 'preparing' | 'buffering' | 'playing' | 'paused' | 'ended' | 'error'
 type PlayerChrome = 'controls' | 'hidden' | 'topbar'
 
-function PlayerPage({
+export function PlayerPage({
   simpleUi,
   subtitleSize,
   item,
@@ -1773,6 +1773,8 @@ function PlayerPage({
   useLayoutEffect(() => suspendHiddenAnimations(bottomChromeRef.current, !controls), [controls])
   const [panel, setPanel] = useState<'audio' | 'subtitles' | null>(null)
   const [feedback, setFeedback] = useState<{ direction: 'backward' | 'forward'; seconds: number; id: number } | null>(null)
+  const previewSession = useRef(new SeekPreview())
+  const [seekPreview, setSeekPreview] = useState<SeekPreviewState | null>(null)
   const [volume, setVolume] = useState(100)
   const [volumeVisible, setVolumeVisible] = useState(false)
   const volumeMounted = usePresence(volumeVisible)
@@ -1842,7 +1844,7 @@ function PlayerPage({
     return Math.max(0, Math.round(seconds * jellyfinTicksPerSecond))
   }, [])
 
-  const circularSeekEnabled = useCallback(() => (
+  const scrubSeekEnabled = useCallback(() => (
     chromeRef.current === 'controls'
     && !document.hidden
     && !['preparing', 'error', 'stopped'].includes(statusRef.current)
@@ -1868,12 +1870,15 @@ function PlayerPage({
       playMethod: active?.playMethod ?? '',
       positionTicks: positionTicks(),
       durationTicks,
-      seekEnabled: nextStatus !== 'stopped' && circularSeekEnabled(),
+      seekEnabled: nextStatus !== 'stopped' && scrubSeekEnabled(),
     })
-  }, [circularSeekEnabled, item.id, item.original, item.runtimeTicks, item.subtitle, item.title, positionTicks])
+  }, [scrubSeekEnabled, item.id, item.original, item.runtimeTicks, item.subtitle, item.title, positionTicks])
 
   useEffect(() => {
-    const publish = () => publishNativePlaybackState(statusRef.current)
+    const publish = () => {
+      if (!scrubSeekEnabled()) { previewSession.current.reset(); setSeekPreview(null) }
+      publishNativePlaybackState(statusRef.current)
+    }
     publish()
     document.addEventListener('focusin', publish)
     document.addEventListener('focusout', publish)
@@ -1883,7 +1888,7 @@ function PlayerPage({
       document.removeEventListener('focusout', publish)
       document.removeEventListener('visibilitychange', publish)
     }
-  }, [chrome, panel, plan, publishNativePlaybackState, status, total])
+  }, [chrome, panel, plan, publishNativePlaybackState, scrubSeekEnabled, status, total])
 
   useEffect(() => () => {
     publishNativePlaybackState('stopped')
@@ -2123,7 +2128,7 @@ function PlayerPage({
     if (hideTimer.current) window.clearTimeout(hideTimer.current)
     if (status === 'playing' && !panel) {
       hideTimer.current = window.setTimeout(() => {
-        updateChrome('hidden')
+        if (!previewSession.current.active) updateChrome('hidden')
       }, 3200)
     }
   }, [panel, status, updateChrome])
@@ -2146,6 +2151,36 @@ function PlayerPage({
     feedbackTimer.current = window.setTimeout(() => setFeedback(null), 920)
     if (showControls) reveal()
   }, [reveal])
+
+  useEffect(() => {
+    previewSession.current.reset()
+    setSeekPreview(null)
+    return () => previewSession.current.reset()
+  }, [plan])
+
+  useEffect(() => {
+    if (!seekPreview) return
+    const cancel = () => {
+      previewSession.current.reset()
+      setSeekPreview(null)
+      scheduleHide()
+    }
+    const check = () => {
+      const active = previewSession.current.active
+      if (active && (!scrubSeekEnabled() || performance.now() - active.updated > 2000)) cancel()
+    }
+    const timer = window.setInterval(check, 500)
+    const hide = () => { if (document.hidden) cancel() }
+    document.addEventListener('visibilitychange', hide)
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', hide) }
+  }, [scheduleHide, scrubSeekEnabled, seekPreview?.id])
+
+  // Keep the phone's full timeline current without increasing Jellyfin reports.
+  useEffect(() => {
+    if (!controls || panel) return
+    const timer = window.setInterval(() => publishNativePlaybackState(statusRef.current), 1000)
+    return () => window.clearInterval(timer)
+  }, [controls, panel, publishNativePlaybackState])
 
   const focusTrackPanelTarget = useCallback((target?: HTMLElement | null) => {
     if (!target) return false
@@ -2316,6 +2351,7 @@ function PlayerPage({
   useEffect(() => {
     const listener = (event: Event) => {
       const key = (event as CustomEvent<string>).detail
+      if (previewSession.current.active) { previewSession.current.reset(); setSeekPreview(null) }
       if (panel) {
         reveal()
         if (key === 'left' || key === 'right' || key === 'up' || key === 'down') {
@@ -2403,9 +2439,22 @@ function PlayerPage({
   useEffect(() => {
     const listener = (event: Event) => {
       const command = String((event as CustomEvent<string>).detail ?? '')
+      const scrub = parseScrubCommand(command)
+      if (scrub) {
+        const video = videoRef.current
+        if (!scrubSeekEnabled() || !video) { previewSession.current.reset(); setSeekPreview(null); return }
+        const target = previewSession.current.receive(command, video.currentTime, video.duration, performance.now())
+        setSeekPreview(previewSession.current.active)
+        if (previewSession.current.active) {
+          setFeedback(null)
+          if (hideTimer.current) window.clearTimeout(hideTimer.current)
+        } else scheduleHide()
+        if (target !== null) seek(target - video.currentTime)
+        return
+      }
       const seconds = parseSeekCommand(command)
       if (seconds !== null) {
-        if (circularSeekEnabled()) seek(seconds)
+        if (scrubSeekEnabled()) seek(seconds)
         return
       }
       if (!command.startsWith('volume:')) return
@@ -2418,7 +2467,7 @@ function PlayerPage({
     }
     window.addEventListener('rayneo-remote-command', listener)
     return () => window.removeEventListener('rayneo-remote-command', listener)
-  }, [circularSeekEnabled, seek])
+  }, [scrubSeekEnabled, scheduleHide, seek])
 
   const chooseTrack = useCallback((kind: 'audio' | 'subtitles', index: number) => {
     const active = planRef.current
@@ -2490,7 +2539,7 @@ function PlayerPage({
   }, [handlePlaying, handlePause, handleEnded, failPlayback, updateStatus])
 
   const subtitlePosition = native ? subtitleClock : current
-  const progress = total > 0 ? Math.min(100, Math.max(0, current / total * 100)) : 0
+  const progress = total > 0 ? Math.min(100, Math.max(0, (seekPreview?.target ?? current) / total * 100)) : 0
   const subtitleText = useMemo(() => plan?.subtitleFormat === 'ass' ? '' : subtitleCues
     .filter((cue) => subtitlePosition >= cue.start && subtitlePosition < cue.end)
     .map((cue) => cue.text)
@@ -2607,6 +2656,14 @@ function PlayerPage({
         </div>
       )}
 
+      {seekPreview && (
+        <div className="seek-preview glass-panel" role="status">
+          <small>{t("松手跳转")}</small>
+          <strong>{t("目标 {0}", { 0: formatTime(seekPreview.target) })}</strong>
+          <span>{t("{0} {1}", { 0: seekPreview.target >= seekPreview.origin ? t("快进") : t("快退"), 1: formatTime(Math.abs(seekPreview.target - seekPreview.origin)) })}</span>
+        </div>
+      )}
+
       {feedback && (
         <div
           key={feedback.id}
@@ -2650,10 +2707,11 @@ function PlayerPage({
         )}
         <section className="player-controls glass-panel">
           <div className="player-progress" style={{ '--played': `${progress}%` } as CSSProperties}>
-            <span className="player-progress__time">{formatTime(current)}</span>
-            <button type="button" data-focusable="true" aria-label={t("播放进度，左右滑动调整十秒，手机顺时针快进、逆时针快退，转得越快调整越多，单击播放或暂停")} className="player-progress__bar" onClick={() => { togglePlayback(); reveal() }}><i><b /></i></button>
+            <span className="player-progress__time">{formatTime(seekPreview?.target ?? current)}</span>
+            <button type="button" data-focusable="true" aria-label={t("播放进度，短滑调整十秒，横向拖动预览，松手跳转，单击播放或暂停")} className="player-progress__bar" onClick={() => { togglePlayback(); reveal() }}><i><b /></i></button>
             <span className="player-progress__time">{formatTime(total)}</span>
           </div>
+          <div className="player-progress-hint">{t("左右滑动调整 · 单击播放／暂停")}</div>
           <div className="player-control-row">
             <div className="player-control-group">
               <FocusButton variant="round" disabled={!previousItem} label={t("上一集")} onClick={() => previousItem && onPlayItem(previousItem, true)}><SkipBack size={21} /></FocusButton>
@@ -2671,7 +2729,7 @@ function PlayerPage({
             </div>
           </div>
           <div className="player-hints" aria-label={t("手机触控板手势")}>
-            <span><MoveHorizontal size={17} aria-hidden="true" /><b>{t("进度条聚焦")}</b>  {t("环形转动变速调整 · 左右滑动 10 秒")}</span>
+            <span><MoveHorizontal size={17} aria-hidden="true" /><b>{t("进度条聚焦")}</b>  {t("短滑 10 秒 · 拖动预览 · 松手跳转")}</span>
             <span><MoveVertical size={17} aria-hidden="true" /><b>{t("上下滑动")}</b>  {t("进度条上滑收起 · 再上滑返回按钮")}</span>
             <span><Pointer size={17} aria-hidden="true" /><b>{t("单击")}</b>  {t("确认 / 播放暂停")}</span>
             <span><RotateCcw size={17} aria-hidden="true" /><b>{t("双击")}</b> {panel ? t("关闭选项") : t("返回详情")}</span>

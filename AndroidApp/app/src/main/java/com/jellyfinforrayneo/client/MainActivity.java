@@ -1760,10 +1760,14 @@ public final class MainActivity extends Activity
         @JavascriptInterface
         public void remoteCommand(String value, boolean haptic)
         {
+            if (value == null || value.length() > 32)
+            {
+                return;
+            }
             String command = bounded(value, 32).trim().toLowerCase(Locale.US);
             runOnUiThread(() ->
             {
-                if (command.startsWith("seek:") && !playback.isSeekEnabled())
+                if ((command.startsWith("seek:") || command.startsWith("scrub:")) && !playback.isSeekEnabled())
                 {
                     return;
                 }

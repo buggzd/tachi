@@ -1,4 +1,4 @@
-import { parseSeekCommand } from '../../SharedUI/seekCommand.mjs'
+import { parseSeekCommand, parseScrubCommand } from '../../SharedUI/seekCommand.mjs'
 const channel = 'jellyfin-rayneo-dual-ui-v1'
 const maximumMessageLength = 16_384
 const remoteCommands = new Set([
@@ -112,6 +112,7 @@ export function installDevelopmentBridge() {
       const validSearchText = /^search-text:[a-z0-9 ]{0,48}$/.test(requestedCommand)
       if (!remoteCommands.has(requestedCommand)
         && parseSeekCommand(requestedCommand) === null
+        && parseScrubCommand(requestedCommand) === null
         && !validSearchText
         && !/^volume:(?:100|[1-9]?\d)$/.test(requestedCommand)) return
       const command = requestedCommand === 'submit' ? 'enter' : requestedCommand

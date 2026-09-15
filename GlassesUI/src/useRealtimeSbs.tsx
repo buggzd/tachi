@@ -5,7 +5,7 @@ import { assVideoRect } from './assVideo'
 export type RealtimeStatus = 'off' | 'needs-stereo' | 'subtitles' | 'loading' | 'ready' | 'frame' | 'stale' | 'flat' | 'error'
 type DepthMessage = { token: string; status: string; sequence: number; nativeMs?: number; depth?: string }
 const WIDTH = 266, HEIGHT = 154
-const maskSelector = '.player-topbar,.player-chrome--bottom,.playback-info,.player-volume,.seek-feedback,.player-state,.player-error,.realtime-sbs-debug'
+const maskSelector = '.player-topbar,.player-chrome--bottom,.playback-info,.player-volume,.seek-feedback,.seek-preview,.player-state,.player-error,.realtime-sbs-debug'
 
 function base64(bytes: Uint8ClampedArray) {
   let text = ''

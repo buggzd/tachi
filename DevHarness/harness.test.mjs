@@ -1,4 +1,4 @@
-import { parseSeekCommand } from '../SharedUI/seekCommand.mjs'
+import { parseSeekCommand, parseScrubCommand } from '../SharedUI/seekCommand.mjs'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
@@ -26,7 +26,7 @@ async function harness(storedTheme = null, storedBackground = null, storedTransp
     return elements.get(selector)
   }
   const context = vm.createContext({
-    parseSeekCommand, URL, URLSearchParams, Blob, crypto: { randomUUID },
+    parseSeekCommand, parseScrubCommand, URL, URLSearchParams, Blob, crypto: { randomUUID },
     document: { querySelector: element },
     window: {
       location: { hostname: '127.0.0.1', origin: 'http://127.0.0.1:4177', search },
@@ -294,7 +294,7 @@ test('successful account switch clears the previous playback and search state', 
 })
 
 
-test('circular seeking forwards only bounded deltas while progress focus is enabled', async () => {
+test('relative seeking forwards only bounded deltas while progress focus is enabled', async () => {
   const app = await harness()
   app.call('applySession', account())
   app.command('remoteCommand', 'seek:15')
@@ -325,4 +325,19 @@ test('language persists and synchronizes both surfaces without replacing catalog
     assert.equal(app.state().language, 'zh-CN')
   }
   if (generation !== undefined) assert.equal(app.bootstrap().catalogGeneration, generation)
+})
+
+
+test('preview transactions require current seek permission and bounded positions', async () => {
+  const app = await harness()
+  app.call('applySession', account())
+  app.command('remoteCommand', 'scrub:start:abcd1234')
+  assert.equal(app.remoteCommands().length, 0)
+  app.call('handleGlassesMessage', { type: 'playback_state', state: 'paused', seekEnabled: true })
+  for (const command of ['scrub:start:abcd1234', 'scrub:preview:abcd1234:120', 'scrub:commit:abcd1234:120']) app.command('remoteCommand', command)
+  app.command('remoteCommand', 'scrub:commit:abcd1234:1000000')
+  assert.equal(app.remoteCommands().length, 3)
+  app.call('handleGlassesMessage', { type: 'playback_state', state: 'stopped', seekEnabled: true })
+  app.command('remoteCommand', 'scrub:commit:abcd1234:120')
+  assert.equal(app.remoteCommands().length, 3)
 })

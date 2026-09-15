@@ -1,6 +1,6 @@
 import { useLanguage } from './useLanguage'
 import { applyLanguage, getLanguage, isLanguage, savePreviewLanguage, nativeMessage, t } from '../../SharedUI/i18n.mjs'
-import { CircularSeekGesture } from './circularSeek.mjs'
+import { ScrubGesture } from '../../SharedUI/scrubGesture.mjs'
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { applyUiTheme, normalizeUiTheme, readPreviewTheme, savePreviewTheme } from '../../SharedUI/theme.mjs'
 import { suspendHiddenAnimations } from '../../SharedUI/hiddenAnimations.mjs'
@@ -1842,9 +1842,11 @@ function TouchpadScreen({
   const glowFrameRef = useRef(0)
   const surfaceRectRef = useRef(null)
   const pointerStart = useRef(null)
-  const seekRingRef = useRef(null)
-  const circularGesture = useRef(null)
-  const circularEnabled = playback?.seekEnabled === true && !searchActive
+  const scrubGesture = useRef(null)
+  const scrubSession = useRef(null)
+  const scrubHeartbeat = useRef(null)
+  const [scrubTarget, setScrubTarget] = useState(null)
+  const scrubEnabled = playback?.seekEnabled === true && !searchActive
   const lastTap = useRef(0)
   const tapTimer = useRef(null)
   const feedbackTimer = useRef(null)
@@ -1950,9 +1952,47 @@ function TouchpadScreen({
     feedbackTimer.current = window.setTimeout(() => setFeedback(''), 520)
   }
 
+  const sendScrub = (phase, session, target) => {
+    if (native) onCommand(`scrub:${phase}:${session.id}${target === undefined ? '' : `:${target}`}`, phase === 'start' && haptics)
+  }
+
+  const finishScrub = (commit = false) => {
+    const session = scrubSession.current
+    if (session) sendScrub(commit ? 'commit' : 'cancel', session, commit ? session.target : undefined)
+    scrubSession.current = null
+    window.clearInterval(scrubHeartbeat.current)
+    setScrubTarget(null)
+  }
+
+  const previewScrub = (target) => {
+    if (!scrubEnabled || !Number.isFinite(target)) return
+    target = Math.max(0, Math.min(999999, Math.round(target)))
+    if (!scrubSession.current) {
+      const id = crypto.getRandomValues(new Uint32Array(1))[0].toString(16).padStart(8, '0')
+      scrubSession.current = { id, target, sent: 0 }
+      sendScrub('start', scrubSession.current)
+      if (!native) vibrate(8)
+      // Keep a stationary preview alive; the glasses expire it if the phone disappears.
+      scrubHeartbeat.current = window.setInterval(() => {
+        if (scrubSession.current) sendScrub('preview', scrubSession.current, scrubSession.current.target)
+      }, 500)
+    }
+    const session = scrubSession.current
+    session.target = target
+    setScrubTarget(target)
+    if (performance.now() - session.sent >= 80) {
+      sendScrub('preview', session, target)
+      session.sent = performance.now()
+    }
+    window.clearTimeout(tapTimer.current)
+    lastTap.current = 0
+    setIntroVisible(false)
+  }
+
   const cancelPointer = () => {
+    finishScrub()
     pointerStart.current = null
-    circularGesture.current = null
+    scrubGesture.current = null
     surfaceRectRef.current = null
     window.clearTimeout(tapTimer.current)
     lastTap.current = 0
@@ -1967,16 +2007,9 @@ function TouchpadScreen({
     return () => {
       document.removeEventListener('visibilitychange', hide)
       window.removeEventListener('blur', cancelPointer)
-      window.clearTimeout(tapTimer.current)
+      cancelPointer()
     }
-  }, [circularEnabled, playback?.itemId])
-
-  const emitSeek = (seconds) => {
-    if (!seconds || !circularEnabled) return
-    showFeedback(`seek:${seconds}`)
-    // Continuous seeking has no repeated vibration.
-    if (native) onCommand(`seek:${seconds}`, false)
-  }
+  }, [scrubEnabled, playback?.itemId])
 
   const onPointerDown = (event) => {
     if (!event.isPrimary || pointerStart.current) { cancelPointer(); return }
@@ -1985,9 +2018,7 @@ function TouchpadScreen({
     surfaceRectRef.current = null
     updateTarget(event)
     pointerStart.current = { x: event.clientX, y: event.clientY, time: Date.now(), id: event.pointerId }
-    const ring = circularEnabled ? seekRingRef.current?.getBoundingClientRect() : null
-    circularGesture.current = ring ? new CircularSeekGesture(ring.left + ring.width / 2, ring.top + ring.height / 2, ring.width / 2) : null
-    circularGesture.current?.move(event.clientX, event.clientY, event.timeStamp)
+    scrubGesture.current = scrubEnabled ? new ScrubGesture(event.clientX, event.clientY, Number(playback.positionTicks) / 1e7, Number(playback.durationTicks) / 1e7) : null
     setPressed(true)
     setIntroVisible(false)
   }
@@ -1995,8 +2026,9 @@ function TouchpadScreen({
   const onPointerMove = (event) => {
     if (pointerStart.current?.id !== event.pointerId) return
     updateTarget(event)
-    emitSeek(circularGesture.current?.move(event.clientX, event.clientY, event.timeStamp) ?? 0)
-    if (circularGesture.current?.active) {
+    const target = scrubGesture.current?.move(event.clientX, event.clientY)
+    if (target != null) previewScrub(target)
+    if (scrubGesture.current?.active) {
       window.clearTimeout(tapTimer.current)
       lastTap.current = 0
     }
@@ -2004,14 +2036,15 @@ function TouchpadScreen({
 
   const onPointerUp = (event) => {
     if (pointerStart.current?.id !== event.pointerId) return
-    const gesture = circularGesture.current
-    emitSeek(gesture?.move(event.clientX, event.clientY, event.timeStamp) ?? 0)
+    const gesture = scrubGesture.current
+    const target = gesture?.move(event.clientX, event.clientY)
+    if (target != null) previewScrub(target)
     if (gesture?.active) {
-      emitSeek(gesture.flush())
+      finishScrub(true)
       cancelPointer()
       return
     }
-    circularGesture.current = null
+    scrubGesture.current = null
     updateTarget(event)
     setPressed(false)
     const dx = event.clientX - pointerStart.current.x
@@ -2020,8 +2053,8 @@ function TouchpadScreen({
     pointerStart.current = null
     surfaceRectRef.current = null
 
-    if (distance > 46) {
-      const horizontal = Math.abs(dx) > Math.abs(dy)
+    const horizontal = Math.abs(dx) > Math.abs(dy)
+    if (distance > (scrubEnabled && horizontal ? 24 : 46)) {
       const direction = horizontal ? (dx > 0 ? 'RIGHT' : 'LEFT') : (dy > 0 ? 'DOWN' : 'UP')
       showFeedback(direction)
       emitCommand(direction.toLowerCase(), 10)
@@ -2158,9 +2191,11 @@ function TouchpadScreen({
         </aside>
       )}
 
-      {circularEnabled && (
-        <div ref={seekRingRef} className="touchpad-seek-ring" aria-label={t("环形调节播放进度")}>
-          <span>↶　　↷</span><strong>{feedback.startsWith('seek:') ? t("{0} {1} 秒", { 0: Number(feedback.slice(5)) > 0 ? t("快进") : t("快退"), 1: Math.abs(Number(feedback.slice(5))) }) : t("转动调节进度")}</strong><small>{t("顺时针快进 · 逆时针快退")}<br />{t("转得越快，调整越多")}</small>
+      {scrubEnabled && (
+        <div className="touchpad-seek-guide">
+          <span>←　　→</span>
+          <strong>{scrubTarget === null ? t("左右滑动调整进度") : t("目标 {0}", { 0: formatPlaybackTime(scrubTarget * 1e7) })}</strong>
+          <small>{t("短滑 10 秒 · 拖动预览 · 松手跳转")}<br />{t("单击播放／暂停 · 上下滑动切换焦点")}</small>
         </div>
       )}
 
@@ -2175,17 +2210,43 @@ function TouchpadScreen({
           </span>
           <strong>{playback.title}</strong>
           {playback.subtitle && <small>{playback.subtitle}</small>}
-          <div className="touchpad-playback__timeline"><i /></div>
+          <input
+            className="touchpad-playback__slider"
+            type="range" min="0" max={Math.min(999999, Math.floor(durationTicks / 1e7)) || 1} step="1"
+            disabled={!scrubEnabled}
+            aria-label={t("拖动定位播放进度")}
+            value={scrubTarget ?? Math.min(999999, Math.floor(positionTicks / 1e7))}
+            onPointerDown={(event) => {
+              event.stopPropagation()
+              if (!event.isPrimary || pointerStart.current) { cancelPointer(); return }
+              event.currentTarget.setPointerCapture(event.pointerId)
+              previewScrub(Number(event.currentTarget.value))
+            }}
+            onPointerMove={(event) => { event.stopPropagation(); if (!event.isPrimary) cancelPointer() }}
+            onChange={(event) => { if (scrubSession.current) previewScrub(Number(event.target.value)) }}
+            onPointerUp={(event) => { event.stopPropagation(); finishScrub(true) }}
+            onPointerCancel={(event) => { event.stopPropagation(); cancelPointer() }}
+            onLostPointerCapture={() => finishScrub()}
+            onBlur={() => finishScrub()}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || !scrubEnabled) return
+              event.preventDefault()
+              const value = Number(event.currentTarget.value)
+              previewScrub(event.key === 'Home' ? 0 : event.key === 'End' ? Math.floor(durationTicks / 1e7) : Math.max(0, Math.min(Math.floor(durationTicks / 1e7), value + (event.key === 'ArrowRight' ? 10 : -10))))
+              finishScrub(true)
+            }}
+          />
+          {!scrubEnabled && <small>{t("聚焦眼镜进度条后可拖动定位")}</small>}
           <div className="touchpad-playback__meta">
-            <span>{formatPlaybackTime(positionTicks)} / {formatPlaybackTime(durationTicks)}</span>
+            <span>{formatPlaybackTime(scrubTarget === null ? positionTicks : scrubTarget * 1e7)} / {formatPlaybackTime(durationTicks)}</span>
             <em>{playback.playMethod === 'Transcode' ? t("服务器转码") : t("直接播放")}</em>
           </div>
         </aside>
       )}
 
-      <div className={`touch-feedback ${feedback && !feedback.startsWith('seek:') ? 'is-visible' : ''}`}>
+      <div className={`touch-feedback ${feedback ? 'is-visible' : ''}`}>
         <span>{feedbackGlyph}</span>
-        <small>{feedback === 'CONFIRM' ? t("确认") : feedback === 'BACK' ? t("返回") : feedback.startsWith('seek:') ? t("环形调节") : feedback ? t("向{0}", { 0: { get UP() { return t("上") }, get DOWN() { return t("下") }, get LEFT() { return t("左") }, get RIGHT() { return t("右") } }[feedback] }) : ''}</small>
+        <small>{feedback === 'CONFIRM' ? t("确认") : feedback === 'BACK' ? t("返回") : feedback ? t("向{0}", { 0: { get UP() { return t("上") }, get DOWN() { return t("下") }, get LEFT() { return t("左") }, get RIGHT() { return t("右") } }[feedback] }) : ''}</small>
       </div>
 
       <div ref={introRef} className={`touchpad-intro ${introVisible && !searchActive ? 'is-visible' : ''}`}>

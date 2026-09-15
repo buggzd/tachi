@@ -208,26 +208,36 @@ back to `document.body`, and bubble from an element target. `GlassesUI` owns the
 single `data-spatial-focus="true"` marker. While video is active, the player
 scope prevents underlying pages from receiving input.
 
-Circular seeking uses the existing `remoteCommand` bridge with `seek:N`, where
-N is a nonzero integer from -60 to 60 seconds. `playback_state.seekEnabled` is an
-exact boolean, true only while the seekable player's progress bar has focus and
-controls are visible, with no track panel or hidden document. Native copies this
-permission into the phone playback snapshot and clears it on playback/session
-cleanup. Preparing, stopped and error states cannot grant permission. Native and
-the player each gate commands; the router never queues seek deltas for reconnect.
+Seeking uses the existing `remoteCommand` bridge. Legacy `seek:N` deltas remain
+bounded to nonzero integers from -60 to 60. Preview transactions use
+`scrub:start:ID`, `scrub:preview:ID:SECONDS`, `scrub:commit:ID:SECONDS` and
+`scrub:cancel:ID`: ID is exactly eight lowercase hex characters and SECONDS is
+a canonical whole number from 0 to 999999, additionally clamped to duration.
+Commands are bounded to 32 characters. Native and the player both require
+`playback_state.seekEnabled`: visible controls, seekable media, progress focus,
+no track panel, and no preparing/error/stopped state. Neither deltas nor preview
+transactions enter the reconnect queue. Commit requires a matching live start;
+duplicate, expired and cancelled commits have no effect.
 
-The phone displays a ring only with this permission. Direction comes from wrapped
-angular movement around its center; both angular travel and curved motion must
-qualify before a stroke becomes a seek gesture. Straight swipes and taps retain
-their actions. Speed controls gain; updates are throttled to 150 ms (except the first whole second after a direction reversal), rounded to
-whole seconds and bounded to 60 seconds including the remainder at release.
-Reversal discards the old direction's remainder, and leaving the ring cancels
-further seeking. A consumed rotation never becomes a tap/swipe on release.
-Focus loss, item changes, pointer cancel, multiple pointers, hidden document and
-phone blur discard the active gesture. The player clamps to its duration and
-keeps play/pause state, the single video and existing reporting lifecycle.
-Browser gesture tests do not replace real touch sampling or direct/HLS seek
-latency checks in both display modes.
+The phone replaces the dial with horizontal distance-based preview: a stroke
+crossing 72 CSS px horizontally uses 0.5 seconds/px, with no velocity gain.
+Short swipes retain ten-second steps; vertical navigation and tap actions remain.
+A consumed drag cannot become a tap or direction on release. The phone's full
+range slider uses the same preview transaction and focus permission. Preview
+updates are throttled to 80 ms, with a 500 ms keepalive while the finger rests.
+The glasses show target time and offset and hold controls visible, without
+changing the media clock; release commits exactly one seek and preserves pause.
+Controls publish the current phone timeline once per second while visible;
+Jellyfin's reporting cadence is unchanged.
+
+Focus loss, plan/item changes, pointer cancellation, multiple pointers, hidden
+phone document and blur discard previews. The player expires a transaction after
+2 seconds without an update (checked every 500 ms). Preparing or losing permission
+also discards it. The player retains the single video and reporting lifecycle.
+The play/pause button has a neutral resting fill and highlights only on focus;
+the focused progress bar is thicker with an enlarged thumb and contextual hint.
+Browser gesture checks do not replace real touch sampling or direct/HLS latency
+and pause-state checks in both display modes.
 
 Phone hardware volume keys are consumed by `MainActivity` and mapped directly
 to one `AudioManager.STREAM_MUSIC` raise/lower/toggle adjustment per key-down.
@@ -704,7 +714,7 @@ minimum device regression set for any device-facing change.
 | Glasses settings and subtitle size | Enter/exit glasses Settings, both themes and four sizes, phone/glasses edits, paused/direct/HLS playback, text versus burned-in subtitles, cold launch/logout/reset in 2D and SBS | One focus returns to Settings; both surfaces acknowledge the same saved preference; playback uses the chosen text size with no font controls in player menus, duplicate video or reporting |
 | Remote tutorial | First ready catalog, skip/relaunch, six phone gestures, wrong/rapid input, pause/resume/exit, sidebar replay, logout, 2D/SBS switch and renderer recovery | Each real gesture advances once; exactly one focus stays inside practice/dialog; completion or skipping is remembered; no media playback or background navigation; SVG motion and text remain readable in both eyes |
 | Glasses UI sounds | Direction/confirm/back, held input at a focus boundary, panels, volume, tutorial and feedback; mute/unmute during a cue; cold launch, logout, detach/reattach, renderer recovery, both themes and display modes, direct/HLS playback | Each ordinary gesture triggers at most one immediate cue and a held direction sounds once at the same boundary; mute persists and stops active/pending cues; the player is silent except for volume; no startup/restoration cue or phone UI sounds; video soundtrack/volume/reporting are unchanged and stereo does not duplicate cues |
-| Playback | Circular seek while progress focused (both directions/speeds, repeated reversal without lifting and fine correction after a pause, bounds, straight swipe, cancel, blur, panels, reconnect); Direct play, H.264/AAC HLS fallback, pause, seek, previous/next item, audio track, WebVTT, ASS/SSA and bitmap subtitles; ASS animated positioning/karaoke, attached/missing fonts, rapid ASS→text→off, paused seek, worker failure and logout in 2D/SBS | Playback remains controllable, progress is reported once, and the selected track is reflected in UI |
+| Playback | Horizontal preview while progress focused (short ten-second swipes, fixed-distance drag, reversal and resting finger, bounds, full phone slider, single commit on release, paused state, cancel, multi-touch, blur, panels, expiry and reconnect); Direct play, H.264/AAC HLS fallback, pause, seek, previous/next item, audio track, WebVTT, ASS/SSA and bitmap subtitles; ASS animated positioning/karaoke, attached/missing fonts, rapid ASS→text→off, paused seek, worker failure and logout in 2D/SBS | Playback remains controllable, progress is reported once, and the selected track is reflected in UI |
 | Single-instance invariants | Mirror and stereo during representative playback | One glasses WebView, zero HTML `<video>`, one native player, one audio stream, and one Jellyfin reporting stream remain active |
 | Renderer recovery | Kill or crash the glasses WebView renderer during browse and playback | The WebView is rebuilt, session bootstrap is republished, and the phone receives a safe state |
 | Codec selection | Representative H.264, HEVC/VP9/AV1 where hardware advertises support, plus an unsupported source | The actual Media3 `MediaCodec` component matches expectations; incompatible media requests the bounded HLS fallback |

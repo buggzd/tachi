@@ -1,4 +1,4 @@
-import { parseSeekCommand } from './seekCommand.mjs'
+import { parseSeekCommand, parseScrubCommand } from './seekCommand.mjs'
 const channel = 'jellyfin-rayneo-dual-ui-v1'
 const maximumMessageLength = 65_536
 const host = window.location.hostname === 'localhost' ? 'localhost' : '127.0.0.1'
@@ -754,8 +754,8 @@ function handleCompanionCall(payload) {
     }
     case 'remoteCommand': {
       const command = boundedText(args[0], 32).toLowerCase()
-      if (!remoteCommands.has(command) && parseSeekCommand(command) === null) break
-      if (parseSeekCommand(command) !== null && !companionState.playback.seekEnabled) break
+      if (!remoteCommands.has(command) && parseSeekCommand(command) === null && parseScrubCommand(command) === null) break
+      if ((parseSeekCommand(command) !== null || parseScrubCommand(command) !== null) && !companionState.playback.seekEnabled) break
       postToFrame('glasses', 'remote-command', {
         command: command === 'submit' ? 'enter' : command,
       })

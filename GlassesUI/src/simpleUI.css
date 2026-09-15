@@ -33,7 +33,7 @@
 :root[data-ui-theme="simpleUI"] .ambient--home-cover .ambient__veil,
 :root[data-ui-theme="simpleUI"] :is(.home-page, .browse-page, .detail-page)::before { display: none; }
 
-:root[data-ui-theme="simpleUI"] :is(.glass-panel, .track-panel, .toast, .player-state, .player-volume, .player-subtitle-error, .browse-toolbar, .empty-state__orb) {
+:root[data-ui-theme="simpleUI"] :is(.glass-panel, .track-panel, .toast, .player-state, .player-volume, .player-subtitle-error, .seek-preview, .browse-toolbar, .empty-state__orb) {
   color: #f0eee6;
   border: 1px solid #434c3d;
   background: #232920;
