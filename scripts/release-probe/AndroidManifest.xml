@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.jellyfinforrayneo.releaseprobe">
+    <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="29" />
+    <application android:label="tachi release probe" />
+    <instrumentation android:name="com.jellyfinforrayneo.releaseprobe.JniProbe"
+        android:targetPackage="com.jellyfinforrayneo.client" />
+</manifest>

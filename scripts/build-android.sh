@@ -92,4 +92,7 @@ if [[ "${BUILD_VARIANT}" == release || "${BUILD_VARIANT}" == all ]]; then
     fi
     "${SCRIPT_DIR}/verify-android.sh" "${release_apk}"
     python3 "${SCRIPT_DIR}/realtime-sbs-bundle.py" verify-apk "${PROJECT_DIR}/${release_apk}" --variant "${SBS_VARIANT}" --resolution "${DEPTH_RESOLUTION}"
+    if [[ "${SBS_VARIANT}" == full ]]; then
+        python3 "${SCRIPT_DIR}/verify-ort-jni.py" app/build/outputs/mapping/release
+    fi
 fi

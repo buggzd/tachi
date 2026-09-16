@@ -107,6 +107,8 @@ git status --short
 
 构建必须通过两套前端检查与生产 bundle、JVM 测试、Debug/Release lint、APK assembly 和 APK 边界检查。构建后 `git diff --exit-code` 必须通过，确保构建没有改写受 Git 跟踪的源码。前端产物不提交；构建会核对 APK 内两套前端的完整文件集合和字节内容与本次生成结果一致。
 
+Full 还必须通过 `verify-ort-jni.py` 的 R8/JNI 保留检查，并在**开启压缩与混淆的正式签名 Release** 上实际播放视频、开启实时 3D、确认持续更新、关闭/再次开启及退出重开。Debug、实验包、独立推理或只安装启动成功都不能替代此项。崩溃修复还需重启导出诊断，验证上一进程证据仍可见；未通过不得公开发布。
+
 确认 staged 内容后，使用聚焦的 Conventional Commit 并先推送 `main`：
 
 ```bash

@@ -541,6 +541,26 @@ Network addresses, DNS server values, server URL, account, media titles,
 Quick Connect code, session payload, credentials, response bodies, and
 arbitrary exception text are never exported.
 
+Diagnostic format 5 adds process-independent crash evidence. `TachiApplication`
+installs the Java fatal handler once, persists only the latest bounded summary
+(four causes, sixteen symbol-only frames each, time and version code), then delegates
+to Android's original handler. Messages, filenames and thread names are omitted.
+A finite background startup task reads it and up to eight system exit records for
+this exact process on Android 11+. Native crashes and ANRs are identified by system
+reason/status; system history can be evicted and cannot identify the old app version.
+On Android 12+, native tombstones are read up to 1 MiB each solely for fixed ORT/JNI
+failure signatures; raw protobufs, abort messages, memory and paths are never saved
+or shared. Unavailable/truncated evidence is explicit. Older Android versions retain
+Java summaries only. No crash uploads, new exported components or debugging flags
+are enabled; users share the existing diagnostic attachment after restarting.
+
+Full Release must keep the complete `ai.onnxruntime` JNI surface. The local QNN
+AAR has no consumer keep rules; native lookups include constructors, fields and
+enums invisible to R8. `verify-ort-jni.py` rejects stripped or renamed ORT APIs and
+a missing `NodeInfo(String, ValueInfo)` constructor. Debug/experimental playback,
+APK hashes and an install-only smoke test cannot replace testing realtime 3D in
+the minified, officially signed Release on device.
+
 ## Single-WebView stereo rendering
 
 `StereoVirtualScreen` does not create a second WebView. `StereoMirrorLayout`
