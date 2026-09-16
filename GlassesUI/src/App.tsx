@@ -1,4 +1,5 @@
 import { getCardShape, cardAspectRatios, type CardShape } from './browseLayout'
+import { focusWithNotification } from './focusNotification'
 import { describeJellyfinFailure } from './jellyfin'
 import { hasNativePlayback, NativePlayback, type PlaybackSurface } from './nativePlayback'
 import { useNativeSbs } from './useNativeSbs'
@@ -144,9 +145,10 @@ export function focusSpatialElement(element?: HTMLElement | null, options: Focus
   const rect = element.getBoundingClientRect()
   const style = window.getComputedStyle(element)
   if (rect.width <= 2 || rect.height <= 2 || style.visibility === 'hidden' || style.display === 'none') return false
+  const changed = currentSpatialFocus() !== element || !element.matches(spatialFocusSelector)
   clearSpatialFocus(element)
   element.setAttribute('data-spatial-focus', 'true')
-  element.focus(options)
+  focusWithNotification(element, options, changed)
   return document.activeElement === element || element.matches(spatialFocusSelector)
 }
 

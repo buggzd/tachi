@@ -208,6 +208,14 @@ back to `document.body`, and bubble from an element target. `GlassesUI` owns the
 single `data-spatial-focus="true"` marker. While video is active, the player
 scope prevents underlying pages from receiving input.
 
+An external Android WebView can update `activeElement` without emitting `focusin`
+while the phone owns window focus. `focusSpatialElement` uses
+`focusWithNotification` to observe the synchronous native focus event and supply
+one bubbling `focusin` only for a changed logical target when that event is
+missing. React preview and focus-region callbacks therefore follow remote
+selection in both Mirror 2D and SBS. Normal browser focus is not notified twice;
+reselecting the same logical target does not repeat the fallback notification.
+
 Seeking uses the existing `remoteCommand` bridge. Legacy `seek:N` deltas remain
 bounded to nonzero integers from -60 to 60. Preview transactions use
 `scrub:start:ID`, `scrub:preview:ID:SECONDS`, `scrub:commit:ID:SECONDS` and
