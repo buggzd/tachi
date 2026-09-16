@@ -1,16 +1,16 @@
 # 实时 SBS：主路线与构建
 
-2026-09-15 起，后续开发采用 **392 严格同帧 + GPU 背景局部液化**。用户已确认当前 3D 观感满意；算法参数和取舍见[主技术路线](SBS_TECHNICAL_ROUTES.md)。这次确定开发方向，不修改 Gradle、APK 或 GitHub 发布默认值；当前仍通过 `liquid` 实验配置启用。
+从 v0.4.0 起，Full 默认采用已测试的 **392×224 严格同帧 + GPU 背景局部液化** 完整配置。用户已确认当前 3D 观感满意；算法参数和取舍见[主技术路线](SBS_TECHNICAL_ROUTES.md)。发布默认切换不代表剩余设备验收已经完成，也不承诺稳定 24 Hz。
 
 ## 主路线构建与使用
 
 ```bash
-./scripts/build-sbs-experiment.sh liquid
+./scripts/build-android.sh release full
 ```
 
-必须显式传 `liquid`；脚本省略参数仍选择旧 `quality`。本地需备齐运行库和 `AndroidApp/realtime-sbs-runtime.json` 中 `experimentalModels.392` 对应模型。脚本启用 392×224、24 Hz 调度目标、GPU 预处理/深度处理/液化、两个捕获槽、固定主机输出和异步捕获观察，并启用补采后提交液化的 `captureBeforeLiquid` 顺序优化，执行 JVM 测试、lint、组装及资源校验。
+本地需备齐运行库和 `AndroidApp/realtime-sbs-runtime.json` 中 `experimentalModels.392` 对应模型（保留清单旧键以兼容实验工具）。Full 启用 392×224、24 Hz 调度目标、GPU 预处理/深度处理/液化、两个捕获槽、固定主机输出和异步捕获观察，并启用补采后提交液化的 `captureBeforeLiquid` 顺序优化。构建执行前端验证、JVM 测试、lint、组装及资源校验；签名配置见发布手册。Gradle 直接指定 `-PrealtimeSbs=true` 同样采用此配置，冲突参数会失败。
 
-输出 `AndroidApp/app/build/distributions/tachi-sbs-liquid-392.apk`，沿用开发应用 ID `com.jellyfinforrayneo.client.debug` 与本机 Debug 签名，关闭 debuggable。可覆盖同签名开发版并保留设置，不覆盖正式版。旧 `quality`（518/12 Hz）和 `motion`（392/24 Hz 非配对）仅供回归对照，不再优先推荐。
+正式签名输出为 `AndroidApp/app/build/outputs/apk/release/app-release.apk`，没有签名配置时只能得到 unsigned 包，不能发布。生产配置保持 `dailySbs=none`，关闭实验夹具和试验日志，Release 不可调试。`./scripts/build-sbs-experiment.sh liquid` 仍用于实验对照，输出开发 ID 的实验 APK；旧 `quality`（518/12 Hz）和 `motion`（392/24 Hz 非配对）仅供回归，不作为正式发行配置。
 
 先在手机选择 SBS 虚拟银幕，确认系统允许外接输出，再播放并开启「实时 3D」。视频信息显示实际深度预览。固定参数为位移强度 **0.85**、羽化 **96 px（每眼 1920 源宽基准）**、拉伸 **65%**。深度使用逐帧精确 P2/P98，无范围 EMA 和像素历史融合。
 
@@ -63,16 +63,15 @@ GPU 已承担 CHW/归一化、深度范围处理和局部液化；ORT QNN 产品
 模型与 SDK 不进入 Git。沿用 `AndroidApp/realtime-sbs-runtime.json` 固定的哈希，放在
 `StereoLab/.local/npu/`：
 
-- `depth-anything-v2-small-qnn-266-u16a-i8w.onnx`
+- `resolution-392/depth-anything-v2-small-qnn-392-u16a-i8w.onnx`（Full）；旧 266 模型仅供历史回归；
 - `onnxruntime-android-qnn-1.22.0.aar`
 - `qairt-runtime/arm64-v8a/` 中清单指定的九个厂商库；
 - `qpm-official/sdk/` 完整官方 SDK（含 `LICENSE.pdf`、`NOTICE.txt`、`QNN_NOTICE.txt`）；
-- liquid 实验所需的 `resolution-392/` 模型，路径与哈希同样见固定清单。
 
 这些文件实际保存在主工作区的忽略目录，不依赖临时 worktree。SDK 由开发者从官方获取并接受协议；
 仅应用内运行库随 Full APK 分发，不公开独立依赖 ZIP 或 `.so`。模型独立发布前需要核实转换产物许可。
 
-已实测 SM8850/V81，模型输入 266×154、U16 activations / I8 weights，QAIRT
+已实测 SM8850/V81，Full 模型输入 392×224、U16 activations / I8 weights，QAIRT
 2.50.40.260831 / QNN API 2.39。当前固定 SoC 配置不表示其他手机已经验证。
 构建逐一验证哈希，保留厂商 DSP ELF 原始字节；APK 只包含 ARM64。
 官方 SDK 需用户自行完成账号与许可步骤，不能提交 SDK、模型、账号数据或下载凭据。
@@ -103,4 +102,4 @@ AndroidApp/gradlew -p AndroidApp -PrealtimeSbs=true :app:assembleDebug
 `tachi-<version>-full-arm64-v8a.apk` 及校验文件。签名与依赖要求见[发布手册](RELEASE.md#实时深度构建输入)。
 
 
-以上通用 Full 命令仍对应旧 266 默认值，不等于 liquid 主路线包。将主路线纳入发布配置是后续独立变更。旧双档、CPU 稳定、实验开关和测量说明已收录于[历史构建快照](archive/2026-09-14-realtime-sbs-builds.md)，原始性能报告继续保留。
+以上 Full 命令采用正式 392 liquid 配置；需要改变算法开关时使用实验入口，生产 Full 拒绝偏离固定配置。旧双档、CPU 稳定、实验开关和测量说明已收录于[历史构建快照](archive/2026-09-14-realtime-sbs-builds.md)，原始性能报告继续保留。

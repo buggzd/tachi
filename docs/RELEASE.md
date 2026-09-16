@@ -46,7 +46,7 @@ Full 会保留 SDK 的 LICENSE、NOTICE、QNN_NOTICE，以及 ORT 和模型相�
 
 ```bash
 python3 scripts/realtime-sbs-bundle.py verify-local
-# liquid 实验构建所需的 392 模型
+# v0.4.0 Full 默认使用的 392 模型（可显式指定）
 python3 scripts/realtime-sbs-bundle.py verify-local --resolution 392
 ```
 
@@ -157,7 +157,7 @@ gh release upload v<versionName> --repo buggzd/tachi \
 ```
 
 不使用 `--clobber`：只补充尚不存在的 Full 附件，不覆盖既有附件。两版使用同一标签源码、
-版本、应用 ID 和签名。通用 Full 保留 266 默认配置；392 liquid 仍走实验构建入口，未在本次改动中提升为正式默认。
+版本、应用 ID 和签名。从 v0.4.0 起，Full 固定采用已测试的 392×224 liquid 完整配置：24 Hz 目标、双捕获槽、GPU 预处理与深度处理、固定输出、异步捕获和先捕获后液化；独立轮询线程、融合轮次和采样复用保持关闭。正式包不启用 daily 实验入口或调试夹具；24 Hz 是目标，不是稳定帧率承诺。
 
 ## 验收 GitHub Release
 

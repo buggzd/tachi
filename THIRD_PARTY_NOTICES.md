@@ -41,11 +41,11 @@ re-encoded without the original metadata.
 The license text is bundled in `CompanionUI/public/licenses/Apache-2.0.txt`.
 AndroidX annotations and the other transitive dependencies retain their original licenses.
 
-## Native playback laboratory
+## Native playback
 
-The separate native playback laboratory uses AndroidX Media3 ExoPlayer and its
-HLS module, version 1.5.1, under the Apache License 2.0. These modules are not yet
-dependencies of the shipping application.
+Both shipping variants (Lite and Full) and the native playback laboratory use
+AndroidX Media3 ExoPlayer and its HLS module, version 1.5.1, under the Apache
+License 2.0.
 
 - Source and license: <https://github.com/androidx/media/tree/1.5.1>
 - Apache License: <https://www.apache.org/licenses/LICENSE-2.0>
@@ -61,6 +61,7 @@ pinned by `AndroidApp/realtime-sbs-runtime.json`; these binaries are not tracked
   The model and runtime hashes identify the validated quantized deployment artifacts.
 
 Full APKs bundle the runtime as part of the application, not as a standalone SDK.
+From v0.4.0, Full uses the pinned 392×224 model and strictly paired liquid profile.
 QAIRT LICENSE.pdf, NOTICE.txt and QNN_NOTICE.txt are copied unchanged from the
 locally installed SDK into assets/realtime-sbs/licenses/qairt. ONNX Runtime MIT
 and third-party notices from v1.22.0 are included alongside the Apache-2.0 text

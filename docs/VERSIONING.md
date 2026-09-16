@@ -40,7 +40,7 @@ git tag -a v<versionName> -m "Release v<versionName>"
 git push origin main v<versionName>
 ```
 
-推送标签后，[Release Action](../.github/workflows/release.yml) 会重新验证版本、构建并校验正式签名 APK，生成 SHA-256 文件，再创建 GitHub Release。不要手工上传未经该工作流验证的 APK。
+推送标签后，[Release Action](../.github/workflows/release.yml) 会重新验证版本、构建并校验正式签名 Lite APK，生成 SHA-256 文件，再创建 GitHub Release。Full 在同一标签的干净源码上本地构建，使用相同正式证书，经包内容校验和设备验收后补充上传；具体流程见 [发布手册](RELEASE.md)。不得上传未经验证或临时签名的 APK。
 
 若已推送的标签在创建 Release 前因 CI 或基础设施故障失败，先在 `main` 修复工作流，再从 Actions 手动运行同一工作流并输入原标签。恢复任务仍会检出并验证原 annotated tag；不得移动或覆盖标签。
 

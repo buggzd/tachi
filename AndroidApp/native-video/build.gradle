@@ -4,19 +4,20 @@ android {
     compileSdk 35
     defaultConfig {
         minSdk 26
-        buildConfigField "boolean", "LIQUID_FUSED_ROUNDS", providers.gradleProperty("liquidFusedRounds").getOrElse("false")
-        buildConfigField "boolean", "LIQUID_CACHE_SAMPLES", providers.gradleProperty("liquidCacheSamples").getOrElse("false")
-        buildConfigField "boolean", "CAPTURE_BEFORE_LIQUID", providers.gradleProperty("captureBeforeLiquid").getOrElse("false")
-        buildConfigField "boolean", "GPU_POLL_OFF_MAIN", providers.gradleProperty("gpuPollOffMain").getOrElse("false")
+        buildConfigField "boolean", "FULL_PRODUCTION", rootProject.productionLiquid.toString()
+        buildConfigField "boolean", "LIQUID_FUSED_ROUNDS", rootProject.sbsOption("liquidFusedRounds", "false")
+        buildConfigField "boolean", "LIQUID_CACHE_SAMPLES", rootProject.sbsOption("liquidCacheSamples", "false")
+        buildConfigField "boolean", "CAPTURE_BEFORE_LIQUID", rootProject.sbsOption("captureBeforeLiquid", "false")
+        buildConfigField "boolean", "GPU_POLL_OFF_MAIN", rootProject.sbsOption("gpuPollOffMain", "false")
         buildConfigField "int", "DEPTH_SAMPLE_WIDTH", "${rootProject.depthProfile.width}"
         buildConfigField "int", "DEPTH_SAMPLE_HEIGHT", "${rootProject.depthProfile.height}"
-        buildConfigField "boolean", "ASYNC_CAPTURE_POLL", providers.gradleProperty("asyncCapturePoll").getOrElse("false")
-        buildConfigField "int", "DEPTH_HZ", providers.gradleProperty("depthHz").getOrElse("12")
-        buildConfigField "boolean", "GPU_PREPROCESS", providers.gradleProperty("gpuPreprocess").getOrElse("false")
-        buildConfigField "boolean", "PINNED_DEPTH_OUTPUT", providers.gradleProperty("pinnedDepthOutput").getOrElse("false")
-        buildConfigField "int", "CAPTURE_SLOTS", providers.gradleProperty("captureSlots").getOrElse("1")
-        buildConfigField "boolean", "ALIGNED_LIQUID", providers.gradleProperty("alignedLiquid").getOrElse("false")
-        buildConfigField "boolean", "GPU_DEPTH_STABILIZATION", providers.gradleProperty("gpuDepthStabilization").getOrElse("false")
+        buildConfigField "boolean", "ASYNC_CAPTURE_POLL", rootProject.sbsOption("asyncCapturePoll", "false")
+        buildConfigField "int", "DEPTH_HZ", rootProject.sbsOption("depthHz", "12")
+        buildConfigField "boolean", "GPU_PREPROCESS", rootProject.sbsOption("gpuPreprocess", "false")
+        buildConfigField "boolean", "PINNED_DEPTH_OUTPUT", rootProject.sbsOption("pinnedDepthOutput", "false")
+        buildConfigField "int", "CAPTURE_SLOTS", rootProject.sbsOption("captureSlots", "1")
+        buildConfigField "boolean", "ALIGNED_LIQUID", rootProject.sbsOption("alignedLiquid", "false")
+        buildConfigField "boolean", "GPU_DEPTH_STABILIZATION", rootProject.sbsOption("gpuDepthStabilization", "false")
     }
     buildFeatures { buildConfig true }
     compileOptions {
@@ -38,16 +39,16 @@ if (qnn) {
     dependencies { compileOnly files(new File(rootProject.projectDir.parentFile, "StereoLab/.local/npu/onnxruntime-android-qnn-1.22.0.aar")) }
 }
 
-if (!(providers.gradleProperty("captureSlots").getOrElse("1") in ["1", "2"]))
+if (!(rootProject.sbsOption("captureSlots", "1") in ["1", "2"]))
     throw new GradleException("captureSlots must be 1 or 2")
-if (providers.gradleProperty("gpuPreprocess").getOrElse("false") == "true"
-        && (!qnn || providers.gradleProperty("gpuDepthStabilization").getOrElse("false") != "true"))
+if (rootProject.sbsOption("gpuPreprocess", "false") == "true"
+        && (!qnn || rootProject.sbsOption("gpuDepthStabilization", "false") != "true"))
     throw new GradleException("gpuPreprocess requires QNN and GPU depth stabilization")
 
-if (!(providers.gradleProperty("depthHz").getOrElse("12") in ["12", "24"]))
+if (!(rootProject.sbsOption("depthHz", "12") in ["12", "24"]))
     throw new GradleException("depthHz must be 12 or 24")
 
-if (providers.gradleProperty("alignedLiquid").getOrElse("false") == "true"
+if (rootProject.sbsOption("alignedLiquid", "false") == "true"
         && (rootProject.depthProfile.width != 392 || !qnn
-        || providers.gradleProperty("gpuDepthStabilization").getOrElse("false") != "true"))
+        || rootProject.sbsOption("gpuDepthStabilization", "false") != "true"))
     throw new GradleException("alignedLiquid requires 392 QNN and GPU depth processing")

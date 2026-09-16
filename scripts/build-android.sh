@@ -5,13 +5,18 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly BUILD_VARIANT="${1:-debug}"
 readonly SBS_VARIANT="${2:-lite}"
-readonly DEPTH_RESOLUTION="${3:-266}"
+default_resolution=266
+[[ "${SBS_VARIANT}" != full ]] || default_resolution=392
+readonly DEPTH_RESOLUTION="${3:-${default_resolution}}"
 case "${DEPTH_RESOLUTION}" in
     266|392) ;;
-    *) echo "Depth resolution must be 266 or experimental 392" >&2; exit 2 ;;
+    *) echo "Depth resolution must be 266 (Lite) or 392 (Full)" >&2; exit 2 ;;
 esac
 if [[ "${SBS_VARIANT}" == lite && "${DEPTH_RESOLUTION}" != 266 ]]; then
-    echo "Experimental depth resolution requires full" >&2; exit 2
+    echo "Lite does not package a depth model; omit the resolution argument" >&2; exit 2
+fi
+if [[ "${SBS_VARIANT}" == full && "${DEPTH_RESOLUTION}" != 392 ]]; then
+    echo "Full production requires the validated 392 liquid profile" >&2; exit 2
 fi
 case "${SBS_VARIANT}" in
     lite) realtime_sbs=false ;;

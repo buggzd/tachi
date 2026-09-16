@@ -24,8 +24,8 @@
       "file": "resolution-392/depth-anything-v2-small-qnn-392-u16a-i8w.onnx",
       "sha256": "1b1ca86751a9ffef6449f5b8f25b6fa982467b217f8d3717d7fbcae3753fcc4f",
       "deviceValidated": true,
-      "deviceValidationScope": "native-player-lab QNN + SBS short playback; not product/external-display acceptance",
-      "deviceEvidence": "docs/performance/2026-09-13-resolution-sweep/README.md"
+      "deviceValidationScope": "SM8850/V81 product HEVC/VTT external SBS charging long run; not complete lifecycle, thermal or AV-sync acceptance",
+      "deviceEvidence": "docs/performance/2026-09-15-native-liquid-product/README.md"
     },
     "518": {
       "width": 518,

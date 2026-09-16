@@ -3,9 +3,23 @@ plugins {
     id "com.android.library" version "8.7.3" apply false
 }
 
-// One fixed shape per APK: capture, inference, stabilization and texture uploads
-// must use the same contract. Experimental models do not alter default releases.
-def resolution = providers.gradleProperty("depthResolution").getOrElse("266")
+// Full production uses the validated liquid profile without daily fixture/logging flags.
+ext.productionLiquid = providers.gradleProperty("realtimeSbs").getOrElse("false") == "true" &&
+        providers.gradleProperty("dailySbs").getOrElse("none") == "none"
+def liquidProfile = [depthResolution: "392", depthHz: "24", captureSlots: "2",
+        gpuDepthStabilization: "true", gpuPreprocess: "true", pinnedDepthOutput: "true",
+        asyncCapturePoll: "true", alignedLiquid: "true", captureBeforeLiquid: "true",
+        gpuPollOffMain: "false", liquidFusedRounds: "false", liquidCacheSamples: "false"]
+ext.sbsOption = { String name, String fallback ->
+    def explicit = providers.gradleProperty(name).orNull
+    if (productionLiquid && liquidProfile.containsKey(name)) {
+        if (explicit != null && explicit != liquidProfile[name])
+            throw new GradleException("Full production requires ${name}=${liquidProfile[name]}; use the experiment entrypoint for other profiles")
+        return liquidProfile[name]
+    }
+    return explicit ?: fallback
+}
+def resolution = sbsOption("depthResolution", "266")
 def depthManifest = new groovy.json.JsonSlurper().parse(file("realtime-sbs-runtime.json"))
 if (resolution != "266" && !depthManifest.experimentalModels.containsKey(resolution))
     throw new GradleException("Unsupported depthResolution")

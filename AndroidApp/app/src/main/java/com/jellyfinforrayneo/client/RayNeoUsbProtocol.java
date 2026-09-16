@@ -1,6 +1,6 @@
 package com.jellyfinforrayneo.client;
 
-/** Air 3s display-only HID reports; see docs/SBS_GEOMETRY_ANALYSIS.md for provenance. */
+/** Air 3s display-only HID reports; see docs/SBS_GEOMETRY.md for provenance. */
 final class RayNeoUsbProtocol
 {
     static final int REPORT_SIZE = 64;

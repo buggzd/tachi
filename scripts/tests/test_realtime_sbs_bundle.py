@@ -13,7 +13,7 @@ spec.loader.exec_module(bundle)
 
 
 class RealtimeBundleTests(unittest.TestCase):
-    def test_experimental_model_cannot_be_verified_as_default_full(self):
+    def test_default_full_requires_392_and_legacy_266_remains_explicit(self):
         manifest = {"modelSha256": hashlib.sha256(b"baseline").hexdigest(), "libraries": {},
                     "experimentalModels": {"392": {"file": "resolution-392/model.onnx",
                                                     "sha256": hashlib.sha256(b"high-res").hexdigest()}}}
@@ -23,9 +23,9 @@ class RealtimeBundleTests(unittest.TestCase):
             output.writestr("assets/realtime-sbs/depth.onnx", b"high-res")
             output.writestr("lib/arm64-v8a/libonnxruntime.so", b"ort")
             output.writestr("lib/arm64-v8a/libonnxruntime4j_jni.so", b"jni")
-        bundle.verify_apk(self.archive, "full", manifest, 392)
+        bundle.verify_apk(self.archive, "full", manifest)
         with self.assertRaises(ValueError):
-            bundle.verify_apk(self.archive, "full", manifest)
+            bundle.verify_apk(self.archive, "full", manifest, 266)
         with self.assertRaises(ValueError):
             bundle.model_entry(manifest, 518)
 
@@ -98,7 +98,7 @@ class RealtimeBundleTests(unittest.TestCase):
                         output.writestr("lib/arm64-v8a/libonnxruntime.so", b"ort")
                         output.writestr("lib/arm64-v8a/libonnxruntime4j_jni.so", b"jni")
                 if valid:
-                    bundle.verify_apk(self.archive, "full", manifest)
+                    bundle.verify_apk(self.archive, "full", manifest, 266)
                 else:
                     with self.assertRaises(ValueError):
-                        bundle.verify_apk(self.archive, "full", manifest)
+                        bundle.verify_apk(self.archive, "full", manifest, 266)

@@ -667,11 +667,11 @@ The isolated browser preview continues to report WebView limitations.
 
 ## Realtime native depth conversion
 
-The selected development route is **392×224 strictly paired RGB/depth with GPU local
+The Full production route from v0.4.0 is **392×224 strictly paired RGB/depth with GPU local
 background liquid warp**, strength 0.85, feather 96 px at a per-eye source width of
 1920, amount 65%. See [route decision](SBS_TECHNICAL_ROUTES.md) and
-[build and acceptance status](REALTIME_SBS.md). This decision does not change release
-build defaults. User approval of visual quality is separate from device acceptance.
+[build and acceptance status](REALTIME_SBS.md). Full uses this complete configuration
+with daily fixtures disabled. User approval of visual quality is separate from device acceptance.
 
 The liquid configuration runs GPU CHW preprocessing, QNN HTP inference and GPU
 per-frame P2/P98 normalization without range EMA or pixel history. Two bounded
@@ -700,7 +700,7 @@ cancels callbacks and quits the timer. Exported poll wake (including the request
 2 ms), GL queue and service durations measure host scheduling, not GPU execution.
 The switch defaults off: sequential three-minute A/B/A runs showed only a small
 uncontrolled difference; see [short comparison](performance/2026-09-15-gpu-poll-short/README.md).
-Liquid daily builds enable `captureBeforeLiquid`: after accepting the matching
+Full production and liquid daily builds enable `captureBeforeLiquid`: after accepting the matching
 RGB/depth and releasing its lease, attempt the existing bounded capture retry, then
 submit the pair's liquid field immediately on the GL queue. Draw callbacks likewise
 capture before submitting any pending field. A pair serial prevents duplicate field
@@ -722,8 +722,8 @@ the only account owner. Native 401/403 events use the existing unauthorized gene
 Legacy CPU stabilization, temporal filtering, unpaired daily profiles and their opt-in
 flags remain available as regression references. Their historical configuration and
 measurements are [archived](archive/2026-09-14-realtime-sbs-builds.md); they do not
-define the selected liquid route. Generic release defaults remain unchanged until a
-separate product configuration change.
+define the selected liquid route. Lite retains planar output; Full production rejects
+overrides that conflict with the validated 392 liquid profile.
 
 The existing phone diagnostic share includes whitelisted native playback samples: latest
 120 entries, at most 1 Hz plus status/subtitle-error changes. Samples survive player teardown

@@ -14,16 +14,16 @@ NOTICES = ("qairt/LICENSE.pdf", "qairt/NOTICE.txt", "qairt/QNN_NOTICE.txt",
            "onnxruntime-LICENSE.txt", "onnxruntime-ThirdPartyNotices.txt")
 
 
-def model_entry(manifest, resolution=266):
+def model_entry(manifest, resolution=392):
     if resolution == 266:
         return MODEL, manifest["modelSha256"]
     if resolution != 392:
-        raise ValueError("Unsupported experimental resolution")
+        raise ValueError("Unsupported depth resolution")
     entry = manifest["experimentalModels"][str(resolution)]
     return entry["file"], entry["sha256"]
 
 
-def expected_files(manifest, resolution=266):
+def expected_files(manifest, resolution=392):
     model, digest = model_entry(manifest, resolution)
     return {model: digest, ORT: manifest["ortSha256"], **{
         f"qairt-runtime/arm64-v8a/{name}": digest for name, digest in manifest["libraries"].items()
@@ -44,7 +44,7 @@ def verify_local(root, expected):
             raise ValueError("Missing QAIRT license or notice")
 
 
-def verify_apk(apk, variant, manifest, resolution=266):
+def verify_apk(apk, variant, manifest, resolution=392):
     with zipfile.ZipFile(apk) as bundle:
         # Signing/alignment needs little space; large gaps indicate an incremental ZIP with stale bytes.
         if apk.stat().st_size - sum(entry.compress_size for entry in bundle.infolist()) > 8 * 1024 * 1024:
@@ -73,7 +73,7 @@ def main():
     parser.add_argument("archive", type=Path, nargs="?")
     parser.add_argument("--root", type=Path, default=ROOT / "StereoLab/.local/npu")
     parser.add_argument("--variant", choices=("lite", "full"), default="full")
-    parser.add_argument("--resolution", choices=(266, 392), type=int, default=266)
+    parser.add_argument("--resolution", choices=(266, 392), type=int, default=392)
     args = parser.parse_args()
     manifest = json.loads((ROOT / "AndroidApp/realtime-sbs-runtime.json").read_text())
     try:
