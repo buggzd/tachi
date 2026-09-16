@@ -432,6 +432,24 @@ hardware timeout. Denial leaves the mode unconfirmed, without reopening the
 prompt on resume. An explicit selection can request consent again. Permission
 dialog lifecycle is kept separate from leaving the application.
 
+The manifest matches only Air 3s VID/PID for `USB_DEVICE_ATTACHED`, allowing
+Android's user-selected default handler to grant access and launch tachi on
+attachment. Runtime identity/interface validation still applies; intent extras
+are never treated as proof of consent. Default handling is system-dependent and
+may launch the app automatically. Installation itself grants no USB access.
+
+`StartupStereoPreparation` permits one early SBS preparation per Activity when
+the saved mode is stereo and a named, OS-disabled glasses display reports an
+actual 1920×1080 physical mode, before a Presentation is connected. Unknown
+geometry, an already-SBS display, and Mirror 2D never qualify. It uses the same
+USB permission and bounded command path. Permission waiting and subsequent
+waiting for system mirroring do not hide content or mark stereo applied. A
+successful early write is reused when the external window becomes available;
+the normal physical/View validation and transition deadline still apply. Denial
+or write failure is not retried by repeated display events. Explicit mode
+selection cancels pending work and returns to the normal mode path. This is a
+startup optimization, not a background service or a bypass of system consent.
+
 The state machine keeps these values separate:
 
 - `requestedMode`: saved phone preference
@@ -453,8 +471,8 @@ Only an active transition hides the WebView. The hardware/geometry deadline is
 8 seconds; USB permission waiting is outside it. A completed USB write alone
 cannot mark stereo applied. A fresh attempt occurs after an explicit selection,
 reconnect or lifecycle resume. Returning to an already-correct physical mode
-uses the measured output and avoids another EDID reconnect. The initial window
-must be measured before deciding to send a command.
+uses the measured output and avoids another EDID reconnect. Outside the startup
+preparation exception, the initial window must be measured before sending a command.
 
 Stereo requires both physical `Display.Mode` and the measured Presentation
 root to have a Full-SBS 32:9 aspect, even width, and at most two pixels of width
@@ -492,8 +510,9 @@ require the user to enable the system's **screen mirroring** control before
 external content is allowed. `glassesDisplayDisabled` identifies that connected
 but disabled output through a read-only display category. The phone asks the
 user to enable screen mirroring; it does not open XR Space or treat another
-app's startup as a remedy. While the system output is disabled, no further USB
-mode reports are sent. App fallback removes its black layer but cannot enable
+app's startup as a remedy. Except for the single startup preparation described
+above, no USB mode reports are sent while system output is disabled.
+App fallback removes its black layer but cannot enable
 an OS-disabled screen. The user's system permission action and the eye-mode
 command are separate requirements.
 
@@ -729,6 +748,7 @@ minimum device regression set for any device-facing change.
 | Display modes | Confirmed Mirror 2D and stereo switch, USB permission denied, occupied interface, exception, physical output timeout | Consent waiting stays visible; only a hardware transition hides the WebView; failures end the transition without automatic retries, while OS-disabled output still requires system mirroring |
 | SBS geometry | Command response/write before/after actual 3840×1080 output; same-ID resize; EDID display recreation; unsupported half-SBS/rotated/inset viewport | Stereo requires command and physical/View evidence; document/video survive a bounded transition; all four page edges and full playback controls remain visible after both switch directions; invalid output falls back once |
 | System display availability | OS disables a recreated external display, enable inside/outside the transition deadline | The phone identifies disabled output, no false applied state or automatic retry loop; app fallback does not claim to enable an OS-disabled display |
+| Startup consent | Saved SBS with disabled 1920×1080, already-SBS/unknown mode, saved 2D; grant/deny USB; repeated display events; enable mirroring before/after USB completion; change mode during consent; cold launch and attach with/without a default USB handler | At most one early SBS attempt, no duplicate command after a successful write, no applied mode before physical/View confirmation; denial/failure remains visible without retries; verify actual HyperOS prompt count and default-handler persistence on device |
 | Virtual screen controls | Fixed 90% size at all four depth levels, then fixed depth at 80–95%; rapid edits; pause/resume; cold restart | Left/right offsets are ±d/2, average center and vertical alignment stay fixed, size is independent, full image stays in each eye and saved settings restore |
 | Eye reference overlay | Close each eye alternately; compare baseline and increased disparity; leave settings, switch mode, disconnect, logout and kill renderer | Left eye sees L, right sees R; cyan plane moves closer relative to white reference, no persistent overlay after exit/recovery |
 | Stereo video composition | Moving frame-number video with DOM controls and text subtitles in both modes, while changing depth/size | Both eyes receive the same frame, video/subtitles/DOM receive identical transforms, no frozen video, duplicate sound/reporting, clipped edge or cross-eye leakage |

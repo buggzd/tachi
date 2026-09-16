@@ -18,6 +18,7 @@ final class RayNeoDisplayController
     private final DisplayModeStateMachine stateMachine;
     private final Listener listener;
     private final RayNeoUsbDisplayClient usbClient;
+    private final StartupStereoPreparation startup = new StartupStereoPreparation();
     private final Runnable stateTick = new Runnable()
     {
         @Override
@@ -35,6 +36,7 @@ final class RayNeoDisplayController
     private boolean paused;
     private boolean destroyed;
     private boolean commandWritten;
+    private boolean startupCommandPending;
     private boolean permissionDeclined;
     private boolean systemDisplayDisabled;
     private DisplayModeStateMachine.Action pendingGeometryAction = DisplayModeStateMachine.Action.NONE;
@@ -49,6 +51,16 @@ final class RayNeoDisplayController
             @Override
             public void onCommandWritten()
             {
+                if (startup.isPending())
+                {
+                    startupCommandPending = false;
+                    startup.complete(true);
+                    if (stateMachine.snapshot().connected && !paused)
+                    {
+                        execute(stateMachine.setConnected(true, SystemClock.uptimeMillis()));
+                    }
+                    return;
+                }
                 commandWritten = true;
                 confirmMeasuredMode();
             }
@@ -56,6 +68,7 @@ final class RayNeoDisplayController
             @Override
             public void onPermissionRequired()
             {
+                startupCommandPending = false;
                 stateMachine.waitForUsbPermission();
                 publish();
             }
@@ -69,19 +82,36 @@ final class RayNeoDisplayController
                 }
                 if (!granted)
                 {
+                    startup.complete(false);
                     permissionDeclined = true;
                     stateMachine.usbPermissionDenied();
                     publish();
                 }
                 else if (!paused)
                 {
-                    requestMode(stateMachine.snapshot().requestedMode);
+                    if (startup.isPending())
+                    {
+                        submitStartupCommand();
+                    }
+                    else
+                    {
+                        execute(stateMachine.requestMode(stateMachine.snapshot().requestedMode,
+                                SystemClock.uptimeMillis()));
+                    }
                 }
             }
 
             @Override
             public void onUnavailable()
             {
+                if (!destroyed && startup.isPending())
+                {
+                    startupCommandPending = false;
+                    startup.complete(false);
+                    stateMachine.onUsbFailure();
+                    publish();
+                    return;
+                }
                 if (!destroyed && stateMachine.snapshot().displayModeTransitioning)
                 {
                     execute(stateMachine.onUsbFailure());
@@ -115,13 +145,32 @@ final class RayNeoDisplayController
 
     void requestMode(String mode)
     {
+        usbClient.cancelPendingCommand();
+        startup.clear();
+        startupCommandPending = false;
         permissionDeclined = false;
         execute(stateMachine.requestMode(mode, SystemClock.uptimeMillis()));
     }
 
-    void setSystemDisplayDisabled(boolean disabled)
+    void setSystemDisplayDisabled(boolean disabled, int width, int height)
     {
         systemDisplayDisabled = disabled;
+        if (!destroyed && startup.begin(stateMachine.snapshot().requestedMode,
+                disabled, width, height, stateMachine.snapshot().connected))
+        {
+            // Prepare once using observed hardware geometry, before Presentation exists.
+            // Waiting for system mirroring is not a hardware transition or an applied mode.
+            submitStartupCommand();
+        }
+    }
+
+    private void submitStartupCommand()
+    {
+        if (!startupCommandPending && !usbClient.isPermissionPending())
+        {
+            startupCommandPending = true;
+            usbClient.request(true, true);
+        }
     }
 
     void setOutputGeometry(DisplayOutputGeometry next)
@@ -167,6 +216,15 @@ final class RayNeoDisplayController
             return;
         }
         paused = false;
+        if (startup.isPending())
+        {
+            if (!usbClient.isPermissionPending())
+            {
+                submitStartupCommand();
+            }
+            scheduleTick();
+            return;
+        }
         if (!permissionDeclined && !usbClient.isPermissionPending() && stateMachine.snapshot().connected)
         {
             execute(stateMachine.setConnected(true, SystemClock.uptimeMillis()));
@@ -181,7 +239,9 @@ final class RayNeoDisplayController
             paused = true;
             handler.removeCallbacks(stateTick);
             // USB consent and HyperOS screen mirroring are system UI, not a failed mode command.
-            if (!usbClient.isPermissionPending() && !systemDisplayDisabled)
+            if (!usbClient.isPermissionPending() && !systemDisplayDisabled
+                    && !startup.isPending()
+                    && !(startup.wasWritten() && !stateMachine.snapshot().connected))
             {
                 pendingGeometryAction = DisplayModeStateMachine.Action.NONE;
                 execute(stateMachine.pause());
@@ -211,18 +271,36 @@ final class RayNeoDisplayController
         {
             DisplayModeStateMachine.State before = stateMachine.snapshot();
             boolean stereo = action == DisplayModeStateMachine.Action.SWITCH_TO_3D;
+            if (!stereo && !startup.isPending())
+            {
+                startup.clear();
+            }
             commandWritten = false;
             pendingGeometryAction = DisplayModeStateMachine.Action.NONE;
-            if (measuredModeMatches(stereo))
+            if (startup.isPending())
+            {
+                stateMachine.waitForUsbPermission();
+            }
+            else if (measuredModeMatches(stereo))
             {
                 // Reuse a correct physical mode instead of causing another EDID reconnect
                 // after the user has just enabled HyperOS screen mirroring.
                 stateMachine.onStereoLayoutChanged(output.stereoReady, SystemClock.uptimeMillis());
                 stateMachine.onPhysicalModeObserved(stereo, SystemClock.uptimeMillis());
+                startup.clear();
             }
             else if (before.displayModeTransitioning && permissionDeclined)
             {
                 stateMachine.usbPermissionDenied();
+            }
+            else if (before.displayModeTransitioning && startup.hasFailed())
+            {
+                stateMachine.onUsbFailure();
+            }
+            else if (stereo && startup.wasWritten())
+            {
+                // Already sent: observe the new physical/View geometry without another EDID write.
+                commandWritten = true;
             }
             else if (before.displayModeTransitioning && output.viewWidth == 0 && !systemDisplayDisabled)
             {
@@ -232,6 +310,7 @@ final class RayNeoDisplayController
             }
             else if (!systemDisplayDisabled)
             {
+                startup.clear();
                 usbClient.request(stereo, before.displayModeTransitioning);
             }
         }
@@ -241,6 +320,10 @@ final class RayNeoDisplayController
     private void publish()
     {
         DisplayModeStateMachine.State next = stateMachine.snapshot();
+        if (next.displayModeApplied)
+        {
+            startup.clear();
+        }
         if (sameState(lastPublishedState, next))
         {
             return;

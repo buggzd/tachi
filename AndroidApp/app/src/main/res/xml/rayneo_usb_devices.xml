@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Air 3s only; runtime also validates the HID interface and endpoints. -->
+    <usb-device vendor-id="7099" product-id="44880" />
+</resources>

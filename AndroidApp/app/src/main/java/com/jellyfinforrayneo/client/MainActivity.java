@@ -149,7 +149,9 @@ public final class MainActivity extends Activity
                     public void onStereoOutputChanged(DisplayOutputGeometry output)
                     {
                         rayNeoDisplay.setSystemDisplayDisabled(glassesPresentation != null
-                                && glassesPresentation.isSystemDisplayDisabled());
+                                && glassesPresentation.isSystemDisplayDisabled(),
+                                glassesPresentation == null ? 0 : glassesPresentation.getDisabledModeWidth(),
+                                glassesPresentation == null ? 0 : glassesPresentation.getDisabledModeHeight());
                         rayNeoDisplay.setOutputGeometry(output);
                         pushCompanionState();
                     }

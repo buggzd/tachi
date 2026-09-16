@@ -92,6 +92,11 @@ final class RayNeoUsbDisplayClient
         return permissionPending;
     }
 
+    void cancelPendingCommand()
+    {
+        ++generation;
+    }
+
     void request(boolean stereo, boolean allowPermission)
     {
         if (destroyed)

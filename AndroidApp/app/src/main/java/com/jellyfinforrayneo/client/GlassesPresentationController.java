@@ -67,6 +67,8 @@ final class GlassesPresentationController
     private int activeDisplayId = Display.INVALID_DISPLAY;
     private boolean started;
     private volatile boolean systemDisplayDisabled;
+    private int disabledModeWidth;
+    private int disabledModeHeight;
 
     GlassesPresentationController(
             Activity activity,
@@ -200,6 +202,16 @@ final class GlassesPresentationController
         return systemDisplayDisabled;
     }
 
+    int getDisabledModeWidth()
+    {
+        return disabledModeWidth;
+    }
+
+    int getDisabledModeHeight()
+    {
+        return disabledModeHeight;
+    }
+
     private void refreshDisplay()
     {
         if (!started || activity.isFinishing())
@@ -267,7 +279,11 @@ final class GlassesPresentationController
             visibleIds.add(display.getDisplayId());
         }
         boolean previouslyDisabled = systemDisplayDisabled;
+        int previousWidth = disabledModeWidth;
+        int previousHeight = disabledModeHeight;
         systemDisplayDisabled = false;
+        disabledModeWidth = 0;
+        disabledModeHeight = 0;
         // Read-only Android connected-display category. Older releases return an empty array.
         for (Display display : displayManager.getDisplays("android.hardware.display.category.ALL_INCLUDING_DISABLED"))
         {
@@ -276,9 +292,22 @@ final class GlassesPresentationController
                     && DisplaySelector.isGlassesName(display.getName()))
             {
                 systemDisplayDisabled = true;
+                try
+                {
+                    Display.Mode mode = display.getMode();
+                    disabledModeWidth = mode.getPhysicalWidth();
+                    disabledModeHeight = mode.getPhysicalHeight();
+                }
+                catch (RuntimeException ignored)
+                {
+                    // Unknown geometry must never trigger an early hardware command.
+                    disabledModeWidth = 0;
+                    disabledModeHeight = 0;
+                }
             }
         }
-        if (previouslyDisabled != systemDisplayDisabled)
+        if (previouslyDisabled != systemDisplayDisabled || previousWidth != disabledModeWidth
+                || previousHeight != disabledModeHeight)
         {
             callback.onStereoOutputChanged(output);
         }
