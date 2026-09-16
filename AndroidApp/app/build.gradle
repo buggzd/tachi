@@ -61,6 +61,8 @@ def realtimeModel = new File(npuRoot, rootProject.depthProfile.file)
 def realtimeRuntime = new File(npuRoot, "qairt-runtime")
 def realtimeAssets = layout.buildDirectory.dir("generated/realtimeAssets")
 def realtimeLibraries = layout.buildDirectory.dir("generated/realtimeLibraries")
+def qairtNotices = ["LICENSE.pdf", "NOTICE.txt", "QNN_NOTICE.txt"]
+def qairtSdk = new File(npuRoot, "qpm-official/sdk")
 if (realtimeSbs) {
     def verifyHash = { File dependency, String expected ->
         if (!dependency.isFile()) throw new GradleException("Missing local realtime SBS dependency; see docs/REALTIME_SBS.md")
@@ -70,6 +72,10 @@ if (realtimeSbs) {
     verifyHash(realtimeModel, rootProject.depthProfile.sha256)
     verifyHash(new File(npuRoot, "onnxruntime-android-qnn-1.22.0.aar"), realtimeManifest.ortSha256)
     realtimeManifest.libraries.each { name, digest -> verifyHash(new File(realtimeRuntime, "arm64-v8a/${name}"), digest) }
+    qairtNotices.each { name ->
+        if (!new File(qairtSdk, name).isFile())
+            throw new GradleException("Missing QAIRT notice: ${name}; see docs/REALTIME_SBS.md")
+    }
 }
 
 android {
@@ -239,6 +245,12 @@ if (realtimeSbs) {
     android.sourceSets.main.jniLibs.srcDir(files(realtimeLibraries).builtBy("prepareRealtimeLibraries"))
     tasks.register("prepareRealtimeAssets", Sync) {
         from(realtimeModel) { rename { "depth.onnx" }; into("realtime-sbs") }
+        from(qairtSdk) { include qairtNotices; into("realtime-sbs/licenses/qairt") }
+        from(new File(repositoryRoot, "CompanionUI/public/licenses/Apache-2.0.txt")) {
+            into("realtime-sbs/licenses")
+        }
+        from(new File(repositoryRoot, "licenses")) { include "onnxruntime-*.txt"; into("realtime-sbs/licenses") }
+        from(new File(repositoryRoot, "THIRD_PARTY_NOTICES.md")) { into("realtime-sbs/licenses") }
         into(realtimeAssets)
     }
     android.sourceSets.main.assets.srcDir(files(realtimeAssets).builtBy("prepareRealtimeAssets"))

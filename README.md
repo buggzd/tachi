@@ -30,7 +30,7 @@ https://github.com/user-attachments/assets/5dd75ead-3682-4bb2-9181-6368b4049c73
 
 你需要一台可访问的 Jellyfin 服务器、RayNeo Air 系列眼镜及配套 Android 手机。源码构建还需要 JDK 17+、Node.js/npm、Python 3，以及 Android SDK platform 35 和 build tools 34.0.0。
 
-1. 从 [GitHub Releases](https://github.com/buggzd/tachi/releases) 下载正式签名的 ARM64 APK。双包发布提供 Lite（原生 2D／平面 SBS）与 Full（另含实时深度模型及 QNN，当前验证 SM8850/V81），详见 [构建说明](docs/REALTIME_SBS.md)。需要自行构建 Debug APK 时：
+1. 从 [GitHub Releases](https://github.com/buggzd/tachi/releases) 下载正式签名的 ARM64 APK。GitHub Actions 构建 Lite，维护者本地构建并验收后补充 Full；以实际 Release 附件为准。两版分别为 Lite（原生 2D／平面 SBS）与 Full（另含实时深度模型及 QNN，当前验证 SM8850/V81），详见 [构建说明](docs/REALTIME_SBS.md)。需要自行构建 Debug APK 时：
 
    ```bash
    git clone https://github.com/buggzd/tachi.git

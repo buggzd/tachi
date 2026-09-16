@@ -65,7 +65,12 @@ GPU 已承担 CHW/归一化、深度范围处理和局部液化；ORT QNN 产品
 
 - `depth-anything-v2-small-qnn-266-u16a-i8w.onnx`
 - `onnxruntime-android-qnn-1.22.0.aar`
-- `qairt-runtime/arm64-v8a/` 中清单指定的九个厂商库。
+- `qairt-runtime/arm64-v8a/` 中清单指定的九个厂商库；
+- `qpm-official/sdk/` 完整官方 SDK（含 `LICENSE.pdf`、`NOTICE.txt`、`QNN_NOTICE.txt`）；
+- liquid 实验所需的 `resolution-392/` 模型，路径与哈希同样见固定清单。
+
+这些文件实际保存在主工作区的忽略目录，不依赖临时 worktree。SDK 由开发者从官方获取并接受协议；
+仅应用内运行库随 Full APK 分发，不公开独立依赖 ZIP 或 `.so`。模型独立发布前需要核实转换产物许可。
 
 已实测 SM8850/V81，模型输入 266×154、U16 activations / I8 weights，QAIRT
 2.50.40.260831 / QNN API 2.39。当前固定 SoC 配置不表示其他手机已经验证。
@@ -93,9 +98,9 @@ AndroidApp/gradlew -p AndroidApp -PrealtimeSbs=true :app:assembleDebug
 ./scripts/build-android.sh all full
 ```
 
-两次构建共用 Gradle 输出位置，保存前一个 APK 后再构建下一版。GitHub 发布工作流会自动分别保存
-`tachi-<version>-lite-arm64-v8a.apk` 和 `tachi-<version>-full-arm64-v8a.apk` 与校验文件，
-CI 依赖包的准备见 [发布手册](RELEASE.md#实时深度构建输入)。
+两次构建共用 Gradle 输出位置，保存前一个 APK 后再构建下一版。GitHub Actions 只构建并发布
+`tachi-<version>-lite-arm64-v8a.apk`；维护者本地构建正式签名的 Full，验收后补充
+`tachi-<version>-full-arm64-v8a.apk` 及校验文件。签名与依赖要求见[发布手册](RELEASE.md#实时深度构建输入)。
 
 
 以上通用 Full 命令仍对应旧 266 默认值，不等于 liquid 主路线包。将主路线纳入发布配置是后续独立变更。旧双档、CPU 稳定、实验开关和测量说明已收录于[历史构建快照](archive/2026-09-14-realtime-sbs-builds.md)，原始性能报告继续保留。

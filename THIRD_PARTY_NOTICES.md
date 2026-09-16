@@ -10,7 +10,7 @@ Air SDK or XR Space application.
 - Historical SDK reference: the pinned download in `scripts/install-rayneo-sdk.sh`
 - Protocol analysis and scope: [SBS geometry and USB scope](docs/SBS_GEOMETRY.md#usb-模式控制)
 
-Vendor binaries are not redistributed in this repository or included in the
+RayNeo vendor binaries are not redistributed in this repository or included in the
 current APK. The historical SDK download helper remains for reproducible
 analysis and is not required by the build.
 
@@ -59,6 +59,16 @@ pinned by `AndroidApp/realtime-sbs-runtime.json`; these binaries are not tracked
 - Depth Anything V2 Small upstream model — Apache License 2.0 — <https://github.com/DepthAnything/Depth-Anything-V2>
 - Qualcomm QAIRT/QNN runtime — Qualcomm SDK terms accepted during local SDK installation.
   The model and runtime hashes identify the validated quantized deployment artifacts.
+
+Full APKs bundle the runtime as part of the application, not as a standalone SDK.
+QAIRT LICENSE.pdf, NOTICE.txt and QNN_NOTICE.txt are copied unchanged from the
+locally installed SDK into assets/realtime-sbs/licenses/qairt. ONNX Runtime MIT
+and third-party notices from v1.22.0 are included alongside the Apache-2.0 text
+and this attribution file. Local depth models are converted and quantized from
+the upstream Small model; their hashes do not establish redistribution rights.
+Before publishing a separate model asset, verify the exact source and conversion
+artifact terms. Neither the full SDK nor standalone QNN libraries/dependency ZIPs
+are published. GitHub Actions builds Lite without these dependencies.
 
 ## Jellyfin
 

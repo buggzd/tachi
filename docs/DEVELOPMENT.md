@@ -86,6 +86,12 @@ npm --prefix CompanionUI ci
 
 ## 构建 Android 应用
 
+保留 `lite` / `full` 名称：默认 `./scripts/build-android.sh debug` 为 Lite；
+本地 `./scripts/build-android.sh debug full` 包含实时 3D。
+Full 的模型与完整 QNN SDK 存放于主工作区 `StereoLab/.local/npu/`（Git 忽略），
+准备方式见[实时深度构建](REALTIME_SBS.md#本地依赖)。GitHub Actions 只构建 Lite，
+正式签名的 Full 由本地构建并补充发布，见[发布手册](RELEASE.md)。
+
 日常 Debug 验证与构建：
 
 ```bash

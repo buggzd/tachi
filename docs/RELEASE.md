@@ -21,7 +21,6 @@
    - `ANDROID_KEYSTORE_PASSWORD`
    - `ANDROID_KEY_ALIAS`
    - `ANDROID_KEY_PASSWORD`
-   - `REALTIME_SBS_BUNDLE_URL`（见下节；两个版本全部通过才发布）
 3. 使用 JDK 17+、Node.js 和 Android platform 35/build tools 34.0.0。
 4. 确认 `main` 已同步，且没有混入与本次发布无关的修改。
 
@@ -29,25 +28,30 @@ GitHub Secrets 是只写的 CI 配置，不是可下载的备份。不要仅依�
 
 ## 实时深度构建输入
 
-GitHub runner 没有开发机的 `.local/npu`。发布 Full 前，需要从已经验证的本地依赖生成 CI 输入包：
+GitHub Actions 只构建 Lite，不再下载或恢复 QNN 依赖，也不需要 `REALTIME_SBS_BUNDLE_URL`。
+Full 由维护者在本地构建，再将最终 APK 附加到同一 Release。
+
+主工作区的 `StereoLab/.local/npu/` 应实际保存依赖，不依赖临时 worktree：
+模型、ORT AAR、`qairt-runtime/arm64-v8a/` 和完整 `qpm-official/sdk/`。
+版本与 SHA-256 记录在 `AndroidApp/realtime-sbs-runtime.json`。其他开发者需自行从 Qualcomm
+官方渠道下载相应 SDK、接受协议并准备匹配的输入；不能把完整 SDK 或运行库依赖 ZIP 作为共享下载。
+
+`qpm-official/sdk/LICENSE.pdf` 第 1 条允许目标代码作为应用的一部分分发，不授予独立分发许可。
+Full 会保留 SDK 的 LICENSE、NOTICE、QNN_NOTICE，以及 ORT 和模型相关声明；不单独发布 QNN `.so`。
+模型不进入 Git。上游 Small 模型采用 Apache-2.0，但公开转换后的模型前仍须核实具体来源、
+转换产物及附带许可（包括随 Full APK 分发的情形）；核实完成后才可作为独立 Release 资源。
+本次构建规范化不发布模型或 APK，也不视为完成所有第三方许可审核。
+
+验证本地输入：
 
 ```bash
-python3 scripts/realtime-sbs-bundle.py pack StereoLab/.local/tachi-realtime-sbs-ci.zip
+python3 scripts/realtime-sbs-bundle.py verify-local
+# liquid 实验构建所需的 392 模型
+python3 scripts/realtime-sbs-bundle.py verify-local --resolution 392
 ```
 
-脚本只收集 `AndroidApp/realtime-sbs-runtime.json` 固定的模型、ORT AAR 和九个厂商库，逐个核对 SHA-256，
-不会打包整个 SDK、账号文件或编译缓存。将此 ZIP 放到你管理的、CI 可访问的 HTTPS 存储，
-把下载 URL 配置为仓库 Secret `REALTIME_SBS_BUNDLE_URL`。URL 可携带限时访问授权，应保证发布时未过期；
-不能将 URL 或 ZIP 提交 Git。模型/SDK 的分发须遵循各自许可，输入包不是公开的 Release 附件。
-
-工作流下载后先验证文件清单、大小和每个文件哈希，再安装到忽略目录。构建脚本会重建选定的 APK 容器，
-包校验还会拒绝超过 8 MiB 的 ZIP 开销，防止增量打包残留的无引用数据使 Lite 膨胀。缺失 Secret、过期链接、
-多余文件或哈希不匹配都会中止发布，不会只发布一半。换模型或 SDK 时，先完成设备验证，再更新清单和输入包。
-本地可验证输入包：
-
-```bash
-python3 scripts/realtime-sbs-bundle.py install StereoLab/.local/tachi-realtime-sbs-ci.zip
-```
+构建会核对模型及运行库哈希，并拒绝有超过 8 MiB 无引用 ZIP 开销的 APK，
+避免由 Full 切回 Lite 后遗留旧模型数据。缺失依赖或许可声明会使 Full 构建失败。
 
 Lite 不带模型及 QNN/ORT，但仍使用原生视频播放器，支持 2D 与平面 SBS；Full 增加实时深度转换，
 当前验证设备为 SM8850/V81。Lite 没有在线模型安装功能，需要实时 3D 时覆盖安装 Full。
@@ -125,15 +129,39 @@ git push origin v<versionName>
 标签推送后，[Signed Android release](../.github/workflows/release.yml) 会执行以下步骤：
 
 1. 验证 SemVer、`versionCode`、annotated tag 和 `main` 可达性；
-2. 恢复临时 keystore 和固定 QNN 输入，依次构建正式签名的 Lite/Full ARM64 Release APK；
+2. 恢复临时 keystore，构建正式签名的 Lite ARM64 Release APK（不需要模型或 QNN）；
 3. 验证构建没有改写源码、APK 内前端资源与本次构建一致且通过边界检查，并使用 `apksigner` 验签；
-4. 验证 Lite 无模型/QNN/ORT 残留、Full 模型和厂商库字节匹配清单；生成各自 SHA-256 文件并创建 GitHub Release。
+4. 验证 Lite 无模型/QNN/ORT 残留，生成 SHA-256 文件并创建 GitHub Release。
 
 CI 不会发布 unsigned APK，也不会回退到 Debug 证书。
 
+## 本地构建并补充 Full
+
+在与 Release 标签完全相同的干净提交上，配置与 CI 相同的正式签名材料（见开发指南），运行：
+
+```bash
+./scripts/verify-version.sh v<versionName>
+git diff --exit-code v<versionName> --
+./scripts/build-android.sh release full
+```
+
+没有签名配置时产物是 unsigned APK，不能发布；不能使用 Debug 证书代替。
+核对 `app-release.apk` 的签名证书与本文指纹、包名和版本，并完成目标设备验收。
+将它复制为 `tachi-<versionName>-full-arm64-v8a.apk`，在附件目录中生成校验文件：
+
+```bash
+shasum -a 256 tachi-<versionName>-full-arm64-v8a.apk > tachi-<versionName>-full-arm64-v8a.apk.sha256
+# 确认对应 Lite Release 已创建；仅上传最终应用，不上传 SDK、运行库或依赖 ZIP
+gh release upload v<versionName> --repo buggzd/tachi \
+  tachi-<versionName>-full-arm64-v8a.apk tachi-<versionName>-full-arm64-v8a.apk.sha256
+```
+
+不使用 `--clobber`：只补充尚不存在的 Full 附件，不覆盖既有附件。两版使用同一标签源码、
+版本、应用 ID 和签名。通用 Full 保留 266 默认配置；392 liquid 仍走实验构建入口，未在本次改动中提升为正式默认。
+
 ## 验收 GitHub Release
 
-确认 Actions 成功、Release 不是 Draft，并同时存在两个 APK 与各自 `.sha256`。下载后校验：
+确认 Actions 成功、Release 不是 Draft，至少有 Lite APK 与 `.sha256`；本地 Full 验收并补充后才提供双包。下载 Full 后校验：
 
 ```bash
 gh release download v<versionName> --repo buggzd/tachi
