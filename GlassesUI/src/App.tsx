@@ -3009,6 +3009,12 @@ export default function App() {
     return () => { detailGeneration.current += 1 }
   }, [jellyfin.loadDetail, page, searchEpisodeHint, selected.id])
 
+  useLayoutEffect(() => {
+    // Related titles reuse the detail route; reset after the new hero is mounted
+    // instead of relying on navigate(), which skips same-route transitions.
+    if (page === 'detail') window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [page, selected.id])
+
   const navigate = useCallback((next: Page) => {
     if (next === page) return
     setHistory((items) => [...items, page])
@@ -3191,7 +3197,7 @@ export default function App() {
       focusSpatialElement(target)
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [jellyfin.status, page, tutorialActive])
+  }, [jellyfin.status, page, selected.id, tutorialActive])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
