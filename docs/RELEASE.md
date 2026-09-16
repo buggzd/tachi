@@ -135,6 +135,8 @@ git push origin v<versionName>
 
 CI 不会发布 unsigned APK，也不会回退到 Debug 证书。
 
+Release 正文优先读取 `docs/releases/v<versionName>.md`，并附上 GitHub 自动生成的变更记录；发布前应按上一个正式标签总结整个版本周期，而不是只记录最后几次提交。没有对应文档时才使用通用双包说明。实时 3D 的兼容性必须明确写明目前仅在骁龙 8 Elite Gen 5（SM8850/V81）手机上测试过，不将实验或单一设备测量写成普遍保证。
+
 ## 本地构建并补充 Full
 
 在与 Release 标签完全相同的干净提交上，配置与 CI 相同的正式签名材料（见开发指南），运行：

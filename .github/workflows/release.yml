@@ -132,8 +132,13 @@ jobs:
             --verify-tag
             --generate-notes
             --title "tachi ${RELEASE_TAG}"
-            --notes "Lite 由 GitHub Actions 构建，不带模型及 QNN，支持原生 2D 与平面 SBS，不支持实时 2D 转 3D。Full 由维护者本地构建、验签后另行附加，包含实时 3D（当前验证 SM8850/V81）；若尚无 full 附件，则该版本尚未提供 Full。两版要求同签名、同包名和同版本，可覆盖切换并保留设置。请使用随附 SHA-256 校验下载。"
           )
+          notes_file="docs/releases/${RELEASE_TAG}.md"
+          if [[ -f "${notes_file}" ]]; then
+            release_flags+=(--notes-file "${notes_file}")
+          else
+            release_flags+=(--notes "Lite 支持原生 2D 与平面 SBS，不含深度模型或 QNN。Full 由维护者本地构建、验签后补充，提供实时 2D 转 3D；目前仅在骁龙 8 Elite Gen 5（SM8850/V81）手机上测试过，其他设备不保证兼容。请以实际附件为准，并使用随附 SHA-256 校验下载。")
+          fi
           if [[ "${RELEASE_TAG}" == *-* ]]; then
             release_flags+=(--prerelease)
           else
