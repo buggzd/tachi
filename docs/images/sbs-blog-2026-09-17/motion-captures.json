@@ -1,0 +1,426 @@
+{
+  "page": "StereoLab/mesh-trials.html",
+  "dataset": "quality-motion",
+  "fps": 30,
+  "frameNumbering": "zero-based",
+  "sourceSha256": "d6a5dfb03c4898313d7d67d5b608f18e19ae08c43d769e5b8051f6f37a7af319",
+  "captureMethod": "PNG exported from WebGL canvas.toDataURL; labels and same-coordinate crops added separately.",
+  "depth": "Offline float inference, p4 392x224, stride=1, delay=0, independent exact P2/P98; no pixel history or range EMA. Not Android QNN output.",
+  "records": [
+    {
+      "frame": 579,
+      "name": "source",
+      "strategy": "liquid",
+      "view": "source",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 1920,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    },
+    {
+      "frame": 579,
+      "name": "depth",
+      "strategy": "liquid",
+      "view": "depth",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 1920,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    },
+    {
+      "frame": 579,
+      "name": "pixel",
+      "strategy": "pixel",
+      "view": "eye",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 1920,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    },
+    {
+      "frame": 579,
+      "name": "liquid",
+      "strategy": "liquid",
+      "view": "eye",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 1920,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    },
+    {
+      "frame": 579,
+      "name": "cut",
+      "strategy": "cut",
+      "view": "eye",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 1920,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    },
+    {
+      "frame": 579,
+      "name": "elastic",
+      "strategy": "elastic",
+      "view": "eye",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 1920,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    },
+    {
+      "frame": 579,
+      "name": "sbs",
+      "strategy": "liquid",
+      "view": "sbs",
+      "dataset": {
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579"
+      },
+      "width": 3840,
+      "height": 1080,
+      "profile": "p4",
+      "strength": 0.85,
+      "featherPx": 96,
+      "amount": 0.65
+    }
+  ],
+  "figures": [
+    {
+      "file": "06-motion-rgb-depth.png",
+      "sources": [
+        "579-source.png",
+        "579-depth.png"
+      ],
+      "cropXYXY": null,
+      "resize": "lanczos",
+      "outputSize": [
+        1992,
+        788
+      ]
+    },
+    {
+      "file": "07-motion-cut.png",
+      "sources": [
+        "579-source.png",
+        "579-cut.png"
+      ],
+      "cropXYXY": [
+        535,
+        370,
+        1065,
+        665
+      ],
+      "resize": "nearest",
+      "outputSize": [
+        1992,
+        782
+      ]
+    },
+    {
+      "file": "08-motion-contours.png",
+      "sources": [
+        "579-source.png",
+        "579-pixel.png",
+        "579-elastic.png",
+        "579-liquid.png"
+      ],
+      "cropXYXY": [
+        535,
+        370,
+        1065,
+        665
+      ],
+      "resize": "nearest",
+      "outputSize": [
+        1992,
+        1388
+      ]
+    },
+    {
+      "file": "09-motion-sbs.png",
+      "sources": [
+        "579-sbs.png"
+      ],
+      "cropXYXY": null,
+      "resize": "none",
+      "outputSize": [
+        3840,
+        1220
+      ]
+    }
+  ],
+  "files": {
+    "579-cut.png": "f0daa51ebd62f0b090668fcc7b400335a19363c306b9339d49ea5818b9111ffe",
+    "579-depth.png": "807b911f5191ef0ea8936cde43c783e147cba558a4aae1fe401dee5b2b71f85c",
+    "579-elastic.png": "0341a67fad9813e96552a79d18026df949698a208920fa80aae4f9a06aed365b",
+    "579-liquid-debug.png": "5e0e76890cc26495e097c4a7ef37b801375b17b848a5c5cafda7a54c89c407ee",
+    "579-liquid.png": "fbc3ccab81030214f3496a6dd3c8a241f590957dacd7ef06acfeb74f98581fb7",
+    "579-p0-depth.png": "c221d3c2c6f7ca3077216a97b07bfafcb9ae9b1b4300991ba03000b34b3496b2",
+    "579-p0-liquid.png": "4aa0b2a1937bb14f1dbbb9149e18af3a31e67946578a1bbf40e5afe85bbb4cc7",
+    "579-p0-pixel.png": "637d3fbdecb5585d04ba2c93d4d89bee0500363200cb4d84191f34270875dee1",
+    "579-p1-depth.png": "d53f31bd38c9aa1e84c6b31c2ad287abc55638080a9a96e752ae04f18ca6d61c",
+    "579-p1-liquid.png": "8d71bd611352d29cee8b7dd1b1d38da2151462e0af7687663b7025877396c93f",
+    "579-p1-pixel.png": "10ba121cc00e0e65ee8892a66c9a19f0defb659556c600db96dae386b7a0e921",
+    "579-p2-depth.png": "70da2d18e60ff12ab5e99a26b847c12e35b6a6a8fd0296e19889bd99fc737e90",
+    "579-p2-liquid.png": "67f51d179d51a5865ee15b7dafd88fafbaa5b9ced4e13c56162ea01de5c5532e",
+    "579-p2-pixel.png": "bbb56c7ea947eea2d68100ef9bbbcd2060f4ffc1e29866759da77ec40d520919",
+    "579-p3-depth.png": "7a63f4d7aad936129a2ac40f0c8519870390d92d4a777d4562253b4678d07a7f",
+    "579-p3-liquid.png": "a1fc4cdd473429a83950cab56dcec8601bcc8ee7c8ea7d41aad208b91b3abf9a",
+    "579-p3-pixel.png": "26dc731815e43bbc9ab669947b0be418ca7ef9106411218c7403b48f73de4d76",
+    "579-p4-depth.png": "807b911f5191ef0ea8936cde43c783e147cba558a4aae1fe401dee5b2b71f85c",
+    "579-p4-liquid.png": "fbc3ccab81030214f3496a6dd3c8a241f590957dacd7ef06acfeb74f98581fb7",
+    "579-p4-pixel.png": "321a23e6873be706da3b9ce4f9278b2e3e16be3a97ed70d8683497a403569ec4",
+    "579-pixel.png": "321a23e6873be706da3b9ce4f9278b2e3e16be3a97ed70d8683497a403569ec4",
+    "579-sbs.png": "04169be11a45b56edaf856c1331deec7e7b15f5a3db7627a1fa3d30dd86be408",
+    "579-source.png": "ecc31dade90aa779dbb35c446a8695115f41bd03ada20117c671529eca6bcb15"
+  },
+  "pageErrors": [],
+  "profileCaptures": {
+    "records": [
+      {
+        "file": "579-p0-depth.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p0",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "579-p0-pixel.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p0",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p0-liquid.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p0",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p1-depth.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p1",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "579-p1-pixel.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p1",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p1-liquid.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p1",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p2-depth.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p2",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "579-p2-pixel.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p2",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p2-liquid.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "288",
+        "profile": "p2",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p3-depth.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p3",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "579-p3-pixel.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p3",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p3-liquid.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p3",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p4-depth.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "579-p4-pixel.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p4",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-p4-liquid.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "579-liquid-debug.png",
+        "ready": "true",
+        "frame": "579",
+        "depthIndex": "579",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": true
+      }
+    ],
+    "errors": []
+  },
+  "profileComparisons": {
+    "files": [
+      "10-motion-profiles-delayed.png",
+      "11-motion-profiles-aligned.png"
+    ],
+    "cropXYXY": [
+      535,
+      370,
+      1065,
+      665
+    ],
+    "resize": "none",
+    "notes": "p0/p1/p2 use index288 => source frame576; p3/p4 use index579. Profiles are combined settings, not resolution-only ablations."
+  },
+  "pipeline": {
+    "file": "12-motion-pipeline.png",
+    "frame": 579,
+    "leftCorrectionMap": "579-left-correction.png",
+    "normalizedNativeDepth": "579-depth-p4-native.png",
+    "correctionSource": "makeBackgroundLiquid output, before RG16F upload; subtract base shift .016*.85*(d-.5), multiply1920; reverse bottom-to-top field rows for display.",
+    "colorScalePx": [
+      0,
+      12
+    ],
+    "maximumExtraLeftPx": 10.56287805522084,
+    "stages": [
+      "1. RGB / 捕获并保留",
+      "2. 模型深度 / 范围映射",
+      "3. 背景修正 / 八轮扩散",
+      "4. 重建诊断 / 实际取色位置",
+      "5. 左眼画面 / 关闭诊断",
+      "6. 双眼SBS / 分眼输出"
+    ]
+  },
+  "rendererSourceHashes": {
+    "StereoLab/mesh-trials.js": "f9e3f5ada068d20ef8d4c3b7cc3f80a3bee8ac3176a27fe07852edc5b0045478",
+    "StereoLab/background-liquid.mjs": "54dfc30c71452cd40028f8f39bdb1c7cdf3bf07e54efe0c600169892c55f0e06",
+    "StereoLab/mesh-shaders.mjs": "fb8df2181503ae73cbd3bf38f141e78fefa7f1c1dccb0af9a9b4440979c674a7",
+    "StereoLab/quality-trials-core.mjs": "fdcdb48861e10b715edb28b4a9d5d98ffca24f705073ee0262f08325a64df9d6"
+  }
+}
