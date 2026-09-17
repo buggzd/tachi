@@ -807,6 +807,6 @@
     ],
     "scale": 2,
     "resize": "nearest-neighbour",
-    "notes": "p0-p2 index287 => source574; p3-p4 index576. Only p0/p1 controls pixel history alone. Other profiles change several variables."
+    "notes": "RGB576: p0-p2 index287 => depth sampled from574; p3-p4 index576. Figures demonstrate frame mismatch, not evidence that temporal fusion causes the visible tearing. p0/p1 both mismatched; other profiles change multiple settings. Historical filenames retained; titles corrected."
   }
 }
