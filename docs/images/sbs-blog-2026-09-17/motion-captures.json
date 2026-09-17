@@ -193,6 +193,22 @@
     }
   ],
   "files": {
+    "576-p0-depth.png": "38b74d76c422e059fa0fcc1db9743fb7b5aa6a552452f49b6b9c473133062a43",
+    "576-p0-liquid.png": "6214ae8918ba89d80ccdd09a5e3e0ae071186b44dd5e5d9c9c30bb77b718e65b",
+    "576-p0-pixel.png": "25f062c60068efc6770f2679e8448ba97d02eb83d32b95fc4cfa215177f81cdc",
+    "576-p1-depth.png": "8e7c95ca0351deffa3be695518036282bb79fcebf61da8705f96fce280e0d199",
+    "576-p1-liquid.png": "961c0320c1a52d8e5704c9abed36dc2641b0b3ff1bf38ae8da9d048329cb6c2d",
+    "576-p1-pixel.png": "741822a4267aeb1b95cf2c07e4692590dddaa6ada9bde9733130932620d2205b",
+    "576-p2-depth.png": "6aa21a711b336b251a7a972d5dcc637368d5ae86cdf2bd3167978c26a883967f",
+    "576-p2-liquid.png": "ebb1f74b0aa9e688c77172eb7b695c07c24b2d91e60852477133c3c0ebf87275",
+    "576-p2-pixel.png": "8e0a71c7e2ed8436aaa156edd0d5996ceccaa9e79a75579583e4c1eefb6bb499",
+    "576-p3-depth.png": "e488b86d7ffa0f9411a3d89a75f59355638c9aaca4445978d4a6d1e5f0e81736",
+    "576-p3-liquid.png": "13ee71f89dd69ea02b080c6269837a2a9bff23112108d0fe173c5ad5ac9173aa",
+    "576-p3-pixel.png": "65907011e3ff7c23ab052446bc266c4e737aa53b7ab675ab8b3b60e142d3eaa1",
+    "576-p4-depth.png": "92932b58c3c8d8322e3bda143f89b56c3069cb9306ee6717845873e1d5b1f7c8",
+    "576-p4-liquid.png": "793b7eff7dfe9a9588ac04d6ec80fe8eedc51cef9d8b126cb2492ddddbefb792",
+    "576-p4-pixel.png": "d94b7e85b8c0c4f7eed03d97300e8fdd8ce5bc0dbea0086ef0d5eda98c8b5b2a",
+    "576-source.png": "d50a1cf3c746815753546be0e0592b8b3c71dbc9903890f837653978c0046a0c",
     "579-cut.png": "f0daa51ebd62f0b090668fcc7b400335a19363c306b9339d49ea5818b9111ffe",
     "579-depth.png": "807b911f5191ef0ea8936cde43c783e147cba558a4aae1fe401dee5b2b71f85c",
     "579-elastic.png": "0341a67fad9813e96552a79d18026df949698a208920fa80aae4f9a06aed365b",
@@ -215,7 +231,23 @@
     "579-p4-pixel.png": "321a23e6873be706da3b9ce4f9278b2e3e16be3a97ed70d8683497a403569ec4",
     "579-pixel.png": "321a23e6873be706da3b9ce4f9278b2e3e16be3a97ed70d8683497a403569ec4",
     "579-sbs.png": "04169be11a45b56edaf856c1331deec7e7b15f5a3db7627a1fa3d30dd86be408",
-    "579-source.png": "ecc31dade90aa779dbb35c446a8695115f41bd03ada20117c671529eca6bcb15"
+    "579-source.png": "ecc31dade90aa779dbb35c446a8695115f41bd03ada20117c671529eca6bcb15",
+    "74-p0-depth.png": "01a2bb3e89ad1ac5f9830c8293101c72690fd366986d79c6efb1435c73f777d9",
+    "74-p0-liquid.png": "c400a66e82c6e95c8caff64d49ad05af0a08b4839576519acd6e61ca10466c53",
+    "74-p0-pixel.png": "3112b5d30016aeb2abf20f2f241236fa037d12761e03b3fce2439bf3516603cf",
+    "74-p1-depth.png": "5e1da04388f5a8dc4a6f51a3de2b41f01ce299e77db486a7316e5d2957d8a45d",
+    "74-p1-liquid.png": "cad96fc4e877deeee9df25a1cfd08b0f4f403740a047923a8801564833bf9411",
+    "74-p1-pixel.png": "8e3de81735150e7aace191c6a2ba7b5df22ecc5a5a19f36bb4c7839c86d249eb",
+    "74-p2-depth.png": "9d2d134fb059cdcc5a96bc55a44c019b86d05dedca0792127a4d7cdb86f540fc",
+    "74-p2-liquid.png": "825f83c89a5ed2df72acbb7576d28a33a4de6993ee6f9a6950a7cdababb3d885",
+    "74-p2-pixel.png": "39a0c68e96c5f6c6e55b770fd148f8b029fe71695221dce7ba093e19bcb31c7f",
+    "74-p3-depth.png": "0e427d4e870dddf7280e9d122075dbd6bd90310ed2e0eb7539d7264aed29abd8",
+    "74-p3-liquid.png": "e6ba1b28c5819ab67fea6462609462c34b5d4f0291d06ad265413c8f964b95ef",
+    "74-p3-pixel.png": "45a2ef16d1d06263fa1188afb49875c41cf2edbc094461df01de4376ef0bd71a",
+    "74-p4-depth.png": "a8a4e76339596da8e940d35fece3789765425f5035da1c2f796c9a5f3125eb61",
+    "74-p4-liquid.png": "21f1dee18b70f02ef2209301012a0954a109e9a00ece0896bff6f0bded0d82b0",
+    "74-p4-pixel.png": "32f3688f9db5087d5da4580e72bc63210f9efedbcd5517838db5ec88892940a2",
+    "74-source.png": "7253a77d4003957595459e4202198b43899920aa0f109f4ebadbaab508eea1ee"
   },
   "pageErrors": [],
   "profileCaptures": {
@@ -388,14 +420,13 @@
       "10-motion-profiles-delayed.png",
       "11-motion-profiles-aligned.png"
     ],
-    "cropXYXY": [
-      535,
-      370,
-      1065,
-      665
+    "frame": 74,
+    "cropXYXY": null,
+    "displaySize": [
+      640,
+      360
     ],
-    "resize": "none",
-    "notes": "p0/p1/p2 use index288 => source frame576; p3/p4 use index579. Profiles are combined settings, not resolution-only ablations."
+    "notes": "Full-frame views. p0-p2 index36 => source72; p3-p4 index74. Depth nearest-neighbour; RGB Lanczos."
   },
   "pipeline": {
     "file": "12-motion-pipeline.png",
@@ -422,5 +453,360 @@
     "StereoLab/background-liquid.mjs": "54dfc30c71452cd40028f8f39bdb1c7cdf3bf07e54efe0c600169892c55f0e06",
     "StereoLab/mesh-shaders.mjs": "fb8df2181503ae73cbd3bf38f141e78fefa7f1c1dccb0af9a9b4440979c674a7",
     "StereoLab/quality-trials-core.mjs": "fdcdb48861e10b715edb28b4a9d5d98ffca24f705073ee0262f08325a64df9d6"
+  },
+  "additionalCaptures74And576": {
+    "records": [
+      {
+        "file": "74-source.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "source",
+        "debug": false
+      },
+      {
+        "file": "74-p0-depth.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p0",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "74-p0-pixel.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p0",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p0-liquid.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p0",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p1-depth.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p1",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "74-p1-pixel.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p1",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p1-liquid.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p1",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p2-depth.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p2",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "74-p2-pixel.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p2",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p2-liquid.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "36",
+        "profile": "p2",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p3-depth.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p3",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "74-p3-pixel.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p3",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p3-liquid.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p3",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p4-depth.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "74-p4-pixel.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p4",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "74-p4-liquid.png",
+        "ready": "true",
+        "frame": "74",
+        "depthIndex": "74",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-source.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "source",
+        "debug": false
+      },
+      {
+        "file": "576-p0-depth.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p0",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "576-p0-pixel.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p0",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p0-liquid.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p0",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p1-depth.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p1",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "576-p1-pixel.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p1",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p1-liquid.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p1",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p2-depth.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p2",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "576-p2-pixel.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p2",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p2-liquid.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "287",
+        "profile": "p2",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p3-depth.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p3",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "576-p3-pixel.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p3",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p3-liquid.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p3",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p4-depth.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "depth",
+        "debug": false
+      },
+      {
+        "file": "576-p4-pixel.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p4",
+        "strategy": "pixel",
+        "view": "eye",
+        "debug": false
+      },
+      {
+        "file": "576-p4-liquid.png",
+        "ready": "true",
+        "frame": "576",
+        "depthIndex": "576",
+        "profile": "p4",
+        "strategy": "liquid",
+        "view": "eye",
+        "debug": false
+      }
+    ],
+    "errors": []
+  },
+  "previous579ProfileComparisons": {
+    "files": [
+      "10-motion-profiles-delayed.png",
+      "11-motion-profiles-aligned.png"
+    ],
+    "cropXYXY": [
+      535,
+      370,
+      1065,
+      665
+    ],
+    "resize": "none",
+    "notes": "p0/p1/p2 use index288 => source frame576; p3/p4 use index579. Profiles are combined settings, not resolution-only ablations. Superseded illustration layout; original captures retained, figures10/11 now use frame74."
+  },
+  "historyComparisons": {
+    "files": [
+      "13-motion-history-control.png",
+      "14-motion-history-detail.png"
+    ],
+    "frame": 576,
+    "cropXYXY": [
+      535,
+      370,
+      1065,
+      665
+    ],
+    "scale": 2,
+    "resize": "nearest-neighbour",
+    "notes": "p0-p2 index287 => source574; p3-p4 index576. Only p0/p1 controls pixel history alone. Other profiles change several variables."
   }
 }
