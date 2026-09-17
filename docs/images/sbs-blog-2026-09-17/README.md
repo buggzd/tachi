@@ -44,3 +44,16 @@ p0/p2/p3 有像素历史融合与范围 EMA；p1 无像素历史，但保留范�
 `12-motion-pipeline.png` 的六个阶段均使用第 579 帧：RGB、p4 归一化深度、左眼背景额外修正、实际 shader 诊断、左眼正常结果、SBS。`579-depth-p4-native.png` 保留 392×224 灰度输入；`579-left-correction.png` 是实际 `makeBackgroundLiquid` Float32 输出在 RG16F 上传前，减去基础视差并换算成每眼 1920 源宽像素后的可视化。色标固定 0–12 px，黑到橙，本帧最大约 10.5629 px；不是自动拉满对比度，也不是 shader 耗时或置信度图。
 
 流程图中的深度与修正场采用最近邻展示，其余画面等比缩小；完整 SBS 不裁切、不改变宽高比。页面 debug 模式的绿色表示额外拉伸，紫色表示 gather 回退，并非真实遮挡恢复正确率。原始完整 canvas 和各档位参数继续记录在 `motion-captures/` 与 `motion-captures.json` 中。
+
+## 优化过程的时间轴与局部放大
+
+`16`–`19` 为原创 SVG 示意，替换正文原来的 Mermaid 流程图；PNG 按 2 倍尺寸导出用于 Markdown。色块宽度不表示实测耗时，不是 GPU profiler 截图。
+
+| 文件（SVG / PNG） | 说明 |
+| --- | --- |
+| `16-optimization-pipeline` | A/B 两帧在 GPU、主机交接、NPU、双槽和显示缓存之间的重叠关系；NPU 串行 |
+| `17-neighborhood-sharing` | 8×8 工作组的重复邻域读取与 10×10 协作加载，八轮扩散不变 |
+| `18-capture-retry-timeline` | 当前帧仍可用、槽位刚释放时的补采机会；新帧到达使旧机会失效 |
+| `19-capture-order-timeline` | 原顺序、等待绘制的第一版、补采后立即液化的保留版；橙色斜纹表示等待 |
+
+图中性能数字来自正文链接的捕获顺序短测报告；不把主机绘制提交解释为物理屏幕延迟。
