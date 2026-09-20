@@ -27,6 +27,7 @@ v0.4.0 Full 已采用 392 同帧 liquid 完整配置，剩余设备验收仍按�
 
 | 资料 | 内容与用途 |
 | --- | --- |
+| [Android 手柄接入调研](archive/2026-09-20-android-gamepad-research.md) | 系统输入 API、连接方式、tachi 适配建议与验证边界；尚未实现手柄适配 |
 | [手机实时 SBS 技术博客](archive/2026-09-17-realtime-sbs-blog.md) | 图文解释 depth-surge-3d、qinglong-vr、iw3 与 tachi 的合成差异、同帧局部液化和实验取舍；截至 2026-09-17 的技术快照 |
 | [v0.4.0 发布说明](releases/v0.4.0.md) | Full 392 liquid 配置、连接与焦点修复，以及发布验收边界 |
 | [开发历史索引](archive/README.md) | Jellyfin Web 调研、SBS 早期设计、性能审阅和 UI 修改记录 |
