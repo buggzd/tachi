@@ -811,6 +811,7 @@ function App() {
               haptics={haptics}
               playback={nativeState?.playback}
               searchActive={Boolean(nativeState?.searchInputActive)}
+              gamepadNavigation={nativeState?.gamepadNavigation === true}
               searchQuery={nativeState?.searchQuery || ''}
               onExit={() => go('home')}
               onCommand={(command, useHaptics = haptics) => callNative('remoteCommand', command, useHaptics)}
@@ -1827,6 +1828,7 @@ function TouchpadScreen({
   haptics,
   playback,
   searchActive,
+  gamepadNavigation,
   searchQuery,
   onExit,
   onCommand,
@@ -1913,7 +1915,7 @@ function TouchpadScreen({
   }, [searchActive, searchQuery])
 
   useEffect(() => {
-    if (!searchActive) return undefined
+    if (!searchActive || gamepadNavigation) return undefined
     setIntroVisible(false)
     const timer = window.setTimeout(() => {
       try {
@@ -1923,7 +1925,7 @@ function TouchpadScreen({
       }
     }, 120)
     return () => window.clearTimeout(timer)
-  }, [searchActive])
+  }, [searchActive, gamepadNavigation])
 
   const vibrate = (pattern = 8) => {
     if (haptics && navigator.vibrate) navigator.vibrate(pattern)
@@ -2245,6 +2247,7 @@ function TouchpadScreen({
         {!pureBlack && <span className="touchpad-intro__mark"><i /></span>}
         <strong>{t("触控已就绪")}</strong>
         <small>{t("在任意位置开始")}</small>
+        <small>{t("手柄：方向键／左摇杆移动，下方键确认，右方键返回")}</small>
       </div>
 
       <footer className={introVisible || searchActive ? 'is-visible' : ''}>

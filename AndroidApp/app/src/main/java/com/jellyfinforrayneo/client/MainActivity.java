@@ -18,6 +18,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.WindowInsets;
@@ -52,6 +53,7 @@ public final class MainActivity extends Activity
     private JellyfinAuthenticationService authentication;
     private JellyfinDiscoveryService discovery;
     private RemoteCommandRouter remoteCommands;
+    private GamepadInputController gamepadInput;
     private VolumeKeyController volumeKeys;
     private RayNeoDisplayController rayNeoDisplay;
     private GlassesPresentationController glassesPresentation;
@@ -78,6 +80,9 @@ public final class MainActivity extends Activity
     private boolean glassesWebReady;
     private boolean glassesSearchActive;
     private boolean destroyed;
+    private boolean resumed;
+    private boolean phoneSearchKeyboard;
+    private boolean gamepadNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -95,6 +100,8 @@ public final class MainActivity extends Activity
         restoreSessionState();
 
         remoteCommands = new RemoteCommandRouter();
+        gamepadInput = new GamepadInputController(this, this::sendGamepadCommand,
+                this::updateGamepadInput);
         AudioManager mediaAudio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         if (mediaAudio != null)
         {
@@ -201,6 +208,24 @@ public final class MainActivity extends Activity
                     {
                         return buildGlassesBootstrap();
                     }
+
+                    @Override
+                    public boolean onControllerKey(KeyEvent event)
+                    {
+                        return handleControllerKey(event, true);
+                    }
+
+                    @Override
+                    public boolean onControllerMotion(MotionEvent event)
+                    {
+                        return gamepadInput != null && gamepadInput.motion(event);
+                    }
+
+                    @Override
+                    public void onInputFocusChanged()
+                    {
+                        getWindow().getDecorView().post(MainActivity.this::updateGamepadInput);
+                    }
                 });
         glassesPresentation.setStereoScreenSettings(sessions.getStereoScreenSettings());
         remoteCommands.setSink(glassesPresentation::dispatchCommand);
@@ -295,6 +320,7 @@ public final class MainActivity extends Activity
     protected void onResume()
     {
         super.onResume();
+        resumed = true;
         updatePhoneSurface();
         diagnosticLog.record(DiagnosticLog.Event.APP_RESUMED);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
@@ -307,6 +333,7 @@ public final class MainActivity extends Activity
         {
             rayNeoDisplay.onResume();
         }
+        updateGamepadInput();
     }
 
     @Override
@@ -319,6 +346,8 @@ public final class MainActivity extends Activity
     @Override
     protected void onPause()
     {
+        resumed = false;
+        updateGamepadInput();
         diagnosticLog.record(DiagnosticLog.Event.APP_PAUSED);
         if (rayNeoDisplay != null)
         {
@@ -342,6 +371,7 @@ public final class MainActivity extends Activity
     {
         diagnosticLog.record(DiagnosticLog.Event.APP_DESTROYED);
         destroyed = true;
+        if (gamepadInput != null) gamepadInput.close();
         if (diagnosticExporter != null) diagnosticExporter.close();
         if (companionBackground != null)
         {
@@ -373,6 +403,7 @@ public final class MainActivity extends Activity
     @Override
     public void onBackPressed()
     {
+        usePhoneNavigation();
         if ("touchpad".equals(webScreen))
         {
             remoteCommands.submit("back");
@@ -400,9 +431,15 @@ public final class MainActivity extends Activity
             {
                 return true;
             }
+            if (GamepadInputController.isControllerKey(event))
+            {
+                // Never send an inactive controller into the legacy keyboard/reconnect queue.
+                return handleControllerKey(event, false) || super.dispatchKeyEvent(event);
+            }
             if (event.getAction() == KeyEvent.ACTION_DOWN)
             {
                 String command = commandForKey(event.getKeyCode());
+                if (command != null) usePhoneNavigation();
                 if (command != null && remoteCommands.submit(command))
                 {
                     return true;
@@ -410,6 +447,57 @@ public final class MainActivity extends Activity
             }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent event)
+    {
+        return gamepadInput != null && gamepadInput.motion(event)
+                || super.dispatchGenericMotionEvent(event);
+    }
+
+    private boolean handleControllerKey(KeyEvent event, boolean glassesWindow)
+    {
+        if (gamepadInput == null || !GamepadInputController.isControllerKey(event)) return false;
+        boolean handled = gamepadInput.key(event);
+        // A temporarily unavailable remote must not fall through to WebView's default focus,
+        // or turn a controller B into the phone's Activity back action.
+        boolean reserved = GamepadInputController.buttonForKey(event.getKeyCode()) >= 0
+                && (glassesWindow || ("touchpad".equals(webScreen) && !phoneSearchKeyboard));
+        return handled || reserved;
+    }
+
+    private void updateGamepadInput()
+    {
+        if (gamepadInput == null) return;
+        boolean focus = hasWindowFocus() || (glassesPresentation != null
+                && glassesPresentation.hasInputFocus());
+        gamepadInput.setEnabled(!destroyed && resumed && focus && !phoneSearchKeyboard
+                && "touchpad".equals(webScreen) && sessions != null && sessions.hasSession()
+                && glassesWebReady && "ready".equals(glassesRuntimeState)
+                && glassesPresentation != null && glassesPresentation.isConnected()
+                && !glassesPresentation.isSystemDisplayDisabled()
+                && rayNeoDisplay != null && !rayNeoDisplay.getState().displayModeTransitioning);
+    }
+
+    private boolean sendGamepadCommand(String command)
+    {
+        if (!gamepadNavigation)
+        {
+            gamepadNavigation = true;
+            pushCompanionState();
+        }
+        return remoteCommands.submitImmediate(command);
+    }
+
+    private void usePhoneNavigation()
+    {
+        if (gamepadInput != null) gamepadInput.interrupt();
+        if (gamepadNavigation)
+        {
+            gamepadNavigation = false;
+            pushCompanionState();
+        }
     }
 
     private void restoreSessionState()
@@ -486,6 +574,9 @@ public final class MainActivity extends Activity
 
     private void clearActiveRuntime()
     {
+        if (gamepadInput != null) gamepadInput.interrupt();
+        phoneSearchKeyboard = false;
+        gamepadNavigation = false;
         glassesPresentation.setStereoTestPattern(false);
         remoteCommands.clear();
         playback.clear();
@@ -672,7 +763,7 @@ public final class MainActivity extends Activity
                     remoteCommands.clear();
                 }
                 pushCompanionState();
-                if (glassesSearchActive && !wasSearchActive
+                if (glassesSearchActive && !wasSearchActive && !gamepadNavigation
                         && ("home".equals(webScreen) || "settings".equals(webScreen)
                                 || "touchpad".equals(webScreen)))
                 {
@@ -812,6 +903,7 @@ public final class MainActivity extends Activity
             result.put("mediaReady", mediaReady);
             result.put("touchpadReady", glassesWebReady && mediaReady);
             result.put("searchInputActive", glassesSearchActive);
+            result.put("gamepadNavigation", gamepadNavigation);
             result.put("searchQuery", glassesSearchQuery);
             result.put("displayMode", displayState.requestedMode);
             result.put("activeDisplayMode", displayState.activeMode);
@@ -871,6 +963,8 @@ public final class MainActivity extends Activity
 
     private void pushCompanionState()
     {
+        if (!glassesSearchActive) phoneSearchKeyboard = false;
+        updateGamepadInput();
         if (companionWebView != null && !destroyed)
         {
             companionWebView.pushState();
@@ -944,6 +1038,7 @@ public final class MainActivity extends Activity
     public void onWindowFocusChanged(boolean hasFocus)
     {
         super.onWindowFocusChanged(hasFocus);
+        getWindow().getDecorView().post(this::updateGamepadInput);
         if (hasFocus && sessions != null && !destroyed)
         {
             updatePhoneSurface();
@@ -1820,9 +1915,16 @@ public final class MainActivity extends Activity
                 {
                     return;
                 }
-                if (remoteCommands.submit(command) && haptic)
+                if (remoteCommands.submit(command))
                 {
-                    companionWebView.haptic("back".equals(command));
+                    if (gamepadInput != null) gamepadInput.interrupt();
+                    if ("search-keyboard-visible".equals(command)) phoneSearchKeyboard = true;
+                    if ("search-keyboard-hidden".equals(command)) phoneSearchKeyboard = false;
+                    boolean wasGamepad = gamepadNavigation;
+                    if (!"search-keyboard-hidden".equals(command)) gamepadNavigation = false;
+                    if (wasGamepad != gamepadNavigation) pushCompanionState();
+                    else updateGamepadInput();
+                    if (haptic) companionWebView.haptic("back".equals(command));
                 }
             });
         }
@@ -1839,6 +1941,7 @@ public final class MainActivity extends Activity
             {
                 if (glassesSearchActive)
                 {
+                    if (gamepadInput != null) gamepadInput.interrupt();
                     remoteCommands.submitSearchText(query);
                 }
             });
@@ -1870,6 +1973,7 @@ public final class MainActivity extends Activity
                     return;
                 }
                 webScreen = requested;
+                updateGamepadInput();
                 if (!"settings".equals(requested))
                 {
                     glassesPresentation.setStereoTestPattern(false);

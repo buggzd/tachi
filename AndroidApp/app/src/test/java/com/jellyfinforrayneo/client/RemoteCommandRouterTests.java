@@ -12,6 +12,25 @@ import static org.junit.Assert.assertTrue;
 public final class RemoteCommandRouterTests
 {
     @Test
+    public void immediateInputNeverQueuesWhenNotReadyOrWhenSinkRejects()
+    {
+        RemoteCommandRouter router = new RemoteCommandRouter();
+        List<String> delivered = new ArrayList<>();
+        assertFalse(router.submitImmediate("left"));
+        router.setSink(command -> delivered.add(command));
+        assertFalse(router.submitImmediate("enter"));
+        router.setReady(true);
+        assertTrue(delivered.isEmpty());
+        assertTrue(router.submitImmediate("submit"));
+        assertFalse(router.submitImmediate("javascript:alert(1)"));
+        router.setSink(command -> false);
+        assertFalse(router.submitImmediate("back"));
+        router.setSink(command -> delivered.add(command));
+        assertEquals(List.of("enter"), delivered);
+        assertEquals(0, router.pendingCount());
+    }
+
+    @Test
     public void submit_AllowsOnlyBoundedWhitelist()
     {
         RemoteCommandRouter router = new RemoteCommandRouter();

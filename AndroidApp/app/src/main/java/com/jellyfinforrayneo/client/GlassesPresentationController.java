@@ -7,6 +7,8 @@ import android.hardware.display.DisplayManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -31,6 +33,12 @@ final class GlassesPresentationController
         void onGlassesMessage(GlassesMessage message);
 
         void onNativePlaybackState(org.json.JSONObject state);
+
+        boolean onControllerKey(KeyEvent event);
+
+        boolean onControllerMotion(MotionEvent event);
+
+        void onInputFocusChanged();
     }
 
     private final Activity activity;
@@ -103,6 +111,12 @@ final class GlassesPresentationController
     void refresh()
     {
         refreshDisplay();
+    }
+
+    boolean hasInputFocus()
+    {
+        return presentation != null && presentation.isShowing() && presentation.getWindow() != null
+                && presentation.getWindow().getDecorView().hasWindowFocus();
     }
 
     void stop()
@@ -370,6 +384,25 @@ final class GlassesPresentationController
         {
             super(activity, display);
             setCancelable(false);
+        }
+
+        @Override
+        public boolean dispatchKeyEvent(KeyEvent event)
+        {
+            return callback.onControllerKey(event) || super.dispatchKeyEvent(event);
+        }
+
+        @Override
+        public boolean dispatchGenericMotionEvent(MotionEvent event)
+        {
+            return callback.onControllerMotion(event) || super.dispatchGenericMotionEvent(event);
+        }
+
+        @Override
+        public void onWindowFocusChanged(boolean hasFocus)
+        {
+            super.onWindowFocusChanged(hasFocus);
+            callback.onInputFocusChanged();
         }
 
         @Override

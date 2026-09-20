@@ -259,6 +259,50 @@ the matching key-up is consumed without another change. The application does
 not queue a directionless volume read behind Android's default key dispatch, so
 a rapid down-to-up or up-to-down reversal cannot publish the preceding direction.
 
+### Android controllers
+
+`GamepadInputController` receives key and generic-motion events from both the phone
+Activity and glasses Presentation on the main looper. It recognizes gamepad,
+joystick and D-pad source masks/device capabilities, preserving ordinary keyboard
+and volume handling. The pure `GamepadNavigation` state machine maps D-pad keys/HAT
+axes and the left stick to directions, A/center/Enter to confirm, and B/controller
+Back to glasses back. Other controls keep their system handling; no vendor SDK,
+Bluetooth scan permission, raw HID protocol, second WebView or player is added.
+
+Navigation requires a resumed Activity, focus in either application window, the
+phone touchpad surface, a valid session, a ready glasses catalog/WebView, an available
+external display and no hardware-mode transition. Loss of eligibility cancels holds.
+Owned releases remain consumed afterward. Mapped controller keys in the glasses
+window, or the phone remote outside text input, cannot fall through to default
+WebView navigation while delivery is unavailable.
+
+At most eight devices share one active controller and one repeat task. Directions
+start immediately and repeat after 350 ms at 120 ms intervals; OS repeats add no
+actions. Confirm/back execute once per press. D-pad key/HAT duplicates share direction
+state; key directions take priority over HAT, then left stick. Stick activation/release
+thresholds are 0.55/0.35 with device flat ranges respected and dominant-axis hysteresis;
+these are initial parameters, not device measurements. At most 32 historical motion
+samples are folded before the current sample, with at most one move per motion batch.
+Unused neutral axis events are not navigation. InputManager callbacks cancel removed/
+changed devices; switching controllers blocks the old hold until release/neutral.
+
+`RemoteCommandRouter.submitImmediate` validates the existing whitelist and never
+queues input, including when its sink rejects delivery. Failed delivery cancels
+repeats. Phone remote commands, confirm/back, session cleanup, mode transitions,
+renderer loss and foreground/focus changes interrupt old holds. Controller connection
+changes do not themselves change playback or session identity.
+
+Phone state adds a transient `gamepadNavigation` boolean for the last navigation
+source, not a device connection claim. A controller-opened search suppresses phone
+autofocus and the native IME request. Explicit phone search focus temporarily owns
+text input; blur restores controller eligibility, using the existing bounded
+search-keyboard messages. No controller identity, descriptor, Bluetooth address or
+input text is persisted or exported. Both languages include controller guidance and
+a tutorial skip hint. Desktop verification covers the implementation; physical
+controller, IME and dual-display acceptance remain pending (no ADB/device checks).
+
+### Remote tutorial
+
 The remote tutorial is a separate glasses React surface, shown once after the
 catalog becomes ready and reachable again through the side navigation. It
 consumes the existing bubbling keyboard event only, not the paired
@@ -781,6 +825,7 @@ minimum device regression set for any device-facing change.
 | Eye reference overlay | Close each eye alternately; compare baseline and increased disparity; leave settings, switch mode, disconnect, logout and kill renderer | Left eye sees L, right sees R; cyan plane moves closer relative to white reference, no persistent overlay after exit/recovery |
 | Stereo video composition | Moving frame-number video with DOM controls and text subtitles in both modes, while changing depth/size | Both eyes receive the same frame, video/subtitles/DOM receive identical transforms, no frozen video, duplicate sound/reporting, clipped edge or cross-eye leakage |
 | Browse and focus | Home, search, filters, folders, details, long lists, dialogs, remote back; partial episode exit, short session, multiple unfinished episodes, cross-season resume, first downward episode entry in both themes | Exactly one visible spatial focus target exists and overlays prevent background input |
+| Controllers (device acceptance pending) | Bluetooth first; Xbox/PlayStation/Switch-style mappings, USB/receiver separately; D-pad key/HAT, stick drift/diagonals, held confirm/back, neutral/reconnect, phone input, both window focus paths, search IME, tutorial, direct/HLS controls, account/renderer/mode changes | One action per press, bounded repeats only while eligible, no stale replay or default double navigation; one glasses focus/player/reporting stream; source-based search autofocus behaves correctly |
 | UI language | Chinese/English system, manual override, both surfaces, cold start/logout/reset, system locale change, renderer recovery and direct/HLS playback in 2D/SBS | Saved language agrees across surfaces; server metadata and subtitle content remain unchanged; no catalog reload, session switch, lost focus or duplicate WebView/video/audio/reporting |
 | UI themes | Default install, saved simpleUI cold launch, rapid switches during browse/direct play/HLS/tutorial in both 2D and SBS, disconnect/reconnect, renderer recovery, logout, reset preferences | Both surfaces and phone system bars agree; focus, document, video, audio and reporting remain single-instance; theme survives logout/recovery and reset restores liquid-glass; simpleUI has no decorative loops or blur |
 | Phone settings | Import/replace/cancel/reset wallpaper, malformed/oversized files, rotated photos, all crop ratios, zoom/position/opacity extremes, drag, save/cancel/Back, stale revision, cold launch, renderer recovery, theme changes, About links and installed version | Failed imports/cancelled edits retain the image and layout; saved crop restores; clear resets layout; only Liquid phone pages render it; wallpaper edits preserve glasses/video; source metadata stays private; links open fixed public pages outside the WebView; version matches the APK |

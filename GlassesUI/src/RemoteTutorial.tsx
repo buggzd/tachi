@@ -129,6 +129,7 @@ export default function RemoteTutorial({ onExit, onComplete, simpleUi = false }:
               <div className="tutorial-welcome__facts"><span><Smartphone size={19} />  {t("单手就能操作")}</span><span><Sparkles size={19} />  {t("大约 1 分钟")}</span></div>
               {choices(t("单击，开始练习"), t("稍后再学"))}
               <small className="tutorial-choice-hint">{t("左右滑动选择 · 单击确认 · 双击跳过")}</small>
+              <small className="tutorial-choice-hint">{t("手柄：方向键／左摇杆移动，下方键确认，右方键跳过教学")}</small>
             </div>
             <div className="tutorial-welcome__art">
               <div className="tutorial-orbit" aria-hidden="true" />

@@ -57,6 +57,12 @@ final class RemoteCommandRouter
         return submitNormalized("search-text:" + normalized);
     }
 
+    synchronized boolean submitImmediate(String value)
+    {
+        String command = normalize(value);
+        return command != null && ready && sink != null && sink.dispatch(command);
+    }
+
     synchronized boolean submitVolume(int percentage)
     {
         int bounded = Math.max(0, Math.min(100, percentage));
