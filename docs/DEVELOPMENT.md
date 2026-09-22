@@ -342,3 +342,5 @@ Debug 包开启 WebView 调试。日志只应筛选通用 Activity、WebView、�
 `node CompanionUI/scripts/verify-covers.mjs` 使用真实卡片组件验证两种主题下的竖版合集、横版、方形、横幅与缺失元数据条目的统一比例，以及不同视口下分集长文件名不撑大卡片、标题截断和聚焦后的等宽尺寸。无服务器预览入口为 GlassesUI 的 `/tests/cards-preview.html`。布局共用 `getCardShape`，数据来自 `PrimaryImageAspectRatio`；自动比例使用 Jellyfin Web 的中位数和标准比例归一规则，不能以视频分辨率或 Folder／BoxSet 类型替代。
 
 `node CompanionUI/scripts/verify-focus-recovery.mjs` 验证禁用／隐藏／inert 默认焦点的四向恢复、详情操作导航、返回按钮确认，以及异步失去播放能力后的焦点恢复。
+
+`node CompanionUI/scripts/verify-detail-focus.mjs` 使用真实 App 和延迟的模拟 Jellyfin 响应，验证剧集详情加载完成后默认聚焦播放、加载期间手动焦点不被抢回，以及无分集时的可用焦点回退。

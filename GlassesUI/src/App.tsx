@@ -3185,6 +3185,9 @@ export default function App() {
 
   useEffect(() => {
     if (page === 'player' || tutorialActive) return
+    // Series play targets arrive with their episodes. Do not select the Back
+    // fallback while the primary action is temporarily disabled by loading.
+    if (page === 'detail' && (detailLoading || (!detail && !detailError))) return
     const timer = window.setTimeout(() => {
       const tutorialReturnTarget = restoreTutorialFocus.current
         ? document.querySelector<HTMLElement>('.tutorial-launch')
@@ -3199,7 +3202,7 @@ export default function App() {
       focusSpatialElement(target)
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [jellyfin.status, page, selected.id, tutorialActive])
+  }, [jellyfin.status, page, selected.id, tutorialActive, detailLoading, detail, detailError])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
