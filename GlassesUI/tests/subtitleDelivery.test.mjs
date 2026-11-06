@@ -48,7 +48,8 @@ function playbackFixture(t, { codec = 'ass', external = false, container = 'mkv'
 function expectSubtitle(plan, index, format = 'ass') {
   const url = new URL(plan.subtitleUrl)
   assert.equal(url.pathname, `/jellyfin/Videos/item/source/Subtitles/${index}/Stream.${format}`)
-  assert.equal(url.searchParams.get('api_key'), session.accessToken)
+  assert.equal(url.searchParams.get('ApiKey'), session.accessToken)
+  assert.equal(url.searchParams.has('api_key'), false)
   assert.equal(url.searchParams.get('startPositionTicks'), '0')
   assert.equal(url.searchParams.get('copyTimestamps'), 'false')
   assert.equal(url.searchParams.get('addVttTimeMap'), 'false')

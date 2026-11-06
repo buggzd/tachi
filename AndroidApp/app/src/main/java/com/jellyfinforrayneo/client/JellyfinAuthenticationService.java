@@ -262,7 +262,6 @@ final class JellyfinAuthenticationService
             connection.setRequestProperty("Accept", "application/json");
             String authorization = authorizationHeader();
             connection.setRequestProperty("Authorization", authorization);
-            connection.setRequestProperty("X-Emby-Authorization", authorization);
 
             if (body != null)
             {

@@ -663,9 +663,8 @@ export class JellyfinClient {
   ): Promise<T> {
     const headers = new Headers(init.headers)
     headers.set('Accept', 'application/json')
-    headers.set('X-Emby-Token', this.session.accessToken)
     headers.set(
-      'X-Emby-Authorization',
+      'Authorization',
       `MediaBrowser Client="tachi", Device="RayNeo Air", DeviceId="${this.session.deviceId}", Version="${__APP_VERSION__}", Token="${this.session.accessToken}"`,
     )
     if (init.body) headers.set('Content-Type', 'application/json')
@@ -738,13 +737,22 @@ export class JellyfinClient {
       maxWidth: wide ? 1920 : 720,
       maxHeight: wide ? 1080 : 1080,
       quality: 88,
-      api_key: this.session.accessToken,
+      ApiKey: this.session.accessToken,
     })
   }
 
   private absoluteUrl(path: string) {
-    if (/^https?:\/\//i.test(path)) return path
-    return `${this.session.serverUrl}/${path.replace(/^\/+/, '')}`
+    try {
+      const base = new URL(`${this.session.serverUrl.replace(/\/+$/, '')}/`)
+      const absolute = /^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')
+      const url = new URL(absolute || path.startsWith(base.pathname) ? path : path.replace(/^\/+/, ''), base)
+      if (url.origin === base.origin && url.pathname.startsWith(base.pathname)
+        && !url.username && !url.password && !url.hash && !path.includes('\\')
+        && !/%2f|%5c/i.test(url.pathname)) return url.toString()
+    } catch {
+      // URL parser exceptions may contain the server-provided URL or credentials.
+    }
+    throw new JellyfinRequestError('response', t("Jellyfin 已响应，但返回的数据格式无法解析。"))
   }
 
   private authenticatedUrl(path: string, query: Record<string, string | number | boolean | undefined> = {}) {
@@ -752,7 +760,13 @@ export class JellyfinClient {
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== '') url.searchParams.set(key, String(value))
     })
-    url.searchParams.set('api_key', this.session.accessToken)
+    // Server-supplied playback URLs can retain an old token or its legacy key.
+    for (const key of [...url.searchParams.keys()]) {
+      if (['api_key', 'apikey', 'x-emby-token', 'x-mediabrowser-token'].includes(key.toLowerCase())) {
+        url.searchParams.delete(key)
+      }
+    }
+    url.searchParams.set('ApiKey', this.session.accessToken)
     return url.toString()
   }
 
@@ -1235,15 +1249,6 @@ export class JellyfinClient {
     ) ?? transcodeResponse?.MediaSources?.[0]
     const transcodePath = transcodedSource?.TranscodingUrl
       ?? (!canDirectPlay ? source.TranscodingUrl : undefined)
-    const transcodeEndpoint: PlaybackEndpoint | undefined = transcodePath
-      ? {
-          url: this.videoUrl(transcodePath, !subtitleRequiresBurnIn),
-          playSessionId: transcodeResponse?.PlaySessionId || directResponse.PlaySessionId || '',
-          playMethod: 'Transcode',
-          transcoding: true,
-          subtitleBurnedIn: subtitleRequiresBurnIn,
-        }
-      : undefined
     const directEndpoint: PlaybackEndpoint | undefined = canDirectPlay
       ? {
           url: this.directStreamUrl(
@@ -1260,6 +1265,21 @@ export class JellyfinClient {
           subtitleBurnedIn: false,
         }
       : undefined
+    let transcodeEndpoint: PlaybackEndpoint | undefined
+    if (transcodePath) {
+      try {
+        transcodeEndpoint = {
+          url: this.videoUrl(transcodePath, !subtitleRequiresBurnIn),
+          playSessionId: transcodeResponse?.PlaySessionId || directResponse.PlaySessionId || '',
+          playMethod: 'Transcode',
+          transcoding: true,
+          subtitleBurnedIn: subtitleRequiresBurnIn,
+        }
+      } catch (error) {
+        // An unusable optional fallback must not prevent valid direct playback.
+        if (!directEndpoint) throw error
+      }
+    }
     const endpoint = directEndpoint ?? transcodeEndpoint
     if (!endpoint) {
       throw new Error(transcodeResponse?.ErrorCode || directResponse.ErrorCode

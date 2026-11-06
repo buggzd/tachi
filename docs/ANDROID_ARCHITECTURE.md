@@ -101,6 +101,15 @@ password is never persisted or included in a state payload; the authentication
 request removes it from the JSON object and wipes its byte and character
 buffers in `finally` blocks. Logs contain only generic failure categories.
 
+Authentication and catalog API requests use the standard `Authorization: MediaBrowser`
+header, with `Token` included after login. Image, video, subtitle and font URLs use
+the case-sensitive `ApiKey` query parameter; inherited legacy token parameters are
+removed before adding the current session token. These requests do not depend on
+legacy `X-Emby-*` headers or `api_key`, which the tested Jellyfin 12.4.0 server
+rejects. Server-provided media URLs must stay within the active server origin and
+Jellyfin base path before a token is attached. Session persistence and login methods
+remain unchanged.
+
 Server URLs support IPv4, host names resolved through A/AAAA records, bracketed
 IPv6 literals with an optional port, and Jellyfin subpaths. A bare IPv6 literal
 without a port is bracketed during normalization. A literal with a port must use

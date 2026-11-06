@@ -179,7 +179,7 @@ async function developmentBootstrap(): Promise<RuntimeBootstrap> {
     const deviceId = 'lucent-rayneo-web-development'
     const headers = {
       'Content-Type': 'application/json',
-      'X-Emby-Authorization': authorizationHeader(deviceId),
+      Authorization: authorizationHeader(deviceId),
     }
     const [infoResponse, authenticationResponse] = await Promise.all([
       fetch(`${serverUrl}/System/Info/Public`, { cache: 'no-store' }),

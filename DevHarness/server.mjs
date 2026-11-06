@@ -120,7 +120,6 @@ async function requestText(method, endpoint, body = undefined) {
       headers: {
         Accept: 'application/json',
         Authorization: authorization,
-        'X-Emby-Authorization': authorization,
         ...(body === undefined ? {} : { 'Content-Type': 'application/json; charset=utf-8' }),
       },
     })
